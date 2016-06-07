@@ -1,0 +1,4 @@
+class LuaBaseEngine
+{
+	bool DoModule(const char* _pszModuleFile);
+};

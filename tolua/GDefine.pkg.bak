@@ -1,0 +1,60 @@
+struct UserData
+{
+	ItemAttrib stAttrib;
+	WORD wCoordX;
+	WORD wCoordY;
+	WORD wMapID;
+	USER_STATE eServerState;
+	OBJECT_STATE eGameState;
+	int nDrt;
+
+	//	Timer
+	//DWORD dwLastWalkTime;
+	//DWORD dwWalkInterval;
+
+	//DWORD dwLastRunTime;
+	//DWORD dwRunInterval;
+};
+
+struct ItemAttrib
+{
+	char name[20];
+	
+	int GetLucky();
+	void SetLucky(int _lucky);
+	
+	int GetHide();
+	void SetHide(int _hide);
+	
+	int GetAccuracy();
+	void SetAccuracy(int _accuracy);
+	
+	int GetAtkSpeed();
+	void SetAtkSpeed(int _atkSpeed);
+	
+	int GetMaxDC();
+	void SetMaxDC(int _maxDC);
+	
+	int GetMaxAC();
+	void SetMaxAC(int _maxAC);
+	
+	int GetMaxMAC();
+	void SetMaxMAC(int _maxMAC);
+	
+	int GetMaxSC();
+	void SetMaxSC(int _maxSC);
+	
+	int GetMaxMC();
+	void SetMaxMC(int _maxMC);
+	
+	int GetType();
+};
+
+struct GroundItem
+{
+	void SetPosX(int _x);
+	void SetPosY(int _y);
+	ItemAttrib* GetItemAttrib();
+};
+
+int Lua_MakeItemUpgrade(int _preLevel, int _upgradeValue);

@@ -1,0 +1,143 @@
+enum SERVER_OBJECT_TYPE
+{
+	SOT_NONE = 0,
+	SOT_HERO,
+	SOT_NPC,
+	SOT_MONSTER,
+};
+
+void MirLog(const char* _pLog);
+void ConsolePrint(const char* _pszText);
+
+class GameObject  : public LockObject/*, public CUser*/
+{
+	~GameObject();
+
+	//	Add delayed process,call it on main loop thread,don't call it on main thread
+	//	Now can only call in main loop thread
+	void AddProcess(const PacketHeader* _pPkt);
+
+	unsigned int GetID();
+	SERVER_OBJECT_TYPE	GetType();
+	ItemAttrib* GetAttrib();
+	WORD GetMapID();
+	UserData* GetUserData();
+	GameScene* GetLocateScene();
+	int GetAttribID();
+	int GetLevel();
+	bool FlyToInstanceMap(int _x, int _y, GameInstanceScene* _pInsScene);
+	
+	bool FlyToMap(int _x, int _y, int _nMapID);
+
+	bool IncHP(DWORD _dwHP);
+	bool DecHP(DWORD _dwHP);
+	bool IncMP(DWORD _dwMP);
+	bool DecMP(DWORD _dwMP);
+	
+	WORD GetCoordX();
+	WORD GetCoordY();
+	
+	int GetCoordXInt();
+	int GetCoordYInt();
+	
+	int GetState();
+	
+	int GetTotalRecvDamage();
+	int GetHP();
+	int GetMaxHP();
+	int GetExpr();
+	
+	const char* GetName();
+};
+
+class HeroObject : public GameObject/*, public CUser*/
+{
+	ItemAttrib* GetItemByIndex(DWORD _dwIndex);
+	ItemAttrib* GetItemByTag(DWORD _dwTag);
+	ItemAttrib* Lua_GetItemByAttribID(int _nId);
+	ItemAttrib* Lua_GetItemByTag(int _nTag);
+	bool AddBagItem(const ItemAttrib* _pItem);
+	bool AddBagItem(DWORD _dwIndex, const ItemAttrib* _pItem);
+
+	void SendSystemMessage(const char* _pszMsg);
+	bool ShowQuestDlg(NPCObject* _pnpc, int _questid, int _step);
+	void HideQuestDlg();
+	bool ShowShopDlg(NPCObject* _pnpc, int _type);
+	QuestContext* GetQuest();
+	int CountItem(int _nAttribID);
+	void ClearItem(int _nAttribID, int _number);
+	bool AddItem(int _nAttribID);
+	int AddItemReturnTag(int _nAttribID);
+	bool RemoveItem(int _nTag);
+	int ItemTagToAttribID(int _nTag);
+	int GetBagEmptySum();
+	int GetAssistEmptySum();
+	void SyncItemAttrib(int _nTag);
+	
+	int GetMoney();
+	void AddMoney(int _nMoney);
+	void MinusMoney(int _nMoney);
+	void GainExp(int _expr);
+
+	int GetHeroJob();
+	int GetHeroSex();
+	
+	void ClearAllItem();
+	void FlyToHome();
+	void SetValidState();
+	
+	void SyncQuestData(int _nStage);
+	int GetTeamID();
+	HeroObject* GetTeamMate(int _idx);
+	void TeamMateFlyToInstanceMap(int _x, int _y, GameInstanceScene* _pInsScene);
+	bool IsTeamLeader();
+	
+	int Lua_GetActiveDropParam();
+	
+	int GetChallengeItemID();
+	bool UseChallengeItem(int _nClgID);
+	
+	bool IsTeamMateAround(int _nOffset);
+	void TeamMateFlyToMap(int _x, int _y, int _nMapID);
+	
+	bool ReceiveGift(int _nGiftID);
+	
+	//	显示对话框的
+	void ResetIDlg();
+	bool AddIDlg_CloseButton(int _nX, int _nY, const char* _pszText);
+	bool AddIDlg_Button(int _nX, int _nY, int _nId, const char* _pszText);
+	bool AddIDlg_String(int _nX, int _nY, const char* _pszText);
+	void ShowIDlg(NPCObject* _pNpc);
+	void HideIDlg();
+	
+	//	限制某一系列地图的进入时间的
+	void SetEnterTimeLimitScene(GameScene* _pScene);
+	
+	void UpdateLifeSkillLevel(LifeSkillType _eType, int _nLevel);
+	
+	void Lua_SetQuestStep(int _nQuestId, int _nStep);
+	int Lua_GetQuestStep(int _nQuestId);
+	void Lua_SetQuestCounter(int _nQuestId, int _nCounter);
+	int Lua_GetQuestCounter(int _nQuestId);
+	
+	int TransferIdentifyAttrib(int _nItemTag0, int _nItemTag1, int _nCount);
+	int TransferIdentifyAttribFailed(int _nItemTag0, int _nItemTag1);
+};
+
+class NPCObject : public GameObject
+{
+	~NPCObject();
+	//	清除所有售卖物品
+	void ClearAllSellItem();
+	//	添加售卖物品
+	void AddSellItem(int _id);
+	//	是否售卖物品存在
+	bool IsItemExist(int _id);
+};
+
+class MonsterObject : public GameObject
+{
+	int GetMonsterID();
+	bool GetCanDropItems();
+	void Say(const char*);
+};

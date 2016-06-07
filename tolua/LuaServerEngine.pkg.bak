@@ -1,0 +1,39 @@
+class LuaServerEngine : public LuaBaseEngine
+{
+public:
+	LuaServerEngine();
+	virtual ~LuaServerEngine(){}
+
+public:
+	bool ExecuteZip(const char* _pszFileName, const char* _pszSubFile);
+	bool ExecuteFile(const char* _pszFileName);
+
+	bool LoadModule(const char* _pszModuleFile);
+	
+public:
+	inline int GetUserTag()
+	{
+		return m_nUserTag;
+	}
+	inline void SetUserTag(int _nTag)
+	{
+		m_nUserTag = _nTag;
+	}
+	inline void SetModulePath(const char* _pszPath, int _nMode = LOADMODE_PATH)
+	{
+		m_xModulePath = _pszPath;
+		m_nLoadMode = _nMode;
+	}
+	inline const string& GetModulePath()
+	{
+		return m_xModulePath;
+	}
+
+public:
+	virtual void Output(const char* _pszLog);
+
+protected:
+	int m_nUserTag;
+	string m_xModulePath;
+	int m_nLoadMode;
+};

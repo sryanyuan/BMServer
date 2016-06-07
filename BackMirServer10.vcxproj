@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>BackMirServer</ProjectName>
+    <ProjectGuid>{32E3F583-D55E-4525-BDFD-08BB20E5C382}</ProjectGuid>
+    <RootNamespace>BackMirServer</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\BackMir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\BackMir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GameSvr</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GameSvr</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>D:\VsProject\Inc\ZipArchive;D:\VsProject\Inc\zlib;D:\VsProject\Inc\tolua;D:\VsProject\Inc\lua;D:\VsProject\Inc\Sqlite;D:\VsProject\Inc\glog;D:\VsProject\Inc\NetWorkEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;_LUA_;ZLIB_WINAPI;_THEMIDA_;_SYNC_CREATE;_SERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0804</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>NetworkEngineD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\VsProject\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(ProjectDir)\..\BackMir\GameSvr.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>D:\VsProject\Inc\ZipArchive;D:\VsProject\Inc\Glog;D:\VsProject\Inc\NetWorkEngine;D:\VsProject\Inc\zlib;D:\VsProject\Inc\tolua;D:\VsProject\Inc\lua;D:\VsProject\Inc\Sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;GOOGLE_GLOG_DLL_DECL=;_LUA_;ZLIB_WINAPI;_THEMIDA_;_SYNC_CREATE;_SERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0804</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>NetworkEngine_t.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\VsProject\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(ProjectDir)\..\BackMir\GameSvr.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\BackMirClient\Common\MirMap.cpp" />
+    <ClCompile Include="..\BackMirClient\Common\SKnl3Helper.cpp" />
+    <ClCompile Include="..\CommonModule\ByteBuffer.cpp" />
+    <ClCompile Include="..\CommonModule\ConsoleHelper.cpp" />
+    <ClCompile Include="..\CommonModule\ConvertUTF.c" />
+    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCCalc.cpp" />
+    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.cpp" />
+    <ClCompile Include="..\CommonModule\DataParser.cpp" />
+    <ClCompile Include="..\CommonModule\GamePacket.cpp" />
+    <ClCompile Include="..\CommonModule\GameStructSerialize.cpp" />
+    <ClCompile Include="..\CommonModule\MagicEffectID.cpp" />
+    <ClCompile Include="..\CommonModule\QuestContext.cpp" />
+    <ClCompile Include="..\CommonModule\SaveFile.cpp" />
+    <ClCompile Include="..\CommonModule\ScriptEngine.cpp" />
+    <ClCompile Include="..\CommonModule\ShareData.cpp" />
+    <ClCompile Include="..\CommonModule\StackWalker\StackWalker.cpp" />
+    <ClCompile Include="..\CommonModule\ZipDataReader.cpp" />
+    <ClCompile Include="BackMirServer.cpp" />
+    <ClCompile Include="ChildView.cpp" />
+    <ClCompile Include="GameWorld\DBThread.cpp" />
+    <ClCompile Include="GameWorld\ExceptionHandler.cpp" />
+    <ClCompile Include="GameWorld\FreeListManager.cpp" />
+    <ClCompile Include="GameWorld\GameDbBuffer.cpp" />
+    <ClCompile Include="GameWorld\GameInstanceScene.cpp" />
+    <ClCompile Include="GameWorld\GameSceneManager.cpp" />
+    <ClCompile Include="GameWorld\GameWorld.cpp" />
+    <ClCompile Include="GameWorld\HeroObject.cpp" />
+    <ClCompile Include="GameWorld\HeroObject_Packet.cpp" />
+    <ClCompile Include="GameWorld\MonsterObject.cpp" />
+    <ClCompile Include="GameWorld\NPCObject.cpp" />
+    <ClCompile Include="GameWorld\ObjectEngine.cpp" />
+    <ClCompile Include="GameWorld\ObjectStatus.cpp" />
+    <ClCompile Include="GameWorld\ObjectValid.cpp" />
+    <ClCompile Include="GameWorld\Struct.cpp" />
+    <ClCompile Include="GameWorld\TeammateControl.cpp" />
+    <ClCompile Include="GameWorld\WatcherThread.cpp" />
+    <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="ServerDlg.cpp" />
+    <ClCompile Include="SettingDlg.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="CMainServer\CMainServer.cpp" />
+    <ClCompile Include="CMainServer\CUser.cpp" />
+    <ClCompile Include="tolua\luaServer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\BackMirClient\Common\MirMap.h" />
+    <ClInclude Include="..\BackMirClient\Common\SKnl3Helper.h" />
+    <ClInclude Include="..\CommonModule\ByteBuffer.h" />
+    <ClInclude Include="..\CommonModule\ConsoleHelper.h" />
+    <ClInclude Include="..\CommonModule\ConvertUTF.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\AntiRE.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCCalc.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunner.h" />
+    <ClInclude Include="..\CommonModule\DataParser.h" />
+    <ClInclude Include="..\CommonModule\EnumUtils.h" />
+    <ClInclude Include="..\CommonModule\ExecuteTimer.h" />
+    <ClInclude Include="..\CommonModule\GamePacket.h" />
+    <ClInclude Include="..\CommonModule\GameStructSerialize.h" />
+    <ClInclude Include="..\CommonModule\GDefine.h" />
+    <ClInclude Include="..\CommonModule\MagicEffectID.h" />
+    <ClInclude Include="..\CommonModule\QuestContext.h" />
+    <ClInclude Include="..\CommonModule\SaveFile.h" />
+    <ClInclude Include="..\CommonModule\ScriptEngine.h" />
+    <ClInclude Include="..\CommonModule\SettingLoader.h" />
+    <ClInclude Include="..\CommonModule\ShareData.h" />
+    <ClInclude Include="..\CommonModule\ShareDefine.h" />
+    <ClInclude Include="..\CommonModule\SimpleIni.h" />
+    <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h" />
+    <ClInclude Include="..\CommonModule\ZipDataReader.h" />
+    <ClInclude Include="BackMirServer.h" />
+    <ClInclude Include="ChildView.h" />
+    <ClInclude Include="GameWorld\DBThread.h" />
+    <ClInclude Include="GameWorld\ExceptionHandler.h" />
+    <ClInclude Include="GameWorld\FreeListManager.h" />
+    <ClInclude Include="GameWorld\GameDbBuffer.h" />
+    <ClInclude Include="GameWorld\GameInstanceScene.h" />
+    <ClInclude Include="GameWorld\GameSceneManager.h" />
+    <ClInclude Include="GameWorld\GameWorld.h" />
+    <ClInclude Include="GameWorld\MonsterObject.h" />
+    <ClInclude Include="GameWorld\ObjectEngine.h" />
+    <ClInclude Include="GameWorld\ObjectStatus.h" />
+    <ClInclude Include="GameWorld\ObjectValid.h" />
+    <ClInclude Include="GameWorld\Struct.h" />
+    <ClInclude Include="GameWorld\TeammateControl.h" />
+    <ClInclude Include="GameWorld\WatcherThread.h" />
+    <ClInclude Include="Helper.h" />
+    <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="ServerDlg.h" />
+    <ClInclude Include="SettingDlg.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="CMainServer\CMainServer.h" />
+    <ClInclude Include="CMainServer\CUser.h" />
+    <ClInclude Include="Net\Packet.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\BackMirServer.ico" />
+    <None Include="res\BackMirServer.rc2" />
+    <None Include="res\Toolbar.bmp" />
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BackMirServer.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="BackMirServer.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

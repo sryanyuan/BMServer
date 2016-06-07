@@ -1,0 +1,1 @@
+bool GetRecordInItemTable(int _id, ItemAttrib* _pOut);

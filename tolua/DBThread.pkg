@@ -1,0 +1,22 @@
+class ItemIDList : public std::list<int>
+{
+	void Push(int _value);
+};
+
+struct DBOperationParam
+{
+	void SetOperation(int _nOp);
+	void SetParam(int _idx, int _value);
+};
+
+class DBThread
+{
+	static DBThread* GetInstance();
+	void AsynExecute(DBOperationParam*);
+	DBOperationParam* GetNewParam();
+	GroundItem* NewGroundItem();
+	void DeleteGroundItem(GroundItem* _pItem);
+	int GroundItemToInt(GroundItem* _pItem);
+	void UpgradeItems(ItemAttrib* _pItem, int _nProb);
+	LuaServerEngine* GetLuaEngine();
+};

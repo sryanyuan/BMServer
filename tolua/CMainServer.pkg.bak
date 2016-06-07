@@ -1,0 +1,4 @@
+class CMainServer
+{
+	static CMainServer* GetInstance();
+}

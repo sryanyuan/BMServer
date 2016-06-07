@@ -1,0 +1,94 @@
+#define DECLARE_WRITE(pkg)			ByteBuffer& WritePacket(ByteBuffer& _buf, pkg& _pkg)
+#define DECLARE_READ(pkg)			ByteBuffer& ReadPacket(ByteBuffer& _buf, pkg& _pkg)
+#define DECLARE_READWRITE(pkg)		DECLARE_WRITE(pkg);DECLARE_READ(pkg);
+
+enum GamePacketCode
+{
+	//	不处理头
+	GAME_PKG_HEADER = 0,
+
+	//	玩家登陆包
+	PKG_SYSTEM_START = 100,
+	PKG_SYSTEM_USERLOGIN_REQ,
+	PKG_SYSTEM_USERLOGIN_ACK,
+	PKG_SYSTEM_NEWNPC_NOT,
+	PKG_SYSTEM_NEWPLAYER_NOT,
+	PKG_SYSTEM_FORCE_ACTION_ACK,
+	PKG_SYSTEM_END,
+	
+	PKG_GAME_START = 999,
+	//	怪物，其余玩家的动作通知包
+	PKG_GAME_OBJECT_ACTION_NOT,
+	//	自己移动后 请求服务器通知的数据包
+	PKG_GAME_USER_ACTION_REQ,
+	//	获取服务器，该玩家的一些状态数据
+	PKG_GAME_SERVERSTATUS_REQ,
+	PKG_GAME_SERVERSTATUS_ACK,
+	//	玩家说话
+	PKG_GAME_PLAYER_SAY_REQ,
+	//	聊天窗口内容
+	PKG_GAME_CHAT_NOT,
+	//	玩家换装
+	PKG_GAME_PLAYER_CHANGEEQUIPMENT_REQ,
+	PKG_GAME_PLAYER_CHANGEEQUIPMENT_NOT,
+	//	玩家丢装备
+	PKG_GAME_PLAYER_DROPITEM_NOT,
+	PKG_GAME_PLAYER_DROPITEM_REQ,
+	//	玩家申请同步客户端装备
+	PKG_GAME_PLAYER_SYNCITEM_REQ,
+	//	玩家获得装备
+	PKG_GAME_PLAYER_GAINITEM_NTF,
+	//	玩家失去装备
+	PKG_GAME_PLAYER_LOSTITEM_ACK,
+	//	玩家捡装备请求
+	PKG_GAME_PLAYER_PICKUPITEM_REQ,
+	//	消去地面装备
+	PKG_GAME_PLAYER_CLEARITEM_NTF,
+	//	清除背包装备
+	PKG_GAME_PLAYER_CLEARBAG_NTF,
+
+	//	玩家同步状态
+	PKG_GAME_PLAYER_SYNCATTRIB_NTF,
+	//	玩家脱下装备
+	PKG_GAME_PLAYER_UNDRESSITEM_REQ,
+	//	玩家脱下装备
+	PKG_GAME_PLAYER_UNDRESSITEM_ACK,
+	//	玩家穿上装备
+	PKG_GAME_PLAYER_DRESSITEM_REQ,
+	PKG_GAME_PLAYER_DRESSITEM_ACK,
+	//	使用背包物品
+	PKG_GAME_PLAYER_USEITEM_REQ,
+	PKG_GAME_PLAYER_USEITEM_ACK,
+	//	玩家更新状态
+	PKG_GAME_PLAYER_UPDATEATTRIB_NTF,
+
+	PKG_GAME_END,
+
+	GAME_PKG_END,
+};
+
+enum GameActionCode
+{
+	//	动作数据包类别
+	ACTION_WALK,	/*移动*/
+	ACTION_TURN,	/*转身*/
+	ACTION_RUN,		/*跑步*/
+	ACTION_ATTACK,	/*攻击*/
+	ACTION_CREATE,	/*生成*/
+	ACTION_STATUS,	/*状态(0HP,1MP,2EXP))*/
+	ACTION_STRUCK,	/*僵直*/
+};
+
+
+
+struct PacketHeader
+{
+	PacketHeader();
+};
+DECLARE_READWRITE(PacketHeader);
+
+struct PkgChatNot : public PacketHeader
+{
+	PkgChatNot();
+};
+DECLARE_READWRITE(PkgChatNot);

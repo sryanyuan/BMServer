@@ -1,0 +1,5 @@
+class CMainServer
+{
+	static CMainServer* GetInstance();
+	bool IsLoginServerMode();
+}

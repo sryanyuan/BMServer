@@ -1,0 +1,9 @@
+class OlShopManager
+{
+	static OlShopManager* GetInstance();
+	
+	//	ÃÌº”…Ã∆∑
+	void AddShopItem(int _nID);
+	void RemoveShopItem(int _nID);
+	void ClearShopItems();
+};

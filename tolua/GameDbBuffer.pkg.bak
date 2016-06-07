@@ -1,0 +1,2 @@
+bool GetRecordInItemTable(int _id, ItemAttrib* _pOut);
+bool GetRecordInMonsterTable(int _id, ItemAttrib* _pOut);

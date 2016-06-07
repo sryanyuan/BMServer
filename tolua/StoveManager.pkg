@@ -1,0 +1,10 @@
+enum LifeSkillType
+{
+	//	Ò±Á¶¿óÊ¯
+	kLifeSkill_SmeltOre = 0,
+	kLifeSkill_SmeltWood,
+	kLifeSkill_SmeltCloth,
+	kLifeSkill_SmeltGem,
+	kLifeSkill_SmeltEquip,
+	kLifeSkill_Total,
+};

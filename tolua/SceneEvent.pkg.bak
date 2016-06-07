@@ -1,0 +1,9 @@
+$#include "../../CommonModule/QuestContext.h"
+
+enum SceneEvent
+{
+	SceneEvent_None,
+	SceneEvent_Update,
+	SceneEvent_PlayerEnter,
+	SceneEvent_Total
+};

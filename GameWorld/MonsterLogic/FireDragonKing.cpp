@@ -1,0 +1,17 @@
+#include "../MonsterObject.h"
+#include "../../GameWorld/GameSceneManager.h"
+//////////////////////////////////////////////////////////////////////////
+FireDragonKing::FireDragonKing()
+{
+
+}
+
+FireDragonKing::~FireDragonKing()
+{
+
+}
+//////////////////////////////////////////////////////////////////////////
+bool FireDragonKing::AttackTarget()
+{
+	return true;
+}

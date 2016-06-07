@@ -1,0 +1,9 @@
+#ifndef _INC_CONNCODE_
+#define _INC_CONNCODE_
+//////////////////////////////////////////////////////////////////////////
+unsigned int GetNewConnCode();
+
+unsigned int GetConnCode(unsigned int _uConnIndex);
+void SetConnCode(unsigned int _uConnIndex, unsigned int _uConnCode);
+//////////////////////////////////////////////////////////////////////////
+#endif

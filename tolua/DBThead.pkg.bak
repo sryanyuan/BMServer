@@ -1,0 +1,24 @@
+struct DBOperationParam
+{
+	void SetOperation(int _nOp)
+	{
+		dwOperation = _nOp;
+	}
+	void SetParam(int _idx, int _value)
+	{
+		if(_idx < 0 ||
+			_idx >= DBTHREAD_PARAM_MAX)
+		{
+			return;
+		}
+
+		dwParam[_idx] = _value;
+	}
+};
+
+class DBThread
+{
+	static DBThread* GetInstance();
+	void AsynExecute(DBOperationParam*);
+	DBOperationParam* GetNewParam();
+};

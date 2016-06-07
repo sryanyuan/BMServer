@@ -1,0 +1,16 @@
+enum LuaEvent
+{
+	kLuaEvent_None,
+	//	世界更新 1s调用一次
+	kLuaEvent_WorldUpdate,
+	//	定时任务触发
+	kLuaEvent_WorldScheduleActive,
+	//	NPC点击
+	kLuaEvent_WorldNPCActive,
+	//	世界启动
+	kLuaEvent_WorldStartRunning,
+	//	进入场景
+	kLuaEvent_ScenePlayerEnter,
+	//	连接上了登陆服务器
+	kLuaEvent_WorldLoginServerConnected,
+};

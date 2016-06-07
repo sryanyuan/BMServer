@@ -1,0 +1,16 @@
+class DBDropDownContext
+{
+	bool IsDropValid();
+
+	float GetDropMultiple();
+
+	int GetMagicDropMultiple();
+
+	GameScene* GetDropScene();
+
+	bool InitDropPosition(int _nItems);
+	int GetDropPosX(int _nItemIndex);
+	int GetDropPosY(int _nItemIndex);
+
+	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY);
+};

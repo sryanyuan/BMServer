@@ -1,0 +1,99 @@
+//typedef unsigned int DWORD;
+//typedef unsigned short WORD;
+void ConsolePrint(const char* _pszMsg);
+
+class GameScene
+{
+	GameObject* GetPlayer(DWORD _dwID);
+	GameObject* GetPlayerWithoutLock(DWORD _dwID);
+	GroundItem* GetItem(DWORD _dwTag);
+
+	DWORD BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID);
+	bool GetSceneData(HeroObject* _pObj);
+	bool GetRandomPosition(DWORD* _pOut);
+	
+	void BroadcastChatMessage(std::string& _xMsg, unsigned int _dwExtra);
+	void BroadcastSceneSystemMessage(const char* _pszMsg);
+	void CreateNPC(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	void CreateMonster(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	//	Just elite monster
+	void CreateEliteMonster(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	//	Just leader monster
+	void CreateLeaderMonster(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	void CreateNormalMonster(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	//	Random position
+	void CreateMonster(unsigned int _uID);
+	void CreateMonster(unsigned int _uID, unsigned short _ux, unsigned short _uy, unsigned short _oft, unsigned short _number, unsigned int _uinterval);
+	void CreateMonsterLater(unsigned int _uID, unsigned short _ux, unsigned short _uy, unsigned short _oft, unsigned short _number, unsigned int _uinterval);
+	void CreateGroundItem(unsigned _uID, unsigned short _uX, unsigned short _uY);
+	void CreateDoorEvent(unsigned int _uMapID, unsigned int _ux, unsigned int _uy, unsigned int _nextx, unsigned int _nexty);
+	void CreateDoorEvent(unsigned int _uMapID, unsigned int _ux, unsigned int _uy, unsigned int _nextx, unsigned int _nexty, unsigned int _utime);
+	void CreateDoorEventWithNotification(unsigned int _uMapID, unsigned int _ux, unsigned int _uy, unsigned int _nextx, unsigned int _nexty, unsigned int _utime);
+	void SetCityRange(int _x, int _y, int _width, int _height, int _centerx, int _centery);
+	void SetAutoReset();
+	//void SetInstance(bool _bIns);
+	void SetTreasureMap(bool _b);
+	void SetKilledMonster();
+	void SetCannotStay();
+	void SetCannotUseScroll();
+	
+	bool IsItemInGround(int _nAttribID, int _x, int _y);
+	void RemoveGroundItem(int _nAttribID, int _x, int _y);
+	
+	int GetMonsterSum(unsigned int _uID);
+	
+	DWORD GetTimeCount();
+	
+	void RegisterCallback(SceneEvent _eType, const char* _pszFuncName, int _nInterval);
+	
+	LuaServerEngine* GetLuaEngine();
+	
+	void SetMonsterDefenceMulti(float _fMulti);
+	void SetMonsterAttackMulti(float _fMulti);
+	
+	int GetPlayerCount();
+	int GetMonsterCount();
+	
+	int GetMapIDInt();
+	
+	int GetPlayerSum();
+	int GetSlaveSum();
+	
+	void ChallengeResetScene(int _nClgID);
+	void ChallengeSuccess(int _nItemID);
+	int GetChallengeID();
+	
+	void AllHeroFlyToHome();
+	
+	int GetTimeLimitID();
+	void SetTimeLimitID(int _id);
+	int GetTimeLimitSec();
+	void SetTimeLimitSec(int _sec);
+};
+
+class GameSceneManager
+{
+	~GameSceneManager();
+	static GameSceneManager* GetInstance();
+
+	bool InsertPlayer(GameObject* _pObj);
+	bool InsertNPC(GameObject* _pObj);
+	bool RemovePlayer(DWORD _dwID);
+
+	GameObject* GetPlayer(WORD _wMapID, DWORD _dwID);
+	GameObject* GetPlayer(DWORD _dwID);
+	
+	GameScene* GetScene(DWORD _dwMapID);
+	GameScene* GetSceneInt(int _nMapID);
+	
+	GameInstanceScene* GetFreeInstanceScene(int _id);
+	void SendSystemMessageAllScene(const char* _pszMsg);
+	void SendSystemNotifyAllScene(const char* _pszMsg);
+};
+
+class GameInstanceScene
+{
+	void BeginInstance();
+	void OnRound(int _nRound);
+	void EndInstance();
+};

@@ -1,0 +1,350 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="CMainServer">
+      <UniqueIdentifier>{2e425a1a-ed6e-4237-8ca6-ba257904cf63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{5285d80b-ce98-4cab-a2be-ad85ceaf5ba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameWorld">
+      <UniqueIdentifier>{4662c12a-4115-4ef1-b397-bd52d051954c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Module">
+      <UniqueIdentifier>{96ae24aa-a8e3-46f5-98c1-1b46415348fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameCommon">
+      <UniqueIdentifier>{03ef85ad-d0c0-4e94-b655-3731cde28c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LuaExport">
+      <UniqueIdentifier>{c303b161-4f10-42dc-a447-34f1d2f04c05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Module\StackWalker">
+      <UniqueIdentifier>{70475120-e9d9-4081-b063-40f926a7b284}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Module\CRCVerifyThread">
+      <UniqueIdentifier>{f586b7b4-55d9-47d7-9c54-d5706ac9b19c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackMirServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ChildView.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Helper.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrm.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CMainServer\CMainServer.cpp">
+      <Filter>CMainServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CMainServer\CUser.cpp">
+      <Filter>CMainServer</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GameWorld.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\HeroObject.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\MonsterObject.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\NPCObject.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\ObjectEngine.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\Struct.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ByteBuffer.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\DataParser.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\GamePacket.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\GameStructSerialize.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GameSceneManager.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BackMirClient\Common\SKnl3Helper.cpp">
+      <Filter>GameCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BackMirClient\Common\MirMap.cpp">
+      <Filter>GameCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\DBThread.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ScriptEngine.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="tolua\luaServer.cpp">
+      <Filter>LuaExport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\MagicEffectID.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ShareData.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\SaveFile.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\ObjectValid.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GameDbBuffer.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\ObjectStatus.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\HeroObject_Packet.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\TeammateControl.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\FreeListManager.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ConvertUTF.c">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ZipDataReader.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\QuestContext.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\ExceptionHandler.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\StackWalker\StackWalker.cpp">
+      <Filter>Module\StackWalker</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GameInstanceScene.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCCalc.cpp">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.cpp">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\WatcherThread.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\ConsoleHelper.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackMirServer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildView.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CMainServer\CMainServer.h">
+      <Filter>CMainServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CMainServer\CUser.h">
+      <Filter>CMainServer</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\Packet.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\GameWorld.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ObjectEngine.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\Struct.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ByteBuffer.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\DataParser.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\EnumUtils.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\GamePacket.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\GameStructSerialize.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\GameSceneManager.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\BackMirClient\Common\MirMap.h">
+      <Filter>GameCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="..\BackMirClient\Common\SKnl3Helper.h">
+      <Filter>GameCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\MonsterObject.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\DBThread.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ScriptEngine.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\MagicEffectID.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ShareData.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\SaveFile.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ObjectValid.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\GameDbBuffer.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ShareDefine.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ObjectStatus.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\TeammateControl.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\FreeListManager.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ConvertUTF.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\SimpleIni.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ZipDataReader.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\SettingLoader.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\QuestContext.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\GDefine.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ExceptionHandler.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h">
+      <Filter>Module\StackWalker</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\GameInstanceScene.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ExecuteTimer.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\AntiRE.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCCalc.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunner.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\WatcherThread.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ConsoleHelper.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\BackMirServer.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\BackMirServer.rc2">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\Toolbar.bmp">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BackMirServer.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
