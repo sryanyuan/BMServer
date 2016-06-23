@@ -21,6 +21,8 @@ int BowManMonster::GetRandomAbility(ABILITY_TYPE _type)
 					if(pMgc->bLevel > 0)
 					{
 						//	要消耗主人的能量
+#ifdef _DEBUG
+#else
 						int nCostMP = pMgc->bLevel * 5;
 						if(pHero->GetObject_MP() > nCostMP)
 						{
@@ -36,6 +38,7 @@ int BowManMonster::GetRandomAbility(ABILITY_TYPE _type)
 						{
 							return 0;
 						}
+#endif
 					}
 				}
 			}

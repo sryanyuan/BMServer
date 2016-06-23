@@ -2348,7 +2348,8 @@ void MonsterObject::ProcessDelayAction()
 		case kDelayAction_Attacked:
 			{
 				if(m_stData.eGameState == OS_STOP ||
-					m_stData.eGameState == OS_STAND)
+					m_stData.eGameState == OS_STAND ||
+					m_stData.eGameState == OS_STRUCK)
 				{
 					DelayActionAttacked* pAttackedAction = (DelayActionAttacked*)pAction;
 
