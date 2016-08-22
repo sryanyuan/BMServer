@@ -796,6 +796,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GameWorld\MSGStack.h"
+				>
+			</File>
+			<File
 				RelativePath=".\GameWorld\NPCObject.cpp"
 				>
 			</File>
@@ -1037,6 +1041,10 @@
 			</File>
 			<File
 				RelativePath="..\BackMirClient\Common\MirMap.h"
+				>
+			</File>
+			<File
+				RelativePath=".\common\shared.h"
 				>
 			</File>
 			<File

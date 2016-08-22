@@ -7,11 +7,13 @@
 #include <Windows.h>
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/cron/CronSchedule.h"
+#include "../common/shared.h"
 #include "DBThread.h"
 //#include "../../CommonModule/ScriptEngine.h"
 #include "LuaServerEngine.h"
 #include "GameDbBuffer.h"
 #include "WorldEventDispatcher.h"
+#include "MSGStack.h"
 //////////////////////////////////////////////////////////////////////////
 //	For encrypt
 #ifdef _THEMIDA_
@@ -102,6 +104,8 @@ private:
 	static int __cronActive(int _nJobId, int _nArg);
 
 public:
+	//	timer process
+	unsigned int WorldRun();
 	//	world control
 	void Initialize(const char* _pszDestFile = NULL);
 	unsigned int Run();
@@ -168,6 +172,10 @@ public:
 		return ++s_uID;
 	}
 
+	inline bool GetThreadRunMode() {
+		return m_bThreadRunMode;
+	}
+
 	//	sync object
 	inline void LockProcess()
 	{
@@ -220,15 +228,30 @@ public:
 
 	void PostRunMessage(const MSG* _pMsg)
 	{
-		if(m_hThread != NULL &&
-			m_dwThreadID != 0)
-		{
-			PostThreadMessage(m_dwThreadID, _pMsg->message, _pMsg->wParam, _pMsg->lParam);
+		if (m_bThreadRunMode) {
+			if(m_hThread != NULL &&
+				m_dwThreadID != 0)
+			{
+				PostThreadMessage(m_dwThreadID, _pMsg->message, _pMsg->wParam, _pMsg->lParam);
+			}
+		} else {
+			//	push into msg queue
+			MSG* pMsg = new MSG;
+			memcpy(pMsg, _pMsg, sizeof(MSG));
+
+			BMLockGuard guard(&m_csMsgStack);
+			m_xMsgStack.push(pMsg);
 		}
 	}
 
 	void SetSchedule(int _nEventId, const char* _pszCronExpr);
 	void ResetSchedule(int _nEventId);
+
+	//	sync process
+	int SyncOnHeroDisconnected(HeroObject* _pHero);
+	int SyncOnHeroConnected(HeroObject* _pHero, bool _bNew);
+	int SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf);
+	int SyncIsHeroExists(LoginQueryInfo* _pQuery);
 
 public:
 	//	working process
@@ -368,6 +391,14 @@ private:
 
 	//	游戏难度
 	int m_nDifficultyLevel;
+
+	//	是否运行于线程模式
+	bool m_bThreadRunMode;
+	bool m_bWorldInit;
+
+	//	消息队列
+	MSGStack m_xMsgStack;
+	CRITICAL_SECTION m_csMsgStack;
 
 protected:
 	CRITICAL_SECTION m_stCsProcess;

@@ -1935,14 +1935,18 @@ void HeroObject::DoPacket(const PkgPlayerClickNPCReq& req)
 	GameObject* pNPC = pScene->GetNPCByHandleID(req.uTargetId);
 	if(pNPC)
 	{
-		if(!pNPC->AddProcess(g_xThreadBuffer))
-		{
-			// !!!
-			char szName[20] = {0};
-			ObjectValid::GetItemName(&pNPC->GetUserData()->stAttrib, szName);
-			LOG(ERROR) << szName << " fatal error operation!!!ClickNPCReq";
-			LOG(ERROR) << "Content:" << g_xThreadBuffer.ToHexString();
-			CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(GetUserIndex());
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			if(!pNPC->AddProcess(g_xThreadBuffer))
+			{
+				// !!!
+				char szName[20] = {0};
+				ObjectValid::GetItemName(&pNPC->GetUserData()->stAttrib, szName);
+				LOG(ERROR) << szName << " fatal error operation!!!ClickNPCReq";
+				LOG(ERROR) << "Content:" << g_xThreadBuffer.ToHexString();
+				CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(GetUserIndex());
+			}
+		} else {
+			pNPC->DispatchPacket(g_xThreadBuffer);
 		}
 	}
 }

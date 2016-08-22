@@ -38,7 +38,7 @@ void ConsolePrint(const char* _pszText);
 extern const int g_nMoveOft[16];
 //////////////////////////////////////////////////////////////////////////
 #define OBJECT_BUFFER_SIZE	1*1024
-#define OBJECT_MSGQUEUE_SIZE	8*1024
+#define OBJECT_MSGQUEUE_SIZE	1*1024
 #define PLAYER_BAG_SIZE		(6 + 36)
 #define HP_SUPPLY_NUMBER	4
 #define MP_SUPPLY_NUMBER	4
@@ -120,6 +120,10 @@ T GetRandomIn(T _x, T _y)
 #define PROCESS_PACKET(op,pkt)		case op:{DO_PROCESS_PACKET(pkt);}break;
 #define PROCESS_DEFAULT()			default:{m_xMsgQueue.SetHeadOffset(pHeader->uLen);LOG(ERROR) << "Unknown opcode[" << pHeader->uOp << "]";}break;
 #define END_PROCESS_PACKET()		}
+
+//	with buffer
+#define DO_PROCESS_PACKET_WITH_BUF(pkt, buf)					pkt pt;buf >> pt;ProcessPacket(&pt);
+#define PROCESS_PACKET_WITH_BUF(op, pkg, buf)		case op:{DO_PROCESS_PACKET_WITH_BUF(pkg, buf);}break;
 
 //#define DO_PROCES_MAGIC(pkt)		switch(pkg.uParam1){
 //#define PROCESS_MAGIC(ID,)
@@ -208,6 +212,10 @@ public:
 
 	//	Handle the message queue
 	virtual bool DoMsgQueue(unsigned int _dwTick);
+
+	//	dispatch the packet to ProcessPacket
+	virtual bool DispatchPacket(ByteBuffer& _refBuf, const PacketHeader *_pHeader);
+	bool DispatchPacket(ByteBuffer& _refBuf);
 
 	//	Receive damage(unhandled damage)
 	//	Attacked by monster

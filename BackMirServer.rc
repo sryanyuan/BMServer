@@ -179,7 +179,7 @@ BEGIN
     PUSHBUTTON      "管理",IDC_BUTTON5,19,183,50,14
     LTEXT           "处理怪物逻辑: 0",IDC_SVRINFO,160,21,99,8
     PUSHBUTTON      "注册至联机大厅",IDC_BUTTON6,80,182,64,14
-    LTEXT           "运行时间: 0",IDC_RUNNINGTIME,14,37,116,8
+    LTEXT           "运行时间: 0",IDC_RUNNINGTIME,14,37,145,8
     PUSHBUTTON      "游戏设置",IDC_BUTTON7,147,182,50,14
 END
 
@@ -203,7 +203,7 @@ CAPTION "注册至联机大厅"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "确定",IDOK,205,162,50,14
-    PUSHBUTTON      "取消",IDCANCEL,259,162,50,14
+    PUSHBUTTON      "取消",2,259,162,50,14
     LTEXT           "主机名称：",IDC_STATIC,15,26,119,8
     EDITTEXT        IDC_EDIT1,15,38,130,14,ES_AUTOHSCROLL
     GROUPBOX        "设置",IDC_STATIC,7,7,302,147
@@ -221,7 +221,7 @@ CAPTION "游戏设置"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "确定",IDOK,205,133,50,14
-    PUSHBUTTON      "取消",IDCANCEL,261,133,50,14
+    PUSHBUTTON      "取消",2,261,133,50,14
     GROUPBOX        "基本设置(需重启生效)",IDC_STATIC,7,14,304,63
     CONTROL         "开启怪物精英模式",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,34,80,10
     CONTROL         "自动踢出堵门玩家",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,55,80,10
@@ -237,7 +237,7 @@ CAPTION "询问"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "确定",IDOK,205,68,50,14
-    PUSHBUTTON      "取消",IDCANCEL,259,68,50,14
+    PUSHBUTTON      "取消",2,259,68,50,14
     LTEXT           "请问您的CPU是否开启了超线程技术？假如开启了请按确定，系统将更换网络引擎，若不是请按取消。（I7处理器请选择确定）",IDC_STATIC,7,28,302,34
 END
 

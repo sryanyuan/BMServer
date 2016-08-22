@@ -226,6 +226,11 @@ GameWorld::GameWorld()
 	m_dwLastMagicDropFireworkTime = 0;
 	m_nDifficultyLevel = 0;
 	m_dwLastUpdateScriptEngineTime = GetTickCount();
+
+	//	Thread run mode
+	m_bThreadRunMode = false;
+	m_bWorldInit = false;
+	InitializeCriticalSection(&m_csMsgStack);
 }
 
 GameWorld::~GameWorld()
@@ -244,6 +249,18 @@ GameWorld::~GameWorld()
 	SAFE_DELETE_ARRAY(m_pRankListData);
 
 	GameSceneManager::DestroyInstance();
+
+	//	clear all msg stack
+	if (!m_bThreadRunMode) {
+		while (!m_xMsgStack.empty()) {
+			MSG* pMsg = m_xMsgStack.top();
+			m_xMsgStack.pop();
+
+			SAFE_DELETE(pMsg);
+		}
+	}
+
+	DeleteCriticalSection(&m_csMsgStack);
 }
 
 GameWorld* GameWorld::GetInstancePtr()
@@ -265,6 +282,103 @@ void GameWorld::DestroyInstance()
 	s_pGameWorld = NULL;
 }
 //////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////
+unsigned int GameWorld::WorldRun()
+{
+	static bool s_bWorldRunEntered = false;
+
+	if (!m_bWorldInit) {
+		return false;
+	}
+
+	if (!s_bWorldRunEntered) {
+		s_bWorldRunEntered = true;
+		m_eState = WS_WORKING;
+		LOG(INFO) << "World runner active";
+		srand((unsigned int)time(NULL));
+
+		//	发送世界启动消息
+		DispatchLuaEvent(kLuaEvent_WorldStartRunning, NULL);
+	}
+
+	static DWORD dwLastWorkTime = GetTickCount();
+	static DWORD dwCurrentWorkTime = dwLastWorkTime;
+	static DWORD dwTimeInterval = 0;
+
+	//	peek message
+	{
+		BMLockGuard guard(&m_csMsgStack);
+		while (!m_xMsgStack.empty()) {
+			MSG* pMsg = m_xMsgStack.top();
+			m_xMsgStack.pop();
+
+			//	process the msg
+			if (0 != Thread_ProcessMessage(pMsg)) {
+				//	stop the world
+				m_eState = WS_STOP;
+				LOG(ERROR) << "break with bad thread process";
+				SAFE_DELETE(pMsg);
+
+				return 1;
+			} else {
+				SAFE_DELETE(pMsg);
+			}
+		}
+	}
+
+	//	run world
+	dwCurrentWorkTime = ::GetTickCount();
+	dwTimeInterval = dwCurrentWorkTime - dwLastWorkTime;
+	m_dwWorkTotalTime += dwTimeInterval;
+	//	testing the terminate flag,if it is true, break the main loop thread
+	if(this->m_bTerminate)
+	{
+		LOG(ERROR) << "world break with terminate";
+		m_eState = WS_STOP;
+		return 1;
+	}
+	//	pause the thread if the pause flag is true
+	if(this->m_bPause)
+	{
+		//	into sleep
+		return 0;
+	}
+
+	//	updating the system first
+	DoWork_System(dwTimeInterval);
+	//	updating all objects
+	DoWork_Objects(dwCurrentWorkTime);
+	//	handle delayed process
+	DoWork_DelayedProcess(dwTimeInterval);
+	//	into sleep
+	SleepEx(1, TRUE);
+
+	//	Test
+	if(dwCurrentWorkTime - dwLastWorkTime > 5000)
+	{
+		//	??
+		//m_nRetCode = 3;
+		//break;
+		//ZeroMemory(GameWorld::GetInstancePtr(), sizeof(GameWorld));
+		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
+		{
+			//	nothing
+		}
+		else
+		{
+#ifdef _DEBUG
+			LOG(INFO) << "quit with long loop time";
+#endif
+			DESTORY_GAMEWORLD;
+		}
+	}
+	//	next loop
+	dwLastWorkTime = dwCurrentWorkTime;
+
+	//	continue timer process
+	return 0;
+}
 
 /************************************************************************/
 /* static unsigned int WorkThread(void* _pData)
@@ -505,31 +619,44 @@ unsigned int GameWorld::Run()
 
 	LoadBlackList();
 
-	m_dwWorkTotalTime = 0;
-	unsigned int uThreadID = 0;
+	//	If running on thread mode, create a thread
+	if (m_bThreadRunMode) {
+		m_dwWorkTotalTime = 0;
+		unsigned int uThreadID = 0;
 
-	m_hThread = (HANDLE)_beginthreadex(NULL,
-		0,
-		&GameWorld::WorkThread,
-		this,
-		0,
-		&uThreadID);
-	m_dwThreadID = (DWORD)uThreadID;
+		m_hThread = (HANDLE)_beginthreadex(NULL,
+			0,
+			&GameWorld::WorkThread,
+			this,
+			0,
+			&uThreadID);
+		m_dwThreadID = (DWORD)uThreadID;
 
-	if(m_hThread == 0)
-	{
-		//	create thread unsuccessfully
-		LOG(FATAL) << "Create main loop thread unsuccessfully! Error code:["
-			<< GetLastError() << "]";
-		return 0;
-	}
-	else
-	{
-		//	create thread successfully
-		LOG(INFO) << "Create main loop thread successfully! Now it is running!";
+		if(m_hThread == 0)
+		{
+			//	create thread unsuccessfully
+			LOG(FATAL) << "Create main loop thread unsuccessfully! Error code:["
+				<< GetLastError() << "]";
+			return 0;
+		}
+		else
+		{
+			//	create thread successfully
+			LOG(INFO) << "Create main loop thread successfully! Now it is running!";
+#ifdef _BUILD_VERSION
+			LOG(INFO) << "Build version:" << _BUILD_VERSION;
+#endif
+			return 1;
+		}
+	} else {
+		//	Running in timer mode
+		m_eState = WS_WORKING;
+		m_bWorldInit = true;
+
 #ifdef _BUILD_VERSION
 		LOG(INFO) << "Build version:" << _BUILD_VERSION;
 #endif
+
 		return 1;
 	}
 }
@@ -667,16 +794,6 @@ void GameWorld::OnMessage(unsigned int _uId, const void* _pData, unsigned int _u
 
 void GameWorld::OnMessage(unsigned int _dwIndex, unsigned int _uId, ByteBuffer* _xBuffer)
 {
-	//GameObject* pObj = GetPlayer(_uId);
-	//	below maybe not thread-safe
-	//	another thread may have insert or remove operation
-	/*
-	GameObject* pObj = GameSceneManager::GetInstance()->GetPlayer(_uId);
-		if(NULL == pObj)
-		{
-			LOG(WARNING) << "The target hero doesn't exist!";
-			return;
-		}*/
 	GameObject* pObj = NULL;
 	if(_dwIndex <= MAX_CONNECTIONS)
 	{
@@ -696,10 +813,14 @@ void GameWorld::OnMessage(unsigned int _dwIndex, unsigned int _uId, ByteBuffer* 
 	{
 		//	Only hero can receive message
 		HeroObject* pHero = static_cast<HeroObject*>(pObj);
-		if(0 == pHero->PushMessage(_xBuffer))
-		{
-			LOG(FATAL) << "Buffer error when writing to the buffer of user["
-				<< _uId << "]";
+		if (GetThreadRunMode()) {
+			if(0 == pHero->PushMessage(_xBuffer))
+			{
+				LOG(FATAL) << "Buffer error when writing to the buffer of user["
+					<< _uId << "]";
+			}
+		} else {
+			SyncOnHeroMsg(pHero, *_xBuffer);
 		}
 	}
 	else
@@ -3556,6 +3677,183 @@ int GameWorld::__cronActive(int _nJobId, int _nArg)
 	LuaEvent_WorldScheduleActive lw;
 	lw.nScheduleId = _nJobId;
 	GameWorld::GetInstance().m_xScript.DispatchEvent(kLuaEvent_WorldScheduleActive, &lw);
+
+	return 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//	sync process
+int GameWorld::SyncOnHeroDisconnected(HeroObject* _pHero) {
+	unsigned int uHeroId = _pHero->GetID();
+	if(GameSceneManager::GetInstance()->RemovePlayer(uHeroId))
+	{
+		LOG(INFO) << "Delete object" << "[" << uHeroId << "]";
+	}
+	else
+	{
+		LOG(INFO) << "Can't delete object" << "[" << uHeroId << "]";
+	}
+
+	return 0;
+}
+
+int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
+	HeroObject* pHero = _pHero;
+
+	//	set object id
+	pHero->SetID(GenerateObjectID());
+
+	//	check is in a valid map
+	if(NULL == pHero->GetLocateScene())
+	{
+		LOG(ERROR) << "Nonexistent scene!";
+		//SAFE_DELETE(pObj);
+		//PostMessage(g_hServerDlg, WM_REMOVEPLAYER, (WPARAM)pHero->GetUserIndex(), (LPARAM)pObj);
+		return 1;
+	}
+
+	if(pHero->GetObject_HP() == 0)
+	{
+		//	Dead
+		GameScene* pHomeScene = pHero->GetHomeScene();
+		if(pHomeScene != NULL)
+		{
+			pHero->SetMapID(pHomeScene->GetMapID());
+			pHero->GetUserData()->wCoordX = pHomeScene->GetCityCenterX();
+			pHero->GetUserData()->wCoordY = pHomeScene->GetCityCenterY();
+			pHero->SetObject_HP(10);
+		}
+	}
+	else
+	{
+		//	A instance scene?
+		//if(pObj->GetLocateScene()->IsInstance())
+		if(pHero->GetLocateScene()->IsTreasureMap())
+		{
+			GameScene* pHomeScene = pHero->GetHomeScene();
+			if(pHomeScene != NULL)
+			{
+				pHero->SetMapID(pHomeScene->GetMapID());
+				pHero->GetUserData()->wCoordX = pHomeScene->GetCityCenterX();
+				pHero->GetUserData()->wCoordY = pHomeScene->GetCityCenterY();
+			}
+		}
+		//	A cannot save position scene?
+		if(!pHero->GetLocateScene()->CanSaveAndStay())
+		{
+			GameScene* pHomeScene = pHero->GetHomeScene();
+			if(pHomeScene != NULL)
+			{
+				pHero->SetMapID(pHomeScene->GetMapID());
+				pHero->GetUserData()->wCoordX = pHomeScene->GetCityCenterX();
+				pHero->GetUserData()->wCoordY = pHomeScene->GetCityCenterY();
+			}
+		}
+		//	blocked by something?
+		if(!pHero->GetLocateScene()->CanThrough(pHero->GetUserData()->wCoordX, pHero->GetUserData()->wCoordY))
+		{
+			GameScene* pHomeScene = pHero->GetHomeScene();
+			if(pHomeScene != NULL)
+			{
+				pHero->SetMapID(pHomeScene->GetMapID());
+				pHero->GetUserData()->wCoordX = pHomeScene->GetCityCenterX();
+				pHero->GetUserData()->wCoordY = pHomeScene->GetCityCenterY();
+			}
+		}
+		//	Around blocked?
+		bool bAroundBlocked = true;
+		int nAroundX = 0;
+		int nAroundY = 0;
+
+		for(int i = 0; i < 8; ++i)
+		{
+			nAroundX = pHero->GetUserData()->wCoordX + g_nMoveOft[i * 2];
+			nAroundY = pHero->GetUserData()->wCoordY + g_nMoveOft[i * 2 + 1];
+
+			if(pHero->GetLocateScene()->CanThrough(nAroundX, nAroundY))
+			{
+				bAroundBlocked = false;
+				break;
+			}
+		}
+
+		if(bAroundBlocked)
+		{
+			GameScene* pHomeScene = pHero->GetHomeScene();
+			if(pHomeScene != NULL)
+			{
+				pHero->SetMapID(pHomeScene->GetMapID());
+				pHero->GetUserData()->wCoordX = pHomeScene->GetCityCenterX();
+				pHero->GetUserData()->wCoordY = pHomeScene->GetCityCenterY();
+			}
+		}
+	}
+
+	bool bLoginSuccess = false;
+
+	//	检查是否能进入游戏世界
+	HeroObject* pOldHero = (HeroObject*)GameSceneManager::GetInstance()->GetPlayerByName(pHero->GetUserData()->stAttrib.name);
+	if(NULL != pOldHero)
+	{
+		//	无法进入
+		pOldHero->SendSystemMessage("您的账号被别人登录");
+		//PostMessage(g_hServerDlg, WM_CLOSECONNECTION, pOldHero->GetUserIndex(), 0);
+		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(pOldHero->GetUserIndex());
+	}
+	else
+	{
+		if(GameSceneManager::GetInstance()->InsertPlayer(pHero))
+		{
+			bLoginSuccess = true;
+
+			if(false == pHero->AcceptLogin(_bNew))
+			{
+				GameSceneManager::GetInstance()->RemovePlayer(pHero->GetID());
+			}
+			else
+			{
+				char szName[20];
+				if(pHero->IsEncrypt())
+				{
+					ObjectValid::GetItemName(&pHero->GetUserData()->stAttrib, szName);
+				}
+				else
+				{
+					strcpy(szName, pHero->GetUserData()->stAttrib.name);
+				}
+
+				UserInfo info;
+				info.xName = szName;
+				info.uHandlerID = pHero->GetID();
+				g_xUserInfoList.push_back(info);
+			}
+		}
+	}
+
+	if(!bLoginSuccess)
+	{
+		//SAFE_DELETE(pObj);
+		//PostMessage(g_hServerDlg, WM_REMOVEPLAYER, (WPARAM)pHero->GetUserIndex(), (LPARAM)pObj);
+		return 1;
+	}
+
+	return 0;
+}
+
+int GameWorld::SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf) {
+	PacketHeader* pHeader = (PacketHeader*)_refBuf.GetHead();
+	_pHero->DispatchPacket(_refBuf, pHeader);
+	return 0;
+}
+
+int GameWorld::SyncIsHeroExists(LoginQueryInfo* _pQuery) {
+	HeroObject* pHero = (HeroObject*)GameSceneManager::GetInstance()->GetPlayerByName(_pQuery->szName);
+	_pQuery->bExists = (pHero != NULL);
+	if(NULL != pHero)
+	{
+		_pQuery->dwConnID = pHero->GetUserIndex();
+	}
 
 	return 0;
 }

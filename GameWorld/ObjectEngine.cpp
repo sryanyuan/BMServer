@@ -184,6 +184,89 @@ bool GameObject::AddProcess(ByteBuffer& _xBuf)
 	return true;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//	DispatchPacket
+bool GameObject::DispatchPacket(ByteBuffer& _refBuf)
+{
+	PacketHeader* pHeader = (PacketHeader*)_refBuf.GetHead();
+	return DispatchPacket(_refBuf, pHeader);
+}
+
+bool GameObject::DispatchPacket(ByteBuffer& _refBuffer, const PacketHeader *_pHeader) {
+	BEGIN_PROCESS_PACKET(_pHeader)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_USER_ACTION_REQ,		PkgUserActionReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_SERVERSTATUS_REQ,		PkgServerStatusReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SAY_REQ,			PkgPlayerSayReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_CHANGEEQUIPMENT_REQ,	PkgPlayerChangeEquipReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_DROPITEM_REQ,	PkgPlayerDropItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_PICKUPITEM_REQ,	PkgPlayerPickUpItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_UNDRESSITEM_REQ,	PkgPlayerUndressItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_DRESSITEM_REQ,	PkgPlayerDressItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_USEITEM_REQ,		PkgPlayerUseItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_LOADED,					PkgGameLoadedAck,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_CLICKNPC_REQ,	PkgPlayerClickNPCReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_ATTACK_REQ,		PkgPlayerAttackReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SYNCASSIST_REQ,	PkgPlayerSyncAssistReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SHOPOP_REQ,		PkgPlayerShopOpReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_USERDATA_REQ,	PkgPlayerUserDataReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_MONSINFO_REQ,	PkgPlayerMonsInfoReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_REVIVE_REQ,		PkgPlayerReviveReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SLAVE_STOP_REQ,	PkgPlayerSlaveStopReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_CUBEITEMS_REQ,	PkgPlayerCubeItemsReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_CALLSLAVE_REQ,	PkgPlayerCallSlaveReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_KILLSLAVE_REQ,	PkgPlayerKillSlaveReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SPEOPERATE_REQ,	PkgPlayerSpeOperateReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_MERGYCOSTITEM_REQ,	PkgPlayerMergyCostItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_NETDELAY_REQ,	PkgPlayerNetDelayReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_GM_NOTIFICATION_REQ,	PkgGmNotificationReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_DECOMPOSE_REQ,	PkgPlayerDecomposeReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_FORGEITEM_REQ,	PkgPlayerForgeItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SPLITITEM_REQ,	PkgPlayerSplitItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OFFSELLITEM_REQ, PkgPlayerOffSellItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OFFBUYITEM_REQ,	PkgPlayerOffBuyItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OFFGETLIST_REQ,	PkgPlayerOffGetListReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OFFCHECKSOLD_REQ,PkgPlayerOffCheckSoldReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_PRIVATECHAT_REQ, PkgPlayerPrivateChatReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OFFTAKEBACK_REQ, PkgPlayerOffTakeBackReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_IDENTIFYITEM_REQ,PkgPlayerIdentifyItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_UNBINDITEM_REQ,	PkgPlayerUnbindItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SERVERDELAY_ACK, PkgPlayerServerDelayAck,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_RANKLIST_REQ,	PkgPlayerRankListReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_GETOLSHOPLIST_REQ, PkgPlayerGetOlShopListReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_BUYOLSHOPITEM_REQ, PkgPlayerBuyOlShopItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_SMELTMATERIALS_REQ,PkgPlayerSmeltMaterialsReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_HAND_MAKE_ITEM_REQ,PkgPlayerHandMakeItemReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_OPEN_POTENTIAL_REQ, PkgPlayerOpenPotentialReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_CHARGE_REQ,		PkgPlayerChargeReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_WORLD_SAY_REQ,	PkgPlayerWorldSayReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_LOGINEXTDATA_REQ,PkgPlayerLoginExtDataReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_DIFFICULTYLEVEL_REQ, PkgPlayerDifficultyLevelReq,				_refBuffer)
+		PROCESS_PACKET_WITH_BUF(PKG_GAME_PLAYER_QUITSELCHR_REQ, PkgPlayerQuitSelChrReq,				_refBuffer)
+		//PROCESS_DEFAULT()
+			default:
+	{
+		_refBuffer.SetHeadOffset(_pHeader->uLen);
+		LOG(ERROR) << "Unknown opcode[" << _pHeader->uOp << "]";
+		++m_dwInvalidMsgQueueTimes;
+		if(m_dwInvalidMsgQueueTimes > 100)
+		{
+			m_bNetDataValid = false;
+			LOG(ERROR) << "Crashed while processing MsgQueue | Content:" << _refBuffer.ToHexString();
+			LOG(ERROR) << "packet[" << _pHeader->uOp << "] len[" << _pHeader->uLen;
+			if(GetType() == SOT_HERO)
+			{
+				HeroObject* pHero = static_cast<HeroObject*>(this);
+				char szName[20] = {0};
+				ObjectValid::GetItemName(&pHero->GetUserData()->stAttrib, szName);
+				LOG(ERROR) << "!!!Name[" << szName << "]";
+			}
+		}
+	}break;
+	END_PROCESS_PACKET();
+
+	return m_bNetDataValid;
+}
+
 /************************************************************************/
 /* virtual void DoMsgQueue(unsigned int _dwTick)
 /************************************************************************/
@@ -217,81 +300,7 @@ bool GameObject::DoMsgQueue(unsigned int _dwTick)
 
 			//LOG(INFO) << "处理ID[" << GetID() << "]的数据包[" << pHeader->uOp <<"]"
 			//<< " 所在地图[" << m_stData.wMapID << "]";
-			BEGIN_PROCESS_PACKET(pHeader)
-				PROCESS_PACKET(PKG_GAME_USER_ACTION_REQ,		PkgUserActionReq)
-				PROCESS_PACKET(PKG_GAME_SERVERSTATUS_REQ,		PkgServerStatusReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SAY_REQ,			PkgPlayerSayReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_CHANGEEQUIPMENT_REQ,	PkgPlayerChangeEquipReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_DROPITEM_REQ,	PkgPlayerDropItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_PICKUPITEM_REQ,	PkgPlayerPickUpItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_UNDRESSITEM_REQ,	PkgPlayerUndressItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_DRESSITEM_REQ,	PkgPlayerDressItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_USEITEM_REQ,		PkgPlayerUseItemReq)
-				PROCESS_PACKET(PKG_GAME_LOADED,					PkgGameLoadedAck)
-				PROCESS_PACKET(PKG_GAME_PLAYER_CLICKNPC_REQ,	PkgPlayerClickNPCReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_ATTACK_REQ,		PkgPlayerAttackReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SYNCASSIST_REQ,	PkgPlayerSyncAssistReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SHOPOP_REQ,		PkgPlayerShopOpReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_USERDATA_REQ,	PkgPlayerUserDataReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_MONSINFO_REQ,	PkgPlayerMonsInfoReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_REVIVE_REQ,		PkgPlayerReviveReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SLAVE_STOP_REQ,	PkgPlayerSlaveStopReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_CUBEITEMS_REQ,	PkgPlayerCubeItemsReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_CALLSLAVE_REQ,	PkgPlayerCallSlaveReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_KILLSLAVE_REQ,	PkgPlayerKillSlaveReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SPEOPERATE_REQ,	PkgPlayerSpeOperateReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_MERGYCOSTITEM_REQ,	PkgPlayerMergyCostItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_NETDELAY_REQ,	PkgPlayerNetDelayReq)
-				PROCESS_PACKET(PKG_GAME_GM_NOTIFICATION_REQ,	PkgGmNotificationReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_DECOMPOSE_REQ,	PkgPlayerDecomposeReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_FORGEITEM_REQ,	PkgPlayerForgeItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SPLITITEM_REQ,	PkgPlayerSplitItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OFFSELLITEM_REQ, PkgPlayerOffSellItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OFFBUYITEM_REQ,	PkgPlayerOffBuyItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OFFGETLIST_REQ,	PkgPlayerOffGetListReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OFFCHECKSOLD_REQ,PkgPlayerOffCheckSoldReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_PRIVATECHAT_REQ, PkgPlayerPrivateChatReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OFFTAKEBACK_REQ, PkgPlayerOffTakeBackReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_IDENTIFYITEM_REQ,PkgPlayerIdentifyItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_UNBINDITEM_REQ,	PkgPlayerUnbindItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SERVERDELAY_ACK, PkgPlayerServerDelayAck)
-				PROCESS_PACKET(PKG_GAME_PLAYER_RANKLIST_REQ,	PkgPlayerRankListReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_GETOLSHOPLIST_REQ, PkgPlayerGetOlShopListReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_BUYOLSHOPITEM_REQ, PkgPlayerBuyOlShopItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_SMELTMATERIALS_REQ,PkgPlayerSmeltMaterialsReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_HAND_MAKE_ITEM_REQ,PkgPlayerHandMakeItemReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_OPEN_POTENTIAL_REQ, PkgPlayerOpenPotentialReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_CHARGE_REQ,		PkgPlayerChargeReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_WORLD_SAY_REQ,	PkgPlayerWorldSayReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_LOGINEXTDATA_REQ,PkgPlayerLoginExtDataReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_DIFFICULTYLEVEL_REQ, PkgPlayerDifficultyLevelReq)
-				PROCESS_PACKET(PKG_GAME_PLAYER_QUITSELCHR_REQ, PkgPlayerQuitSelChrReq)
-				//PROCESS_DEFAULT()
-			default:
-			{
-				m_xMsgQueue.SetHeadOffset(pHeader->uLen);
-				LOG(ERROR) << "Unknown opcode[" << pHeader->uOp << "]";
-				++m_dwInvalidMsgQueueTimes;
-				if(m_dwInvalidMsgQueueTimes > 100)
-				{
-					m_bNetDataValid = false;
-					LOG(ERROR) << "Crashed while processing MsgQueue | Content:" << m_xMsgQueue.ToHexString();
-					LOG(ERROR) << "packet[" << pHeader->uOp << "] len[" << pHeader->uLen;
-					if(GetType() == SOT_HERO)
-					{
-						HeroObject* pHero = static_cast<HeroObject*>(this);
-						char szName[20] = {0};
-						ObjectValid::GetItemName(&pHero->GetUserData()->stAttrib, szName);
-						LOG(ERROR) << "!!!Name[" << szName << "]";
-					}
-				}
-			}break;
-			END_PROCESS_PACKET()
-
-			if(!m_bNetDataValid)
-			{
-				break;
-			}
+			DispatchPacket(m_xMsgQueue, pHeader);
 		}
 	}
 	catch(std::exception exp)

@@ -6,6 +6,7 @@
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
 #include "../GameWorld/WatcherThread.h"
+#include "../common/shared.h"
 #include <string>
 
 class CNetBase;
@@ -41,13 +42,6 @@ typedef std::map<DWORD, DWORD> Index2UserIDMap;
 		return false;\
 	}\
 }
-
-struct LoginQueryInfo
-{
-	char szName[20];
-	bool bExists;
-	DWORD dwConnID;
-};
 
 enum NetThreadEventType
 {
@@ -173,8 +167,6 @@ private:
 protected:
 	CNetbase* m_pxServer;
 	PlayerMap m_xPlayers;
-
-	Index2UserIDMap m_xTranslateMap;
 
 	//	服务器运行模式
 	BYTE m_bMode;

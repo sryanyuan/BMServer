@@ -123,7 +123,7 @@ bool CMainServer::InitNetWork()
 
 	CUSTOM_EVENT ev[8];
 	ZeroMemory(ev, sizeof(ev));
-	ev[desc.dwCustomDefineEventNum].dwPeriodicTime = 3000;
+	ev[desc.dwCustomDefineEventNum].dwPeriodicTime = 10;
 	ev[desc.dwCustomDefineEventNum++].pEventFunc = &CMainServer::_OnGameLoop;
 	desc.pEvent = ev;
 
@@ -441,10 +441,6 @@ void CMainServer::InsertUserConnectionMapKey(WPARAM _wParam, LPARAM _lParam)
 {
 	RECORD_FUNCNAME_SERVER;
 	//	Set mapped key
-	if(m_xTranslateMap.find((DWORD)_wParam) == m_xTranslateMap.end())
-	{
-		m_xTranslateMap.insert(std::make_pair((DWORD)_wParam, (DWORD)_lParam));
-	}
 }
 
 /************************************************************************/
@@ -519,36 +515,17 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 
 				LOG(INFO) << "player[" << _dwIndex << "]disconnect";
 
-				DelayedProcess dp;
-				dp.uOp = DP_USERLOGOUT;
-				dp.uParam0 = g_pxHeros[_dwIndex]->GetID();
-				GameWorld::GetInstance().AddDelayedProcess(&dp);
-				g_pxHeros[_dwIndex] = NULL;
-
-				Index2UserIDMap::iterator iter = m_xTranslateMap.find(_dwIndex);
-				if(iter != m_xTranslateMap.end())
-				{
-					m_xTranslateMap.erase(iter);
+				if (GameWorld::GetInstance().GetThreadRunMode()) {
+					DelayedProcess dp;
+					dp.uOp = DP_USERLOGOUT;
+					dp.uParam0 = g_pxHeros[_dwIndex]->GetID();
+					GameWorld::GetInstance().AddDelayedProcess(&dp);
+					g_pxHeros[_dwIndex] = NULL;
+				} else {
+					//	directly invoke and set nil
+					GameWorld::GetInstance().SyncOnHeroDisconnected(g_pxHeros[_dwIndex]);
+					g_pxHeros[_dwIndex] = NULL;
 				}
-			}
-		}
-		else
-		{
-			//m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
-			//AddInfomation("玩家[%s]:[%d]断开", szIP, wPort);
-			AddInfomation("玩家[%d]断开", _dwIndex);
-
-			LOG(INFO) << "player[" << _dwIndex << "]disconnect";
-
-			DWORD dwUserID = 0;
-			Index2UserIDMap::iterator iter = m_xTranslateMap.find(_dwIndex);
-			if(iter != m_xTranslateMap.end())
-			{
-				DelayedProcess dp;
-				dp.uOp = DP_USERLOGOUT;
-				dp.uParam0 = iter->second;
-				GameWorld::GetInstance().AddDelayedProcess(&dp);
-				m_xTranslateMap.erase(iter);
 			}
 		}
 
@@ -639,23 +616,6 @@ void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 			}break;
 		default:
 			{
-				//	判断是否有UserID
-				DWORD dwUserID = GET_PACKET_USERID((*_xBuf));
-
-				//	Test...
-				/*if(g_pxHeros[_dwIndex] != NULL)
-				{
-
-				}*/
-
-				//	Stable...
-				/*
-				if(dwUserID != 0)
-								{
-									GameWorld::GetInstance().OnMessage(_dwIndex, dwUserID, _xBuf);
-									//LOG(INFO) << "Direct id from user[" << dwUserID << "]" << "\n | Process packet[" << GET_PACKET_OP((*_xBuf)) << "]";
-								}
-								else */
 				if(_dwIndex <= MAX_CONNECTIONS)
 				{
 					if(g_pxHeros[_dwIndex])
@@ -663,18 +623,6 @@ void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 						GameWorld::GetInstance().OnMessage(_dwIndex, g_pxHeros[_dwIndex]->GetID(), _xBuf);
 					}
 				}
-/*
-
-				else
-				{
-					Index2UserIDMap::const_iterator iter = m_xTranslateMap.find(_dwIndex);
-					if(iter != m_xTranslateMap.end())
-					{
-						GameWorld::GetInstance().OnMessage(_dwIndex, iter->second, _xBuf);
-					}
-				}
-*/
-
 			}break;
 		}
 	}
@@ -739,7 +687,12 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		HeroObject* pHero = g_pxHeros[not.dwPlayerIndex];
 		if(NULL != pHero)
 		{
-			pHero->PushMessage(&s_xExtDataBuffer);
+			if (GameWorld::GetInstance().GetThreadRunMode()) {
+				pHero->PushMessage(&s_xExtDataBuffer);
+			} else {
+				PacketHeader* pHeader = (PacketHeader*)s_xExtDataBuffer.GetHead();
+				pHero->DispatchPacket(s_xExtDataBuffer, pHeader);
+			}
 		}
 	}
 	else if(dwOpCode == PKG_LOGIN_HUMRANKLIST_NOT)
@@ -754,12 +707,16 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		//	post 给游戏线程
 		char* pszRankCopy = new char[not.xData.size() + 1];
 		strcpy(pszRankCopy, not.xData.c_str());
-
 		MSG msgQuery;
 		msgQuery.message = WM_PLAYERRANKLIST;
 		msgQuery.wParam = (WPARAM)pszRankCopy;
 		msgQuery.lParam = 0;
-		GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+		} else {
+			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
+		}
 	}
 	else if(dwOpCode == PKG_LOGIN_CHECKBUYSHOPITEM_ACK)
 	{
@@ -770,7 +727,12 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery;
 		msgQuery.message = WM_CHECKBUYOLSHOPITEM;
 		msgQuery.wParam = (WPARAM)pAck;
-		GameWorld::GetInstance().PostRunMessage(&msgQuery);
+
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+		} else {
+			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
+		}
 	}
 	else if(dwOpCode == PKG_LOGIN_CONSUMEDONATE_ACK)
 	{
@@ -781,7 +743,12 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery;
 		msgQuery.message = WM_CONSUMEDONATE;
 		msgQuery.wParam = (WPARAM)pAck;
-		GameWorld::GetInstance().PostRunMessage(&msgQuery);
+		
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+		} else {
+			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
+		}
 	}
 	else if(dwOpCode == PKG_LOGIN_SCHEDULE_ACTIVE_RSP)
 	{
@@ -792,7 +759,12 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery = {0};
 		msgQuery.message = WM_SCHEDULEACTIVE;
 		msgQuery.wParam = rsp.nEventId;
-		GameWorld::GetInstance().PostRunMessage(&msgQuery);
+		
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+		} else {
+			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
+		}
 	}
 	else
 	{
@@ -903,7 +875,17 @@ void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
 	}
 
 	//	process time event
-	CMainServer::GetInstance()->ProcessNetThreadEvent();
+	static DWORD s_dwLastProcessNetThreadEventTime = GetTickCount();
+	if (GetTickCount() - s_dwLastProcessNetThreadEventTime > 3000) {
+		s_dwLastProcessNetThreadEventTime = GetTickCount();
+		CMainServer::GetInstance()->ProcessNetThreadEvent();
+	}
+
+	//	update gameworld
+	static unsigned int s_nWorldRunState = 0;
+	if (0 == s_nWorldRunState) {
+		s_nWorldRunState = GameWorld::GetInstance().WorldRun();;
+	}
 }
 
 void CMainServer::ProcessNetThreadEvent()
@@ -932,16 +914,18 @@ void CMainServer::ProcessNetThreadEvent()
 
 					LOG(INFO) << "player[" << dwIndex << "] small quit";
 
-					DelayedProcess dp;
-					dp.uOp = DP_USERLOGOUT;
-					dp.uParam0 = g_pxHeros[dwIndex]->GetID();
-					GameWorld::GetInstance().AddDelayedProcess(&dp);
-					g_pxHeros[dwIndex] = NULL;
+					if (GameWorld::GetInstance().GetThreadRunMode()) {
+						DelayedProcess dp;
+						dp.uOp = DP_USERLOGOUT;
+						dp.uParam0 = g_pxHeros[dwIndex]->GetID();
+						GameWorld::GetInstance().AddDelayedProcess(&dp);
+						g_pxHeros[dwIndex] = NULL;
+					} else {
+						if (0 == GameWorld::GetInstance().SyncOnHeroDisconnected(g_pxHeros[dwIndex])) {
+							
+						}
 
-					Index2UserIDMap::iterator iter = m_xTranslateMap.find(dwIndex);
-					if(iter != m_xTranslateMap.end())
-					{
-						m_xTranslateMap.erase(iter);
+						g_pxHeros[dwIndex] = NULL;
 					}
 				}
 			}
@@ -4983,33 +4967,54 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 	}
 
 	//	首先，检查用户是否已经在游戏中
-	HANDLE hLoginQueryEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	LoginQueryInfo info;
 	info.dwConnID = 0;
 	strcpy(info.szName, req.stHeader.szName);
 	info.bExists = true;
 
-	MSG msgQuery;
-	msgQuery.message = WM_PLAYERLOGIN;
-	msgQuery.wParam = (WPARAM)hLoginQueryEvent;
-	msgQuery.lParam = (LPARAM)&info;
-	GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+	if (GameWorld::GetInstance().GetThreadRunMode()) {
+		HANDLE hLoginQueryEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	//	wait the event
-	DWORD dwWaitRet = WaitForSingleObject(hLoginQueryEvent, 1000);
-	if(WAIT_FAILED == dwWaitRet)
-	{
-		LOG(ERROR) << "wait for Event LoginQuery failed. Error:" << GetLastError();
-		//return;
-	}
-	else if(WAIT_TIMEOUT == dwWaitRet)
-	{
-		LOG(ERROR) << "wait for Event LoginQuery timeout.";
-		//return;
-	}
-	else if(WAIT_OBJECT_0 == dwWaitRet)
-	{
-		//	ok
+		MSG msgQuery;
+		msgQuery.message = WM_PLAYERLOGIN;
+		msgQuery.wParam = (WPARAM)hLoginQueryEvent;
+		msgQuery.lParam = (LPARAM)&info;
+		GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+
+		//	wait the event
+		DWORD dwWaitRet = WaitForSingleObject(hLoginQueryEvent, 1000);
+		if(WAIT_FAILED == dwWaitRet)
+		{
+			LOG(ERROR) << "wait for Event LoginQuery failed. Error:" << GetLastError();
+			//return;
+		}
+		else if(WAIT_TIMEOUT == dwWaitRet)
+		{
+			LOG(ERROR) << "wait for Event LoginQuery timeout.";
+			//return;
+		}
+		else if(WAIT_OBJECT_0 == dwWaitRet)
+		{
+			//	ok
+			if(!info.bExists)
+			{
+				//	可以进行登录
+				LOG(INFO) << "Player[" << req.stHeader.szName << "] login ok! index[" << _dwIndex << "] conn code[" << GetConnCode(_dwIndex) << "]";
+			}
+			else
+			{
+				//	踢出之前的玩家
+				LOG(ERROR) << "Player[" << req.stHeader.szName << "] login failed! same uid relogin, index[" << _dwIndex << "]";
+				ForceCloseConnection(info.dwConnID);
+				//return;
+			}
+		}
+
+		CloseHandle(hLoginQueryEvent);
+		hLoginQueryEvent = NULL;
+	} else {
+		GameWorld::GetInstance().SyncIsHeroExists(&info);
+
 		if(!info.bExists)
 		{
 			//	可以进行登录
@@ -5023,9 +5028,6 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 			//return;
 		}
 	}
-
-	CloseHandle(hLoginQueryEvent);
-	hLoginQueryEvent = NULL;
 
 	if(info.bExists)
 	{
@@ -5083,24 +5085,45 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 			}
 		}
 
-		DelayedProcess dp;
-		dp.uOp = DP_USERLOGIN;
-		dp.uParam0 = (unsigned int)pObj;
-		dp.uParam1 = 0;
-		GameWorld::GetInstance().AddDelayedProcess(&dp);
+		if (GameWorld::GetInstance().GetThreadRunMode()) {
+			DelayedProcess dp;
+			dp.uOp = DP_USERLOGIN;
+			dp.uParam0 = (unsigned int)pObj;
+			dp.uParam1 = 0;
+			GameWorld::GetInstance().AddDelayedProcess(&dp);
 
-		//	record the player in the global table
-		if(_dwIndex <= MAX_CONNECTIONS)
-		{
-			g_pxHeros[_dwIndex] = pObj;
+			//	record the player in the global table
+			if(_dwIndex <= MAX_CONNECTIONS)
+			{
+				g_pxHeros[_dwIndex] = pObj;
+			}
+
+			//	Set mapped key
+			++m_dwUserNumber;
+			UpdateServerState();
+
+			AddInfomation("玩家[%s]登入游戏",
+				req.stHeader.szName);
+		} else {
+			if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, true)) {
+				//	delete the hero
+				SAFE_DELETE(pObj);
+				g_pxHeros[_dwIndex] = NULL;
+			} else {
+				//	record the player in the global table
+				if(_dwIndex <= MAX_CONNECTIONS)
+				{
+					g_pxHeros[_dwIndex] = pObj;
+				}
+
+				//	Set mapped key
+				++m_dwUserNumber;
+				UpdateServerState();
+
+				AddInfomation("玩家[%s]登入游戏",
+					req.stHeader.szName);
+			}
 		}
-
-		//	Set mapped key
-		++m_dwUserNumber;
-		UpdateServerState();
-
-		AddInfomation("玩家[%s]登入游戏",
-			req.stHeader.szName);
 	}
 	else
 	{
@@ -5169,26 +5192,48 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 				if(LoadHumData208(pObj, g_xMainBuffer))
 				{
 					//	Now Ok
-					DelayedProcess dp;
-					dp.uOp = DP_USERLOGIN;
-					dp.uParam0 = (unsigned int)pObj;
-					dp.uParam1 = 1;
-					GameWorld::GetInstance().AddDelayedProcess(&dp);
+					if (GameWorld::GetInstance().GetThreadRunMode()) {
+						DelayedProcess dp;
+						dp.uOp = DP_USERLOGIN;
+						dp.uParam0 = (unsigned int)pObj;
+						dp.uParam1 = 1;
+						GameWorld::GetInstance().AddDelayedProcess(&dp);
 
-					//	record the player in the global table
-					if(_dwIndex <= MAX_CONNECTIONS)
-					{
-						g_pxHeros[_dwIndex] = pObj;
+						//	record the player in the global table
+						if(_dwIndex <= MAX_CONNECTIONS)
+						{
+							g_pxHeros[_dwIndex] = pObj;
+						}
+
+						//	Set mapped key
+						++m_dwUserNumber;
+						UpdateServerState();
+
+						/*AddInfomation("玩家[%s]登入游戏",
+						req.stHeader.szName);*/
+						sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
+						AddInfomation(szText);
+					} else {
+						if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, false)) {
+							SAFE_DELETE(pObj);
+							g_pxHeros[_dwIndex] = NULL;
+						} else {
+							//	record the player in the global table
+							if(_dwIndex <= MAX_CONNECTIONS)
+							{
+								g_pxHeros[_dwIndex] = pObj;
+							}
+
+							//	Set mapped key
+							++m_dwUserNumber;
+							UpdateServerState();
+
+							/*AddInfomation("玩家[%s]登入游戏",
+							req.stHeader.szName);*/
+							sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
+							AddInfomation(szText);
+						}
 					}
-
-					//	Set mapped key
-					++m_dwUserNumber;
-					UpdateServerState();
-
-					/*AddInfomation("玩家[%s]登入游戏",
-					req.stHeader.szName);*/
-					sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-					AddInfomation(szText);
 				}
 				else
 				{
@@ -5209,26 +5254,48 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 				if(LoadHumData210(pObj, g_xMainBuffer))
 				{
 					//	Now Ok
-					DelayedProcess dp;
-					dp.uOp = DP_USERLOGIN;
-					dp.uParam0 = (unsigned int)pObj;
-					dp.uParam1 = 1;
-					GameWorld::GetInstance().AddDelayedProcess(&dp);
+					if (GameWorld::GetInstance().GetThreadRunMode()) {
+						DelayedProcess dp;
+						dp.uOp = DP_USERLOGIN;
+						dp.uParam0 = (unsigned int)pObj;
+						dp.uParam1 = 1;
+						GameWorld::GetInstance().AddDelayedProcess(&dp);
 
-					//	record the player in the global table
-					if(_dwIndex <= MAX_CONNECTIONS)
-					{
-						g_pxHeros[_dwIndex] = pObj;
+						//	record the player in the global table
+						if(_dwIndex <= MAX_CONNECTIONS)
+						{
+							g_pxHeros[_dwIndex] = pObj;
+						}
+
+						//	Set mapped key
+						++m_dwUserNumber;
+						UpdateServerState();
+
+						/*AddInfomation("玩家[%s]登入游戏",
+						req.stHeader.szName);*/
+						sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
+						AddInfomation(szText);
+					} else {
+						if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, false)) {
+							SAFE_DELETE(pObj);
+							g_pxHeros[_dwIndex] = NULL;
+						} else {
+							//	record the player in the global table
+							if(_dwIndex <= MAX_CONNECTIONS)
+							{
+								g_pxHeros[_dwIndex] = pObj;
+							}
+
+							//	Set mapped key
+							++m_dwUserNumber;
+							UpdateServerState();
+
+							/*AddInfomation("玩家[%s]登入游戏",
+							req.stHeader.szName);*/
+							sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
+							AddInfomation(szText);
+						}
 					}
-
-					//	Set mapped key
-					++m_dwUserNumber;
-					UpdateServerState();
-
-					/*AddInfomation("玩家[%s]登入游戏",
-					req.stHeader.szName);*/
-					sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-					AddInfomation(szText);
 				}
 				else
 				{
