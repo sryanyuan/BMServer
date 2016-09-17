@@ -252,7 +252,12 @@ bool MonsterTemplateObject::AttackTarget()
 {
 	if(ATTACK_NORMAL == m_eAttackMode)
 	{
-		bool bRet = __super::AttackTarget();
+		//	first call logic attack
+		bool bRet = LogicNormalAttack();
+		if (!bRet)
+		{
+			bRet = __super::AttackTarget();
+		}
 		m_nExecuteLogicIndex = -1;
 		m_eAttackMode = ATTACK_NONE;
 	}
@@ -329,4 +334,35 @@ int MonsterTemplateObject::GetDirectionByMoveOffset(int _nOftX, int _nOftY)
 	}
 
 	return nDrt;
+}
+
+int MonsterTemplateObject::AttackTargetsSpecifiedPosition(int _nX, int _nY, int _nAction, float _fAttackFactor, int _nDelay /* = 500 */, const ReceiveDamageInfo* _pInfo /* = NULL */)
+{
+	return AttackTargetsRange(_nX, _nY, 0, 0, _nAction, _fAttackFactor, _nDelay, _pInfo);
+}
+
+int MonsterTemplateObject::AttackTargetsRange(int _nX, int _nY, int _nOftX, int _nOftY, int _nAction, float _fAttackFactor, int _nDelay /* = 500 */, const ReceiveDamageInfo* _pInfo /* = NULL */)
+{
+	GameObjectList objs;
+	GetLocateScene()->GetMappedObjects(_nX, _nY, _nOftX, _nOftY, objs, MAPPEDOBJECT_STATUE_ALIVE | MAPPEDOBJECT_PLAYER | MAPPEDOBJECT_SLAVE);
+
+	GameObjectList::iterator it = objs.begin();
+	for (it; it != objs.end(); ++it)
+	{
+		GameObject* pObj = *it;
+
+		pObj->ReceiveDamage(this, IsMagicAttackMode(), GetRandomAbility(AT_DC) * _fAttackFactor, _nDelay, _pInfo);
+	}
+
+	PkgObjectActionNot not;
+	m_stData.eGameState = OS_ATTACK;
+	m_dwLastAttackTime = GetTickCount();
+	not.uAction = _nAction;
+	not.uParam0 = MAKE_POSITION_DWORD(this);
+	not.uTargetId = GetID();
+	g_xThreadBuffer.Reset();
+	g_xThreadBuffer << not;
+	GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+
+	return objs.size();
 }

@@ -453,7 +453,8 @@ int MonsterObject::GetRandomAbility(ABILITY_TYPE _type)
 int MonsterObject::GetDefPalsyProb()
 {
 	if(GetObject_ID() == 140 ||
-		GetObject_ID() == 143)
+		GetObject_ID() == 143 ||
+		GetObject_ID() == 159)
 	{
 		//	ÆÆÌìÄ§Áú 70%¼¸ÂÊ·ÀÂé±Ô
 		return 70;

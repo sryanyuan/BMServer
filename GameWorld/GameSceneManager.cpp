@@ -104,6 +104,7 @@ GameScene::GameScene()
 	m_bIsInstance = false;
 	m_bIsTreasureMap = false;
 	m_bKilledMonster = false;
+	m_dwTreasureGiveRewardTime = 0;
 	m_bGiveReward = 0;
 	m_dwTreasureTipTime = 0;
 	m_bSaveAndStay = true;
@@ -250,103 +251,6 @@ bool GameScene::Initialize(DWORD _dwMapID)
 	}
 
 	return bRet;
-/*#ifdef _DEBUG
-	sprintf(szMapFile, "%s\\Help\\scene%d.lua",
-		szRootPath, _dwMapID);
-	m_xScript.Create();
-	m_xScript.SetUserTag(_dwMapID);
-	tolua_BackMirServer_open(m_xScript.GetVM());
-
-	if(m_xScript.LoadFile(szMapFile))
-	{
-		LOG(INFO) << "载入地图脚本文件[" << szMapFile << "]成功";
-		int nRet = 0;
-		lua_getglobal(m_xScript.GetVM(), "OnMapLoaded");
-		tolua_pushusertype(m_xScript.GetVM(), this, "GameScene");
-		nRet = lua_pcall(m_xScript.GetVM(), 1, 0, 0);
-
-		if(0 == nRet)
-		{
-			LOG(INFO) << "执行" << pszMapName << "[OnMapLoaded]脚本函数";
-		}
-		else
-		{
-			LOG(WARNING) << "Execute script(OnMapLoaded) On[" << pszMapName << "]" << lua_tostring(m_xScript.GetVM(), -1);
-			lua_pop(m_xScript.GetVM(), 1);
-		}
-
-		lua_getglobal(m_xScript.GetVM(), "GetVersion");
-		nRet = lua_pcall(m_xScript.GetVM(), 0, 0, 0);
-		if(0 == nRet)
-		{
-
-		}
-		else
-		{
-			lua_pop(m_xScript.GetVM(), 1);
-			return false;
-		}
-	}
-	else
-	{
-		LOG(ERROR) << "运行[" << szMapFile << "]失败";
-		bRet = false;
-	}
-
-	return bRet;
-#else
-	sprintf(szMapFile, "%s\\Help\\dog.idx",
-		szRootPath);
-	m_xScript.Create();
-	m_xScript.SetUserTag(_dwMapID);
-	tolua_BackMirServer_open(m_xScript.GetVM());
-	char szFile[50];
-#ifdef _LUAJIT_
-	sprintf(szFile, "scene%d.bjt",
-		_dwMapID);
-#else
-	sprintf(szFile, "scene%d.bbt",
-		_dwMapID);
-#endif
-
-	if(m_xScript.ExecuteZip(szMapFile, szFile))
-	{
-		int nRet = 0;
-		lua_getglobal(m_xScript.GetVM(), "OnMapLoaded");
-		tolua_pushusertype(m_xScript.GetVM(), this, "GameScene");
-		nRet = lua_pcall(m_xScript.GetVM(), 1, 0, 0);
-
-		if(0 == nRet)
-		{
-			
-		}
-		else
-		{
-			LOG(WARNING) << "Execute script On[" << m_xScript.GetUserTag() << "]" << lua_tostring(m_xScript.GetVM(), -1);
-			lua_pop(m_xScript.GetVM(), 1);
-		}
-
-		lua_getglobal(m_xScript.GetVM(), "GetVersion");
-		nRet = lua_pcall(m_xScript.GetVM(), 0, 0, 0);
-		if(0 == nRet)
-		{
-
-		}
-		else
-		{
-			lua_pop(m_xScript.GetVM(), 1);
-			return false;
-		}
-	}
-	else
-	{
-		LOG(ERROR) << "运行[" << szMapFile << "]失败";
-		bRet = false;
-	}
-
-	return bRet;
-#endif*/
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1219,7 +1123,6 @@ void GameScene::Update(DWORD _dwTick)
 		}
 	}
 
-
 	//if(IsInstance())
 	if(IsTreasureMap())
 	{
@@ -1240,6 +1143,7 @@ void GameScene::Update(DWORD _dwTick)
 					{
 						pHero = static_cast<HeroObject*>(begiter->second);
 						pHero->SendSystemMessage("打开 藏宝盒 领取奖励");
+						pHero->SendSystemMessage("60秒后自动回城");
 					}
 				}
 
@@ -1250,6 +1154,30 @@ void GameScene::Update(DWORD _dwTick)
 				{
 					LOG(ERROR) << lua_tostring(m_xScript.GetVM(), -1);
 					lua_pop(m_xScript.GetVM(), 1);
+				}
+
+				m_dwTreasureGiveRewardTime = GetTickCount();
+			}
+			else if (m_bGiveReward &&
+				m_bKilledMonster)
+			{
+				if (GetTickCount() - m_dwTreasureGiveRewardTime > 60000 &&
+					0 != m_dwTreasureGiveRewardTime)
+				{
+					HeroObject* pHero = NULL;
+
+					std::map<DWORD, GameObject*>::const_iterator begiter = m_xPlayers.begin();
+					for(begiter;
+						begiter != m_xPlayers.end();
+						++begiter)
+					{
+						if(begiter->second->GetType() == SOT_HERO)
+						{
+							pHero = static_cast<HeroObject*>(begiter->second);
+							pHero->SendSystemMessage("藏宝图超时");
+							pHero->FlyToHome();
+						}
+					}
 				}
 			}
 		}
@@ -1283,92 +1211,6 @@ void GameScene::Update(DWORD _dwTick)
 	//	Send the timer count buf
 	FlushDelayBuf();
 
-	//	Execute the script
-	/*m_dwExecuteScriptInterval += _dwTick;
-	if(m_dwExecuteScriptInterval > EXECUTE_SCRIPT_INTERVAL * 30 &&
-		m_xScript.GetScript() != NULL)
-	{
-		m_dwExecuteScriptInterval = 0;
-		lua_getglobal(m_xScript.GetScript(), "OnUpdateScene");
-		//lua_pushlightuserdata(m_xScript.GetScript(), this);
-		tolua_pushusertype(m_xScript.GetScript(), this, "GameScene");
-		int nRet = 0;
-		nRet = lua_pcall(m_xScript.GetScript(), 1, 1, 0);
-		if(nRet != 0)
-		{
-			LOG(ERROR) << "Execute script error : " << m_xScript.GetMapName() << " : " << lua_tostring(m_xScript.GetScript(), -1);
-			lua_pop(m_xScript.GetScript(), 1);
-		}
-		else
-		{
-			//	WRANNING! Don't forget to pop the return value (Memory leak!!!)
-			lua_pop(m_xScript.GetScript(), 1);
-		}
-	}*/
-
-	//	Insert players
-	//	Note: Not in DoWork because iterator become invalid by using erase function
-	/*if(!m_xWaitInsertPlayers.empty())
-	{
-		std::list<GameObject*>::const_iterator begiter = m_xWaitInsertPlayers.begin();
-		std::list<GameObject*>::const_iterator enditer = m_xWaitInsertPlayers.end();
-
-		for(begiter; begiter != enditer; ++begiter)
-		{
-			if((*begiter)->GetType() == SOT_HERO)
-			{
-				InsertPlayer(*begiter);
-				GetSceneData((HeroObject*)*begiter);
-
-				//	lua call
-				m_xSceneEventExecutor.Call_ScenePlayerEnter(this, (HeroObject*)*begiter);
-			}
-			else if((*begiter)->GetType() == SOT_MONSTER)
-			{
-				InsertNPC(*begiter);
-			}
-		}
-
-		m_xWaitInsertPlayers.clear();
-	}
-	if(!m_xWaitRemovePlayers.empty())
-	{
-		std::list<GameObject*>::const_iterator begiter = m_xWaitRemovePlayers.begin();
-		std::list<GameObject*>::const_iterator enditer = m_xWaitRemovePlayers.end();
-
-		for(begiter; begiter != enditer; ++begiter)
-		{
-			if((*begiter)->GetType() == SOT_HERO)
-			{
-				RemovePlayer((*begiter)->GetID(), false);
-			}
-			else if((*begiter)->GetType() == SOT_MONSTER)
-			{
-				RemoveNPC((*begiter)->GetID(), false);
-			}
-		}
-
-		m_xWaitRemovePlayers.clear();
-	}
-	if(!m_xWaitDeletePlayers.empty())
-	{
-		std::list<GameObject*>::const_iterator begiter = m_xWaitDeletePlayers.begin();
-		std::list<GameObject*>::const_iterator enditer = m_xWaitDeletePlayers.end();
-
-		for(begiter; begiter != enditer; ++begiter)
-		{
-			if((*begiter)->GetType() == SOT_HERO)
-			{
-				RemovePlayer((*begiter)->GetID(), true);
-			}
-			else if((*begiter)->GetType() == SOT_MONSTER)
-			{
-				RemoveNPC((*begiter)->GetID(), true);
-			}
-		}
-
-		m_xWaitDeletePlayers.clear();
-	}*/
 	ProcessWaitInsert();
 	ProcessWaitRemove();
 	ProcessWaitDelete();
@@ -3121,7 +2963,8 @@ MonsterObject* GameScene::NewMonsterByID(int _nAttribID)
 		pNewMonster = new YamaWatcherMonster;
 	}
 	else if(_uID == 140 ||
-		_uID == 143)
+		_uID == 143 ||
+		_uID == 159)
 	{
 		pNewMonster = new FireDragonMonster;
 	}

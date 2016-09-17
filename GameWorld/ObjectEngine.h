@@ -501,6 +501,7 @@ typedef std::map<int, DWORD> DrugUseTimeMap;
 #define MAX_SLAVE_SUM	3
 #define MAX_STORE_NUMBER	36
 #define MAX_BIGSTORE_NUMBER	80
+
 class HeroObject : public GameObject/*, public CUser*/
 {
 public:
@@ -665,6 +666,7 @@ public:
 	int CountItem(int _nAttribID);
 	void ClearItem(int _nAttribID, int _number);
 	bool AddItem(int _nAttribID);
+	bool AddSuperItem(int _nAttribID, int _nExt);
 	int AddItemReturnTag(int _nAttribID);
 	bool AddItemNoBind(int _nAttribID);
 	int AddItemNoBindReturnTag(int _nAttribID);
@@ -835,6 +837,7 @@ public:
 	void RefleshAttrib();
 	void UpdateSuitAttrib();
 	void UpdateStoveAttrib();
+	void UpdateSuitSameLevelAttrib();
 	void GetHeroAttrib(ItemAttrib* _pItem);
 
 	inline void SetCityMap(WORD _wmap)							{m_dwLastCityMap = _wmap;}
@@ -872,6 +875,8 @@ public:
 	//	转移鉴定属性
 	int TransferIdentifyAttrib(int _nItemTag0, int _nItemTag1, int _nCount);
 	int TransferIdentifyAttribFailed(int _nItemTag0, int _nItemTag1);
+	//	鉴定低阶装备
+	void IdentifyLowLevelEquip(ItemAttrib* _pItem);
 
 public:
 	//	Magic
@@ -1095,6 +1100,7 @@ protected:
 	ItemAttrib m_stEquip[PLAYER_ITEM_TOTAL];
 	ItemAttrib m_stStore[MAX_STORE_NUMBER];
 	ItemAttrib m_stBigStore[MAX_BIGSTORE_NUMBER];
+	bool m_bBigStoreReceived;
 	//	Can process packet
 	bool m_bClientLoaded;
 
@@ -1216,6 +1222,9 @@ protected:
 
 	//	小退了?
 	bool m_bSmallQuit;
+
+	//	额外的攻击加成，用于全身精良之类的套装
+	int m_nExtraSuitType;
 
 //public:
 	//int m_nConnectionIndex;

@@ -134,6 +134,11 @@ HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 	//m_ePkType = kHeroPkType_All;
 
 	m_bSmallQuit = false;
+
+	m_nExtraSuitType = 0;
+
+	//	NOTE : 这里注意下，没有收到大仓库的数据后，假如人物退出，会造成大仓库数据丢失
+	m_bBigStoreReceived = false;
 }
 
 HeroObject::~HeroObject()
@@ -2754,6 +2759,7 @@ void HeroObject::RefleshAttrib()
 	m_stData.stAttrib = item;
 
 	UpdateSuitAttrib();
+	UpdateSuitSameLevelAttrib();
 
 	LoginSvr_UpdatePlayerRank();
 }
@@ -3038,6 +3044,47 @@ void HeroObject::UpdateSuitAttrib()
 
 	ObjectValid::EncryptAttrib(&item);
 	m_stData.stAttrib = item;
+}
+
+void HeroObject::UpdateSuitSameLevelAttrib()
+{
+	int nExtraSuitType = 0;
+
+	int nSuitCount[9] = {0};
+
+	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
+	{
+		ItemAttrib* pItem = &m_stEquip[i];
+		//if(m_stEquip[i].type != ITEM_NO)
+		if(GETITEMATB(pItem, Type) != ITEM_NO)
+		{
+			//if(m_equip[i].atkPalsy != 0)
+			int nQualityIndex = GetItemUpgrade(GETITEMATB(pItem, Level));
+
+			if (0 < nQualityIndex &&
+				nQualityIndex < 9)
+			{
+				nSuitCount[nQualityIndex]++;
+			}
+		}
+	}
+
+	//	check active
+	for (int i = 0; i < 9; ++i)
+	{
+		if (nSuitCount[i] >= 5)
+		{
+			nExtraSuitType = i;
+			break;
+		}
+	}
+
+	if (nExtraSuitType != m_nExtraSuitType)
+	{
+		m_nExtraSuitType = nExtraSuitType;
+
+		//SendStatusInfo();
+	}
 }
 //////////////////////////////////////////////////////////////////////////
 /*
@@ -5009,13 +5056,6 @@ bool HeroObject::UseTreasureMap(ItemAttrib* _pItem)
 							lua_pop(pLua, 1);
 						}
 
-						/*PkgPlayerUseItemAck ack;
-						ack.dwUsage = USE_DRUG;
-						ack.dwTag = _pItem->tag;
-						ack.uTargetId = GetID();
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << ack;
-						SendPlayerBuffer(g_xThreadBuffer);*/
 						int nLeftSum = GETITEMATB(_pItem, AtkSpeed);
 						--nLeftSum;
 
@@ -5067,13 +5107,7 @@ bool HeroObject::UseTreasureMap(ItemAttrib* _pItem)
 							nPosY + 3 * g_nMoveOft[i * 2 + 1]);
 					}
 				}
-				/*PkgPlayerUseItemAck ack;
-				ack.dwUsage = USE_DRUG;
-				ack.dwTag = _pItem->tag;
-				ack.uTargetId = GetID();
-				g_xThreadBuffer.Reset();
-				g_xThreadBuffer << ack;
-				SendPlayerBuffer(g_xThreadBuffer);*/
+
 				int nLeftSum = GETITEMATB(_pItem, AtkSpeed);
 				--nLeftSum;
 
@@ -8937,6 +8971,7 @@ bool HeroObject::ShowShopDlg(NPCObject* _pnpc, int _type)
 		SendPacket(ack);
 	}
 	else if(_type == SHOP_IDENTIFY ||
+		_type == SHOP_IDENTIFY_LOW ||
 		_type == SHOP_UNBIND)
 	{
 		PkgPlayerShowShopAck ack;
@@ -9052,6 +9087,32 @@ int HeroObject::GetRandomAbility(ABILITY_TYPE _type)
 			float fRadio = GetCriticalAttackLimit();
 			nValue *= fRadio;
 			m_bLastAttackCritical = true;
+		}
+	}
+
+	static float s_fSuitSameLevelFactor[] = {
+		1.0f,
+		1.03f,
+		1.06f,
+		1.09f,
+		1.12f,
+		1.15f,
+		1.20f,
+		1.30f,
+		1.40f
+	};
+
+	if (m_nExtraSuitType > 0 &&
+		m_nExtraSuitType < 9)
+	{
+		if ((m_stData.bJob == 0 &&
+			_type == AT_DC) ||
+			(m_stData.bJob == 1 &&
+			_type == AT_MC) ||
+			(m_stData.bJob == 2 &&
+			_type == AT_SC))
+		{
+			nValue *= s_fSuitSameLevelFactor[m_nExtraSuitType];
 		}
 	}
 
@@ -9503,6 +9564,149 @@ bool HeroObject::AddItem(int _nAttribID)
 					memcpy(pBagItem, &destItem, sizeof(ItemAttrib));
 					pBagItem->tag = GameWorld::GetInstance().GenerateItemTag();
 					SET_FLAG(pBagItem->atkPois, POIS_MASK_BIND);
+					ObjectValid::EncryptAttrib(pBagItem);
+
+					PkgPlayerGainItemNtf ntf;
+					ntf.uTargetId = GetID();
+					ntf.stItem = *pBagItem;
+					ObjectValid::DecryptAttrib(&ntf.stItem);
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << ntf;
+					SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+
+					bRet = true;
+				}
+			}
+		}
+	}
+
+	return bRet;
+}
+//////////////////////////////////////////////////////////////////////////
+bool HeroObject::AddSuperItem(int _nAttribID, int _nExt)
+{
+	//	1. cost items
+	ItemAttrib destItem;
+	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	ItemAttrib* pBagItem = NULL;
+	bool bRet = false;
+
+	if(GetRecordInItemTable(_nAttribID, &destItem))
+	{
+		if(destItem.type == ITEM_COST)
+		{
+			//	1. cost items
+			for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+			{
+				//	search the same item that already exists
+				if(GETITEMATB(&m_xBag[i], Type) == ITEM_COST &&
+					GETITEMATB(&m_xBag[i], ID) == _nAttribID)
+				{
+					if(GETITEMATB(&m_xBag[i], AtkSpeed) < GRID_MAX &&
+						TEST_FLAG_BOOL(GETITEMATB(&m_xBag[i], AtkPois), POIS_MASK_BIND))
+					{
+						pBagItem = &m_xBag[i];
+						break;
+					}
+				}
+			}
+
+			if(pBagItem == NULL)
+			{
+				//	search empty item
+				for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+				{
+					if(GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
+						m_xBag[i].tag != ITEMTAG_INQUERY)
+					{
+						pBagItem = &m_xBag[i];
+						break;
+					}
+				}
+			}
+
+			if(NULL != pBagItem)
+			{
+				if(GETITEMATB(pBagItem, Type) == ITEM_NO)
+				{
+					memcpy(pBagItem, &destItem, sizeof(ItemAttrib));
+					pBagItem->tag = GameWorld::GetInstance().GenerateItemTag();
+					pBagItem->atkSpeed = 1;
+					SET_FLAG(pBagItem->atkPois, POIS_MASK_BIND);
+					ObjectValid::EncryptAttrib(pBagItem);
+
+					PkgPlayerGainItemNtf ntf;
+					ntf.uTargetId = GetID();
+					ntf.stItem = *pBagItem;
+					ObjectValid::DecryptAttrib(&ntf.stItem);
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << ntf;
+					SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+
+					bRet = true;
+				}
+				else if(GETITEMATB(pBagItem, Type) == ITEM_COST)
+				{
+					int nSum = GETITEMATB(pBagItem, AtkSpeed);
+					if(nSum < GRID_MAX)
+					{
+						++nSum;
+						SETITEMATB(pBagItem, AtkSpeed, nSum);
+
+						PkgPlayerUpdateCostNtf ntf;
+						ntf.uTargetId = GetID();
+						ntf.nNumber = nSum;
+						ntf.dwTag = pBagItem->tag;
+						g_xThreadBuffer.Reset();
+						g_xThreadBuffer << ntf;
+						SendPlayerBuffer(g_xThreadBuffer);
+
+						bRet = true;
+					}
+				}
+			}
+		}
+		else
+		{
+			//	2.other items
+			for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+			{
+				if(GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
+					m_xBag[i].tag != ITEMTAG_INQUERY)
+				{
+					pBagItem = &m_xBag[i];
+					break;
+				}
+			}
+
+			if(NULL != pBagItem)
+			{
+				if(GETITEMATB(pBagItem, Type) == ITEM_NO)
+				{
+					memcpy(pBagItem, &destItem, sizeof(ItemAttrib));
+					pBagItem->tag = GameWorld::GetInstance().GenerateItemTag();
+					SET_FLAG(pBagItem->atkPois, POIS_MASK_BIND);
+
+					//	upgrade item
+					if (_nExt > 0 &&
+						_nExt <= 8 &&
+						IsEquipItem(pBagItem->type))
+					{
+						lua_State* pState = GameWorld::GetInstance().GetLuaState();
+						lua_getglobal(pState, "mustUpgradeItem");
+						if(lua_isfunction(pState, -1))
+						{
+							tolua_pushusertype(pState, pBagItem, "ItemAttrib");
+							lua_pushnumber(pState, _nExt);
+
+							if(0 != lua_pcall(pState, 2, 0, 0))
+							{
+								LOG(ERROR) << "Lua error : " << lua_tostring(pState, -1);
+								lua_pop(pState, 1);
+							}
+						}
+					}
+
 					ObjectValid::EncryptAttrib(pBagItem);
 
 					PkgPlayerGainItemNtf ntf;
@@ -10702,15 +10906,16 @@ int HeroObject::GetSheildDefence(int _damage)
 					nSkillLevel = 3;
 				}
 
-				float fMinDefence = 0.2f;
+				float fFactor = 0.18f;
+				float fMinDefence = fFactor;
 				float fMaxDefence = 0.0f;
 
 				fMinDefence *= nSkillLevel;
-				fMaxDefence = fMinDefence + 0.2f;
+				fMaxDefence = fMinDefence + fFactor;
 
 				float fActualDefence = fMinDefence;
 				int nMC = GetRandomAbility(AT_MC);
-				fActualDefence += (float)nMC / 512;
+				fActualDefence += (float)nMC / 1024;
 				if(fActualDefence > fMaxDefence)
 				{
 					fActualDefence = fMaxDefence;
@@ -11526,13 +11731,19 @@ void HeroObject::SendHumDataV2(bool _bSendToClient, bool _bSendToLogin)
 		}
 
 		//	扩展信息
-		PkgSystemExtUserDataAck extack;
-		extack.nExtIndex = 0;
-		if(WriteHumBigStoreDataToBuffer(extack.xData, bHideIdentify))
+		if (IsNewPlayer() ||
+			(!IsNewPlayer() && m_bBigStoreReceived))
 		{
-			g_xThreadBuffer.Reset();
-			g_xThreadBuffer << extack;
-			SendPlayerBuffer(g_xThreadBuffer);
+			//	1.新玩家，则发送仓库数据 初始化存档
+			//	2.老玩家 则收到了仓库数据 才会发送仓库数据进行存档
+			PkgSystemExtUserDataAck extack;
+			extack.nExtIndex = 0;
+			if(WriteHumBigStoreDataToBuffer(extack.xData, bHideIdentify))
+			{
+				g_xThreadBuffer.Reset();
+				g_xThreadBuffer << extack;
+				SendPlayerBuffer(g_xThreadBuffer);
+			}
 		}
 	}
 
@@ -11563,21 +11774,27 @@ void HeroObject::SendHumDataV2(bool _bSendToClient, bool _bSendToLogin)
 		SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
 
 		xHumData.clear();
-		if(!WriteHumBigStoreDataToBuffer(xHumData, false, true))
+
+		//	发送大仓库数据
+		if (IsNewPlayer() ||
+			(!IsNewPlayer() && m_bBigStoreReceived))
 		{
-			LOG(ERROR) << "failed to get hum binary extend data and send to login server.";
-			return;
+			if(!WriteHumBigStoreDataToBuffer(xHumData, false, true))
+			{
+				LOG(ERROR) << "failed to get hum binary extend data and send to login server.";
+				return;
+			}
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << (int)0;
+			g_xThreadBuffer << (int)PKG_LOGIN_EXTROLEDATAFROMGS_NOT;
+			g_xThreadBuffer << GetLSIndex();
+			g_xThreadBuffer << GetUID();
+			g_xThreadBuffer << (char)strlen(szName);
+			g_xThreadBuffer.Write(szName, strlen(szName));
+			g_xThreadBuffer << (short)0;
+			g_xThreadBuffer << xHumData;
+			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
 		}
-		g_xThreadBuffer.Reset();
-		g_xThreadBuffer << (int)0;
-		g_xThreadBuffer << (int)PKG_LOGIN_EXTROLEDATAFROMGS_NOT;
-		g_xThreadBuffer << GetLSIndex();
-		g_xThreadBuffer << GetUID();
-		g_xThreadBuffer << (char)strlen(szName);
-		g_xThreadBuffer.Write(szName, strlen(szName));
-		g_xThreadBuffer << (short)0;
-		g_xThreadBuffer << xHumData;
-		SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
 	}
 
 #ifdef _DEBUG
@@ -11934,6 +12151,13 @@ void HeroObject::GetStatusInfo(PkgPlayerGStatusNtf& ntf)
 			statusNtf.xStatus.push_back(GSTATUS_JINGANG);
 			statusNtf.xTimes.push_back(m_dwJinGangExpireTime - dwCurTick);
 		}
+	}
+
+	//	extra suit add
+	if (0 != m_nExtraSuitType)
+	{
+		statusNtf.xStatus.push_back(GSTATUS_SUITSAMELEVEL);
+		statusNtf.xTimes.push_back(MAKELONG(m_nExtraSuitType, 0xffff));
 	}
 }
 
@@ -13656,4 +13880,55 @@ void HeroObject::ProcessDelayAction()
 	{
 		ClearDelayAction();
 	}
+}
+
+void HeroObject::IdentifyLowLevelEquip(ItemAttrib* _pItem)
+{
+	UINT uHideAttribCode = GETITEMATB(_pItem, MaxMP);
+	if(0 == uHideAttribCode)
+	{
+		return;
+	}
+
+	int nActiveAttribSum = HideAttribHelper::GetActiveAttribCount(uHideAttribCode);
+	int nAllAttribSum = HideAttribHelper::GetAllAttribCount(uHideAttribCode);
+
+	if(nActiveAttribSum >= nAllAttribSum)
+	{
+		PkgPlayerQuickMsgNtf ntf;
+		ntf.uTargetId = GetID();
+		ntf.nMsgID = QMSG_IDENTIFYFULL;
+		SendPacket(ntf);
+		return;
+	}
+
+	//	扣钱
+	int nCostMoney = 0;
+	nCostMoney = (1 + GetItemUpgrade(GETITEMATB(_pItem, Level))) * 1000;
+
+	if(GetMoney() < nCostMoney)
+	{
+		PkgPlayerQuickMsgNtf ntf;
+		ntf.uTargetId = GetID();
+		ntf.nMsgID = QMSG_NOENOUGHMONEY;
+		SendPacket(ntf);
+		return;
+	}
+
+	MinusMoney(nCostMoney);
+
+	nActiveAttribSum++;
+	HideAttribHelper::SetActiveAttribCount(uHideAttribCode, nActiveAttribSum);
+	SETITEMATB(_pItem, MaxMP, uHideAttribCode);
+
+	int nValue = GETITEMATB(_pItem, AtkPois);
+	SET_FLAG(nValue, POIS_MASK_BIND);
+	SETITEMATB(_pItem, AtkPois, nValue);
+
+	PkgPlayerQuickMsgNtf ntf;
+	ntf.uTargetId = GetID();
+	ntf.nMsgID = QMSG_IDENTIFYOK;
+	SendPacket(ntf);
+
+	SyncItemAttrib(_pItem->tag);
 }

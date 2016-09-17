@@ -636,9 +636,11 @@ bool FireDragonMonster::ExtAttack0()
 }*/
 void FireDragonMonster::OnDeadRevive(int _nLeftLife)
 {
+	++m_nDeadTimes;
+
 	if(0 == _nLeftLife)
 	{
-		Say("人类只是小蝼蚁而已,想打败我?哈哈哈");
+		Say("让你们看看我的真面目");
 	}
 	else if(1 == _nLeftLife)
 	{
@@ -646,7 +648,7 @@ void FireDragonMonster::OnDeadRevive(int _nLeftLife)
 	}
 	else if(2 == _nLeftLife)
 	{
-		Say("让你们看看我的真面目");
+		Say("人类只是小蝼蚁而已,想打败我?哈哈哈");
 	}
 }
 

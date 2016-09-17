@@ -276,7 +276,7 @@ public:
 	inline void SetTreasureMap(bool _b)				{m_bIsTreasureMap = _b;}
 	void DeleteAllMonster();
 	void DeleteAllItem();
-	inline void ResetGiveReward()					{m_bGiveReward = false;m_bKilledMonster = false;}
+	inline void ResetGiveReward()					{m_bGiveReward = false;m_bKilledMonster = false;m_dwTreasureGiveRewardTime = 0;}
 	inline void SetKilledMonster()					{m_bKilledMonster = true;}
 
 	inline float GetMonsterDefenceMulti()			{return m_fSceneMonsterDefenceMulti;}
@@ -385,6 +385,7 @@ protected:
 	bool m_bGiveReward;
 	bool m_bKilledMonster;
 	DWORD m_dwTreasureTipTime;
+	DWORD m_dwTreasureGiveRewardTime;
 
 	bool m_bCanUseScroll;
 

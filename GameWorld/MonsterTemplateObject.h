@@ -58,6 +58,7 @@ public:
 	//	add
 	virtual bool LogicCanAttack(const MonsLogicItem* _pLogic){return false;}
 	virtual bool LogicAttackTarget(const MonsLogicItem* _pLogic){return false;};
+	virtual bool LogicNormalAttack(){return false;}
 
 	//	stand状态时候 可以做一些更新
 	virtual bool FreeUpdate()	{return true;}
@@ -76,6 +77,11 @@ public:
 	int GetMoveOffsetXByDirection(int _nDrt);
 	int GetMoveOffsetYByDirection(int _nDrt);
 	int GetDirectionByMoveOffset(int _nOftX, int _nOftY);
+
+	//	attack functions
+	//	攻击某个坐标下的所有怪物
+	int AttackTargetsSpecifiedPosition(int _nX, int _nY, int _nAction, float _fAttackFactor, int _nDelay = 500, const ReceiveDamageInfo* _pInfo = NULL);
+	int AttackTargetsRange(int _nX, int _nY, int _nOftX, int _nOftY, int _nAction, float _fAttackFactor, int _nDelay = 500, const ReceiveDamageInfo* _pInfo = NULL);
 
 protected:
 	virtual void SelectAttackMode();

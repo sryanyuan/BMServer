@@ -2304,6 +2304,13 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 		}
 //#endif
 	}
+	else if (req.dwOp == CMD_OP_MAKESUPERITEM)
+	{
+		if (IsGmHide())
+		{
+			AddSuperItem(LOWORD(req.dwParam), HIWORD(req.dwParam));
+		}
+	}
 	else if(req.dwOp == CMD_OP_GIVE)
 	{
 		if(IsGmHide())
@@ -3860,6 +3867,15 @@ void HeroObject::DoPacket(const PkgPlayerIdentifyItemReq &req)
 		return;
 	}
 
+	//	获得装备的阶级
+	int nEquipLevel = GetItemGrade(GETITEMATB(pItem, ID));
+	if (nEquipLevel >= 1 &&
+		nEquipLevel <= 3)
+	{
+		IdentifyLowLevelEquip(pItem);
+		return;
+	}
+
 	UINT uHideAttribCode = GETITEMATB(pItem, MaxMP);
 	if(0 == uHideAttribCode)
 	{
@@ -4721,6 +4737,12 @@ void HeroObject::DoPacket(const PkgPlayerWorldSayReq& req)
 
 void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 {
+	g_xConsole.CPrint("Received hum %s ext data %d length %d", GetName(), req.cIndex, req.xData.size());
+
+	if (0 == req.cIndex)
+	{
+		m_bBigStoreReceived = true;
+	}
 	if(req.xData.empty())
 	{
 		return;
@@ -4785,6 +4807,8 @@ void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 					}
 				}
 			}
+			//	大仓库数据收到了 之后就可以存档大仓库数据了
+			m_bBigStoreReceived = true;
 		}
 	}
 	catch (std::exception e)

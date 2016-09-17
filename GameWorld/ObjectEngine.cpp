@@ -873,7 +873,8 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 	else
 	{
 		if(GetObject_ID() == 140 ||
-			GetObject_ID() == 143)
+			GetObject_ID() == 143 ||
+			GetObject_ID() == 159)
 		{
 			//	ÆÆÌìÄ§Áú
 			dwAddInterval = 20 * 1000;
