@@ -1,6 +1,6 @@
 /*
 ** Lua binding: BackMirServer
-** Generated automatically by tolua++-1.0.92 on 06/01/16 20:08:21.
+** Generated automatically by tolua++-1.0.92 on 02/04/17 18:47:41.
 */
 
 #ifndef __cplusplus
@@ -2863,6 +2863,74 @@ static int tolua_BackMirServer_HeroObject_TransferIdentifyAttribFailed00(lua_Sta
 }
 #endif //#ifndef TOLUA_DISABLE
 
+/* method: SlavesFlyToMaster of class  HeroObject */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_HeroObject_SlavesFlyToMaster00
+static int tolua_BackMirServer_HeroObject_SlavesFlyToMaster00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"HeroObject",0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  HeroObject* self = (HeroObject*)  tolua_tousertype(tolua_S,1,0);
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'SlavesFlyToMaster'", NULL);
+#endif
+  {
+   self->SlavesFlyToMaster();
+  }
+ }
+ return 0;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'SlavesFlyToMaster'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* method: Lua_OpenChestBox of class  HeroObject */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_HeroObject_Lua_OpenChestBox00
+static int tolua_BackMirServer_HeroObject_Lua_OpenChestBox00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"HeroObject",0,&tolua_err) ||
+     !tolua_isusertype(tolua_S,2,"ItemAttrib",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,3,0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,4,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,5,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  HeroObject* self = (HeroObject*)  tolua_tousertype(tolua_S,1,0);
+  ItemAttrib* _pItem = ((ItemAttrib*)  tolua_tousertype(tolua_S,2,0));
+  int _nItemID = ((int)  tolua_tonumber(tolua_S,3,0));
+  int _nItemLv = ((int)  tolua_tonumber(tolua_S,4,0));
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'Lua_OpenChestBox'", NULL);
+#endif
+  {
+   self->Lua_OpenChestBox(_pItem,_nItemID,_nItemLv);
+  }
+ }
+ return 0;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'Lua_OpenChestBox'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
 /* method: delete of class  NPCObject */
 #ifndef TOLUA_DISABLE_tolua_BackMirServer_NPCObject_delete00
 static int tolua_BackMirServer_NPCObject_delete00(lua_State* tolua_S)
@@ -3150,6 +3218,40 @@ static int tolua_BackMirServer_GameScene_GetPlayerWithoutLock00(lua_State* tolua
 #ifndef TOLUA_RELEASE
  tolua_lerror:
  tolua_error(tolua_S,"#ferror in function 'GetPlayerWithoutLock'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* method: GetPlayerWithoutLockInt of class  GameScene */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_GameScene_GetPlayerWithoutLockInt00
+static int tolua_BackMirServer_GameScene_GetPlayerWithoutLockInt00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,3,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
+  int _dwID = ((int)  tolua_tonumber(tolua_S,2,0));
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetPlayerWithoutLockInt'", NULL);
+#endif
+  {
+   GameObject* tolua_ret = (GameObject*)  self->GetPlayerWithoutLockInt(_dwID);
+    tolua_pushusertype(tolua_S,(void*)tolua_ret,"GameObject");
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetPlayerWithoutLockInt'.",&tolua_err);
  return 0;
 #endif
 }
@@ -5442,6 +5544,40 @@ static int tolua_BackMirServer_GameSceneManager_SendSystemNotifyAllScene00(lua_S
 }
 #endif //#ifndef TOLUA_DISABLE
 
+/* method: CreateInstanceScene of class  GameSceneManager */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_GameSceneManager_CreateInstanceScene00
+static int tolua_BackMirServer_GameSceneManager_CreateInstanceScene00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,3,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
+  int _nResID = ((int)  tolua_tonumber(tolua_S,2,0));
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'CreateInstanceScene'", NULL);
+#endif
+  {
+   GameScene* tolua_ret = (GameScene*)  self->CreateInstanceScene(_nResID);
+    tolua_pushusertype(tolua_S,(void*)tolua_ret,"GameScene");
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'CreateInstanceScene'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
 /* method: GetMonsterSum of class  GameSceneManager */
 #ifndef TOLUA_DISABLE_tolua_BackMirServer_GameSceneManager_GetMonsterSum00
 static int tolua_BackMirServer_GameSceneManager_GetMonsterSum00(lua_State* tolua_S)
@@ -6456,6 +6592,71 @@ static int tolua_BackMirServer_ItemAttrib_SetLevel00(lua_State* tolua_S)
 #ifndef TOLUA_RELEASE
  tolua_lerror:
  tolua_error(tolua_S,"#ferror in function 'SetLevel'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* method: GetMaxHP of class  ItemAttrib */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_ItemAttrib_GetMaxHP00
+static int tolua_BackMirServer_ItemAttrib_GetMaxHP00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"ItemAttrib",0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  ItemAttrib* self = (ItemAttrib*)  tolua_tousertype(tolua_S,1,0);
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetMaxHP'", NULL);
+#endif
+  {
+   unsigned int tolua_ret = (unsigned int)  self->GetMaxHP();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetMaxHP'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* method: SetMaxHP of class  ItemAttrib */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_ItemAttrib_SetMaxHP00
+static int tolua_BackMirServer_ItemAttrib_SetMaxHP00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"ItemAttrib",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,3,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  ItemAttrib* self = (ItemAttrib*)  tolua_tousertype(tolua_S,1,0);
+  unsigned int _maxHP = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'SetMaxHP'", NULL);
+#endif
+  {
+   self->SetMaxHP(_maxHP);
+  }
+ }
+ return 0;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'SetMaxHP'.",&tolua_err);
  return 0;
 #endif
 }
@@ -7554,6 +7755,38 @@ static int tolua_BackMirServer_DBDropDownContext_NewGroundItem00(lua_State* tolu
 }
 #endif //#ifndef TOLUA_DISABLE
 
+/* method: GetAdditionPoint of class  DBDropDownContext */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_DBDropDownContext_GetAdditionPoint00
+static int tolua_BackMirServer_DBDropDownContext_GetAdditionPoint00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"DBDropDownContext",0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  DBDropDownContext* self = (DBDropDownContext*)  tolua_tousertype(tolua_S,1,0);
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetAdditionPoint'", NULL);
+#endif
+  {
+   int tolua_ret = (int)  self->GetAdditionPoint();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetAdditionPoint'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
 /* method: GetItemType of class  LuaItemHelper */
 #ifndef TOLUA_DISABLE_tolua_BackMirServer_LuaItemHelper_GetItemType00
 static int tolua_BackMirServer_LuaItemHelper_GetItemType00(lua_State* tolua_S)
@@ -7852,6 +8085,95 @@ static int tolua_BackMirServer_LuaItemHelper_IsEncrypt00(lua_State* tolua_S)
 }
 #endif //#ifndef TOLUA_DISABLE
 
+/* function: GetLoWord */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_GetLoWord00
+static int tolua_BackMirServer_GetLoWord00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isnumber(tolua_S,1,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  unsigned int _nValue = ((unsigned int)  tolua_tonumber(tolua_S,1,0));
+  {
+   unsigned int tolua_ret = (unsigned int)  GetLoWord(_nValue);
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetLoWord'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* function: GetHiWord */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_GetHiWord00
+static int tolua_BackMirServer_GetHiWord00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isnumber(tolua_S,1,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  unsigned int _nValue = ((unsigned int)  tolua_tonumber(tolua_S,1,0));
+  {
+   unsigned int tolua_ret = (unsigned int)  GetHiWord(_nValue);
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetHiWord'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* function: MakeLong */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_MakeLong00
+static int tolua_BackMirServer_MakeLong00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isnumber(tolua_S,1,0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,3,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  unsigned int _nLow = ((unsigned int)  tolua_tonumber(tolua_S,1,0));
+  unsigned int _nHigh = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
+  {
+   unsigned int tolua_ret = (unsigned int)  MakeLong(_nLow,_nHigh);
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'MakeLong'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
 /* method: GetInstance of class  OlShopManager */
 #ifndef TOLUA_DISABLE_tolua_BackMirServer_OlShopManager_GetInstance00
 static int tolua_BackMirServer_OlShopManager_GetInstance00(lua_State* tolua_S)
@@ -8133,6 +8455,41 @@ static int tolua_BackMirServer_GameWorld_ResetSchedule00(lua_State* tolua_S)
 }
 #endif //#ifndef TOLUA_DISABLE
 
+/* method: AddAdditionPointWeight of class  GameWorld */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_GameWorld_AddAdditionPointWeight00
+static int tolua_BackMirServer_GameWorld_AddAdditionPointWeight00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"GameWorld",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,3,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,4,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  GameWorld* self = (GameWorld*)  tolua_tousertype(tolua_S,1,0);
+  int _nPoint = ((int)  tolua_tonumber(tolua_S,2,0));
+  int _nWeight = ((int)  tolua_tonumber(tolua_S,3,0));
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'AddAdditionPointWeight'", NULL);
+#endif
+  {
+   self->AddAdditionPointWeight(_nPoint,_nWeight);
+  }
+ }
+ return 0;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'AddAdditionPointWeight'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
 /* Open function */
 TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
 {
@@ -8235,6 +8592,8 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"Lua_GetQuestCounter",tolua_BackMirServer_HeroObject_Lua_GetQuestCounter00);
    tolua_function(tolua_S,"TransferIdentifyAttrib",tolua_BackMirServer_HeroObject_TransferIdentifyAttrib00);
    tolua_function(tolua_S,"TransferIdentifyAttribFailed",tolua_BackMirServer_HeroObject_TransferIdentifyAttribFailed00);
+   tolua_function(tolua_S,"SlavesFlyToMaster",tolua_BackMirServer_HeroObject_SlavesFlyToMaster00);
+   tolua_function(tolua_S,"Lua_OpenChestBox",tolua_BackMirServer_HeroObject_Lua_OpenChestBox00);
   tolua_endmodule(tolua_S);
   #ifdef __cplusplus
   tolua_cclass(tolua_S,"NPCObject","NPCObject","GameObject",tolua_collect_NPCObject);
@@ -8259,6 +8618,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
   tolua_beginmodule(tolua_S,"GameScene");
    tolua_function(tolua_S,"GetPlayer",tolua_BackMirServer_GameScene_GetPlayer00);
    tolua_function(tolua_S,"GetPlayerWithoutLock",tolua_BackMirServer_GameScene_GetPlayerWithoutLock00);
+   tolua_function(tolua_S,"GetPlayerWithoutLockInt",tolua_BackMirServer_GameScene_GetPlayerWithoutLockInt00);
    tolua_function(tolua_S,"GetItem",tolua_BackMirServer_GameScene_GetItem00);
    tolua_function(tolua_S,"BroadcastPacket",tolua_BackMirServer_GameScene_BroadcastPacket00);
    tolua_function(tolua_S,"GetSceneData",tolua_BackMirServer_GameScene_GetSceneData00);
@@ -8332,6 +8692,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"GetFreeInstanceScene",tolua_BackMirServer_GameSceneManager_GetFreeInstanceScene00);
    tolua_function(tolua_S,"SendSystemMessageAllScene",tolua_BackMirServer_GameSceneManager_SendSystemMessageAllScene00);
    tolua_function(tolua_S,"SendSystemNotifyAllScene",tolua_BackMirServer_GameSceneManager_SendSystemNotifyAllScene00);
+   tolua_function(tolua_S,"CreateInstanceScene",tolua_BackMirServer_GameSceneManager_CreateInstanceScene00);
    tolua_function(tolua_S,"GetMonsterSum",tolua_BackMirServer_GameSceneManager_GetMonsterSum00);
   tolua_endmodule(tolua_S);
   tolua_cclass(tolua_S,"GameInstanceScene","GameInstanceScene","",NULL);
@@ -8373,6 +8734,8 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"SetMaxMC",tolua_BackMirServer_ItemAttrib_SetMaxMC00);
    tolua_function(tolua_S,"GetLevel",tolua_BackMirServer_ItemAttrib_GetLevel00);
    tolua_function(tolua_S,"SetLevel",tolua_BackMirServer_ItemAttrib_SetLevel00);
+   tolua_function(tolua_S,"GetMaxHP",tolua_BackMirServer_ItemAttrib_GetMaxHP00);
+   tolua_function(tolua_S,"SetMaxHP",tolua_BackMirServer_ItemAttrib_SetMaxHP00);
    tolua_function(tolua_S,"GetType",tolua_BackMirServer_ItemAttrib_GetType00);
   tolua_endmodule(tolua_S);
   tolua_cclass(tolua_S,"GroundItem","GroundItem","",NULL);
@@ -8395,6 +8758,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
   tolua_constant(tolua_S,"SceneEvent_None",SceneEvent_None);
   tolua_constant(tolua_S,"SceneEvent_Update",SceneEvent_Update);
   tolua_constant(tolua_S,"SceneEvent_PlayerEnter",SceneEvent_PlayerEnter);
+  tolua_constant(tolua_S,"SceneEvent_PlayerLeave",SceneEvent_PlayerLeave);
   tolua_constant(tolua_S,"SceneEvent_Total",SceneEvent_Total);
   tolua_cclass(tolua_S,"ItemIDList","ItemIDList","std::list<int>",NULL);
   tolua_beginmodule(tolua_S,"ItemIDList");
@@ -8428,6 +8792,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
   tolua_constant(tolua_S,"kLuaEvent_WorldStartRunning",kLuaEvent_WorldStartRunning);
   tolua_constant(tolua_S,"kLuaEvent_ScenePlayerEnter",kLuaEvent_ScenePlayerEnter);
   tolua_constant(tolua_S,"kLuaEvent_WorldLoginServerConnected",kLuaEvent_WorldLoginServerConnected);
+  tolua_constant(tolua_S,"kLuaEvent_ScenePlayerLeave",kLuaEvent_ScenePlayerLeave);
   tolua_cclass(tolua_S,"DBDropDownContext","DBDropDownContext","",NULL);
   tolua_beginmodule(tolua_S,"DBDropDownContext");
    tolua_function(tolua_S,"IsDropValid",tolua_BackMirServer_DBDropDownContext_IsDropValid00);
@@ -8438,6 +8803,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"GetDropPosX",tolua_BackMirServer_DBDropDownContext_GetDropPosX00);
    tolua_function(tolua_S,"GetDropPosY",tolua_BackMirServer_DBDropDownContext_GetDropPosY00);
    tolua_function(tolua_S,"NewGroundItem",tolua_BackMirServer_DBDropDownContext_NewGroundItem00);
+   tolua_function(tolua_S,"GetAdditionPoint",tolua_BackMirServer_DBDropDownContext_GetAdditionPoint00);
   tolua_endmodule(tolua_S);
   tolua_cclass(tolua_S,"LuaItemHelper","LuaItemHelper","",NULL);
   tolua_beginmodule(tolua_S,"LuaItemHelper");
@@ -8452,6 +8818,9 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"DecryptItem",tolua_BackMirServer_LuaItemHelper_DecryptItem00);
    tolua_function(tolua_S,"IsEncrypt",tolua_BackMirServer_LuaItemHelper_IsEncrypt00);
   tolua_endmodule(tolua_S);
+  tolua_function(tolua_S,"GetLoWord",tolua_BackMirServer_GetLoWord00);
+  tolua_function(tolua_S,"GetHiWord",tolua_BackMirServer_GetHiWord00);
+  tolua_function(tolua_S,"MakeLong",tolua_BackMirServer_MakeLong00);
   tolua_cclass(tolua_S,"OlShopManager","OlShopManager","",NULL);
   tolua_beginmodule(tolua_S,"OlShopManager");
    tolua_function(tolua_S,"GetInstance",tolua_BackMirServer_OlShopManager_GetInstance00);
@@ -8475,6 +8844,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"GetInstancePtr",tolua_BackMirServer_GameWorld_GetInstancePtr00);
    tolua_function(tolua_S,"SetSchedule",tolua_BackMirServer_GameWorld_SetSchedule00);
    tolua_function(tolua_S,"ResetSchedule",tolua_BackMirServer_GameWorld_ResetSchedule00);
+   tolua_function(tolua_S,"AddAdditionPointWeight",tolua_BackMirServer_GameWorld_AddAdditionPointWeight00);
   tolua_endmodule(tolua_S);
  tolua_endmodule(tolua_S);
  return 1;

@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\BackMir\BinDebug\"
+			OutputDirectory="$(SolutionDir)..\BackMir\"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -45,8 +45,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;"
-				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;__THEMIDA_;_SHIELDEN_;_ZIPARCHIVE_;_SYNC_CREATE;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;_BIN_PATH"
+				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\NetWorkEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;"
+				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;__THEMIDA_;_SHIELDEN_;_ZIPARCHIVE_;_SYNC_CREATE;_LUAJIT_;_CRT_SECURE_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -69,9 +69,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)..\BackMir\BinDebug\GameSvr.exe"
+				OutputFile="$(SolutionDir)..\BackMir\GameSvr.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib&quot;;&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;"
+				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib&quot;;&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\networkengine&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -100,7 +100,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\BackMir\Bin\"
+			OutputDirectory="$(SolutionDir)..\BackMir\"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -127,10 +127,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
+				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;_THEMIDA_;_ZIPARCHIVE_;_SYNC_CREATE;_DISABLE_CONSOLE;__SHIELDEN_;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;_BIN_PATH"
+				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\NetWorkEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;_THEMIDA_;_ZIPARCHIVE_;_SYNC_CREATE;_DISABLE_CONSOLE;__SHIELDEN_;_LUAJIT_;_CRT_SECURE_NO_WARNINGS"
 				StringPooling="true"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -153,9 +153,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)..\BackMir\Bin\GameSvr.exe"
+				OutputFile="$(SolutionDir)..\BackMir\GameSvr.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\themida&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;"
+				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\networkengine&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\themida&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -526,14 +526,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\CommonModule\LuaConfigLoader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\LuaConfigLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="..\CommonModule\LuaEventDispatcher.cpp"
 				>
 			</File>
@@ -542,27 +534,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\CommonModule\LuaIterator.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\LuaIterator.h"
-				>
-			</File>
-			<File
 				RelativePath="..\CommonModule\MagicEffectID.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\CommonModule\MagicEffectID.h"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\MapConfigManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\MapConfigManager.h"
 				>
 			</File>
 			<File
@@ -639,14 +615,6 @@
 			</File>
 			<File
 				RelativePath="..\CommonModule\StoveManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\CommonModule\utils.h"
 				>
 			</File>
 			<File
@@ -795,10 +763,6 @@
 			</File>
 			<File
 				RelativePath=".\GameWorld\GameInstanceScene.h"
-				>
-			</File>
-			<File
-				RelativePath=".\GameWorld\GameScene.cpp"
 				>
 			</File>
 			<File
@@ -1159,14 +1123,6 @@
 			>
 			<File
 				RelativePath="..\CommonModule\Doc\ItemAttrib_field.txt"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Import"
-			>
-			<File
-				RelativePath=".\Import\ImportModule.cpp"
 				>
 			</File>
 		</Filter>

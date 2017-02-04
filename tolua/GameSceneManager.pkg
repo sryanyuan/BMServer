@@ -14,6 +14,7 @@ class GameScene
 {
 	GameObject* GetPlayer(DWORD _dwID);
 	GameObject* GetPlayerWithoutLock(DWORD _dwID);
+	GameObject* GetPlayerWithoutLockInt(int _dwID);
 	GroundItem* GetItem(DWORD _dwTag);
 
 	DWORD BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID);
@@ -113,6 +114,8 @@ class GameSceneManager
 	GameInstanceScene* GetFreeInstanceScene(int _id);
 	void SendSystemMessageAllScene(const char* _pszMsg);
 	void SendSystemNotifyAllScene(const char* _pszMsg);
+	
+	GameScene* CreateInstanceScene(int _nResID);
 	
 	int GetMonsterSum(int _id);
 };

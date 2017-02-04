@@ -25,4 +25,5 @@ public:
 	bool m_bEnableElite;
 	bool m_bAutoKickDoorObstacle;
 	bool m_bShowDifficultySelect;
+	bool m_bUsingOldEngine;
 };

@@ -122,6 +122,10 @@ class HeroObject : public GameObject/*, public CUser*/
 	
 	int TransferIdentifyAttrib(int _nItemTag0, int _nItemTag1, int _nCount);
 	int TransferIdentifyAttribFailed(int _nItemTag0, int _nItemTag1);
+	
+	void SlavesFlyToMaster();
+	
+	void Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv);
 };
 
 class NPCObject : public GameObject

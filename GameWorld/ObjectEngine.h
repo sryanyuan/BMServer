@@ -19,6 +19,7 @@
 #include "../../CommonModule/RandGenerator.h"
 #include "../../CommonModule/StoveManager.h"
 #include "FreeListManager.h"
+#include <google/protobuf/message.h>
 //////////////////////////////////////////////////////////////////////////
 extern ByteBuffer g_xThreadBuffer;
 extern ConsoleHelper g_xConsole;
@@ -32,6 +33,7 @@ class GameInstanceScene;
 
 unsigned int SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf);
 unsigned int SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf);
+unsigned int SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg);
 void MirLog(const char* _pLog);
 void ConsolePrint(const char* _pszText);
 
@@ -672,6 +674,7 @@ public:
 	int AddItemNoBindReturnTag(int _nAttribID);
 	bool AddBatchItem(int _nAttribID, int _nSum);
 	bool AddItem_GM(int _nAttribID);
+	bool AddItemSuper_GM(int _nAttribID, int _nValue);
 	bool RemoveItem(int _nTag);
 	int ItemTagToAttribID(int _nTag);
 	void SyncItemAttrib(int _nTag);
@@ -682,6 +685,7 @@ public:
 
 	void ClearAllItem();
 	void FlyToHome();
+	void SlavesFlyToMaster();
 	void FlyToPrison();
 	void SetValidState()								{m_pValid->UpdateAllAttrib();}
 
@@ -790,6 +794,7 @@ public:
 	bool UseNameFrameResetCard(ItemAttrib* _pItem);
 	bool UseChatFrameCard(ItemAttrib* _pItem);
 	bool UseChatFrameResetCard(ItemAttrib* _pItem);
+	bool UseChestKey(ItemAttrib* _pItem);
 	//bool UseLandScroll(ItemAttrib* _pItem);
 
 	inline int GetMoney()
@@ -925,6 +930,9 @@ public:
 	bool IsEffectExist(DWORD _dwMgcID);
 	//bool ReceiveDamage(int _nDmg);
 
+	bool IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY);
+	void ForceDisconnectHero();
+
 private:
 	bool LearnMagic(DWORD _dwMgcID, BYTE _bBookLevel);
 
@@ -1033,6 +1041,10 @@ public:
 
 	inline BYTE GetDifficultyLevel()		{return m_byteDifficultyLevel;}
 	inline void SetDifficultyLevel(BYTE _bLevel)	{m_byteDifficultyLevel = _bLevel;}
+
+public:
+	// lua export functions
+	void Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv);
 
 public:
 	//	sync functions
@@ -1225,6 +1237,9 @@ protected:
 
 	//	额外的攻击加成，用于全身精良之类的套装
 	int m_nExtraSuitType;
+
+	// 非法的魔法攻击包
+	int m_nInvalidMagicAttackTimes;
 
 //public:
 	//int m_nConnectionIndex;

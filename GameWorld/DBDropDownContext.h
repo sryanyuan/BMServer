@@ -28,6 +28,8 @@ public:
 	int GetDropPosX(int _nItemIndex);
 	int GetDropPosY(int _nItemIndex);
 
+	int GetAdditionPoint();
+
 	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY);
 
 protected:

@@ -7,6 +7,7 @@ NPCObject::NPCObject(/*DWORD _dwID*/) /*: GameObject(_dwID)*/
 	m_eType = SOT_NPC;
 	m_xMsgQueue.Resize(1024);
 	m_bWorldNPC = false;
+	ClearAllSellItem();
 }
 
 NPCObject::~NPCObject()

@@ -20,6 +20,7 @@
 #include "../CommonModule/BMHttpManager.h"
 #include "../CommonModule/cJSON.h"
 #include "ConfigDlg.h"
+#include "runarg.h"
 
 using std::string;
 //////////////////////////////////////////////////////////////////////////
@@ -243,8 +244,15 @@ void CServerDlg::OnBnStartClicked()
 	}
 
 	char szCfgFile[MAX_PATH];
-	strcpy(szCfgFile, GetRootPath());
-	strcat(szCfgFile, "\\cfg.ini");
+	if (NULL == GetRunArg("cfgfile") ||
+		strlen(GetRunArg("cfgfile")) == 0)
+	{
+		sprintf(szCfgFile, "%s\\conf\\cfg.ini", GetRootPath());
+	}
+	else
+	{
+		sprintf(szCfgFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
+	}
 
 	if(!PathFileExists(szCfgFile))
 	{
@@ -326,10 +334,10 @@ LRESULT CServerDlg::OnAddInformation(WPARAM wParam, LPARAM lParam)
 //////////////////////////////////////////////////////////////////////////
 void CServerDlg::AutoRun()
 {
-	CommandLineHelper xHelper;
-	if(xHelper.InitParam())
+	//CommandLineHelper xHelper;
+	//if(xHelper.InitParam())
 	{
-		const char* pszValue = xHelper.GetParam("loginsvr");
+		const char* pszValue = GetRunArg("loginsvr");
 		if(pszValue != NULL)
 		{
 			CMainServer::GetInstance()->SetServerMode(GM_LOGIN);
@@ -337,7 +345,7 @@ void CServerDlg::AutoRun()
 			CMainServer::GetInstance()->SetLoginAddr(xLoginAddr);
 		}
 
-		pszValue = xHelper.GetParam("listenip");
+		pszValue = GetRunArg("listenip");
 		if(pszValue != NULL)
 		{
 			char szIP[16];
@@ -589,6 +597,9 @@ void CServerDlg::OnClose()
 			{
 				Sleep(1);
 			}
+
+			// µÈ´ýÍøÂçÒýÇæÍ£Ö¹
+			CMainServer::GetInstance()->WaitForStopEngine();
 			
 			__super::OnClose();
 		}

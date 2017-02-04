@@ -216,6 +216,30 @@ int DBDropDownContext::GetDropPosY(int _nItemIndex)
 	return HIWORD(m_xDropPosVector[_nItemIndex]);
 }
 
+int DBDropDownContext::GetAdditionPoint()
+{
+	GameScene* pScene = GetDropScene();
+	if (NULL == pScene)
+	{
+		return 0;
+	}
+
+	WeightCalc& refWorldCalc = GameWorld::GetInstance().GetAdditionPointCalc();
+	WeightCalc& refSceneCalc = pScene->GetAdditionPointCalc();
+
+	// first using the scene weight
+	if (refSceneCalc.Calculable())
+	{
+		return refSceneCalc.Get();
+	}
+	// using world weight
+	int nValue = refWorldCalc.Get();
+#ifdef _DEBUG
+	g_xConsole.CPrint("Drop addition item with value %d", nValue);
+#endif
+	return nValue;
+}
+
 int DBDropDownContext::InitDropPosition(int _nItems)
 {
 	//	get all dropdown position

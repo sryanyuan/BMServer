@@ -30,11 +30,20 @@ enum LuaEvent
 	kLuaEvent_ScenePlayerEnter,
 	//	连接上了登陆服务器
 	kLuaEvent_WorldLoginServerConnected,
+	// 离开场景
+	kLuaEvent_ScenePlayerLeave,
 };
 
 struct LuaEvent_ScenePlayerEnter
 {
 	GameScene* pScene;
+	HeroObject* pHero;
+};
+
+struct LuaEvent_ScenePlayerLeave
+{
+	GameScene* pPrevScene;
+	GameScene* pNewScene;
 	HeroObject* pHero;
 };
 

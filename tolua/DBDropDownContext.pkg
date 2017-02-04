@@ -13,4 +13,6 @@ class DBDropDownContext
 	int GetDropPosY(int _nItemIndex);
 
 	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY);
+	
+	int GetAdditionPoint();
 };

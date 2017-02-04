@@ -66,7 +66,7 @@ void SceneEventExecutor::RemoveAllSceneEvent()
 		SceneEventItem* pItem = *begIter;
 
 		SAFE_DELETE(pItem);
-		begIter = m_xSceneEventList.erase(begIter);
+		//begIter = m_xSceneEventList.erase(begIter);
 	}
 
 	m_xSceneEventList.clear();
@@ -160,7 +160,58 @@ int SceneEventExecutor::Call_ScenePlayerEnter(GameScene* _pScene, HeroObject* _p
 				if(nRet != 0)
 				{
 #ifdef _DEBUG
-					LOG(WARNING) << "Can't call onSceneUpdate : " << lua_tostring(pState, -1);
+					LOG(WARNING) << "Can't call Call_ScenePlayerEnter : " << lua_tostring(pState, -1);
+#endif
+					lua_pop(pState, 1);
+				}
+				else
+				{
+					++nCalled;
+				}
+
+				pItem->dwLastCallbackTime = GetTickCount();
+			}
+		}
+	}
+
+	return nCalled;
+}
+
+int SceneEventExecutor::Call_ScenePlayerLeave(GameScene* _pPrevScene, GameScene* _pScene, HeroObject* _pHero)
+{
+	if(!IsEventExist(SceneEvent_PlayerLeave))
+	{
+		return -1;
+	}
+
+	SceneEventList::iterator begIter = m_xSceneEventList.begin();
+	SceneEventList::iterator endIter = m_xSceneEventList.end();
+
+	int nCalled = 0;
+
+	for(begIter;
+		begIter != m_xSceneEventList.end();
+		++begIter)
+	{
+		SceneEventItem* pItem = *begIter;
+
+		if(pItem->eEventType == SceneEvent_PlayerLeave)
+		{
+			if((pItem->dwCallbackInterval == 0) ||
+				(pItem->dwCallbackInterval != 0 && GetTickCount() - pItem->dwLastCallbackTime > pItem->dwCallbackInterval))
+			{
+				lua_State* pState = _pPrevScene->GetLuaState();
+
+				lua_getglobal(pState, pItem->xFuncName.c_str());
+				tolua_pushusertype(pState, _pHero, "HeroObject");
+				tolua_pushusertype(pState, _pPrevScene, "GameScene");
+				tolua_pushusertype(pState, _pScene, "GameScene");
+
+				int nRet = lua_pcall(pState, 3, 0, 0);
+				if(nRet != 0)
+				{
+#ifdef _DEBUG
+					LOG(WARNING) << "Can't call Call_ScenePlayerLeave : " << lua_tostring(pState, -1);
 #endif
 					lua_pop(pState, 1);
 				}

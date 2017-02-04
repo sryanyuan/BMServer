@@ -21,15 +21,6 @@
 //	For glog
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
-//////////////////////////////////////////////////////////////////////////
-#ifdef _DEBUG
-#pragma comment(lib, "libglog_static_d.lib")
-//#pragma comment(lib, "CommonModule_D.lib")
-#else
-#pragma comment(lib, "libglog.lib")
-//#pragma comment(lib, "CommonModule.lib")
-#endif
-#pragma comment(lib, "shlwapi.lib")
 
 //////////////////////////////////////////////////////////////////////////
 extern HWND g_hServerDlg;
@@ -222,8 +213,11 @@ GameWorld::GameWorld()
 	m_bEnableWorldNotify = false;
 
 	m_dwLastBurstFireworkTime = 0;
+	m_nExpFireworkUID = 0;
 	m_dwLastExpFireworkTime = 0;
+	m_nBurstFireworkUID = 0;
 	m_dwLastMagicDropFireworkTime = 0;
+	m_nMagicDropFireworkUID = 0;
 	m_nDifficultyLevel = 0;
 	m_dwLastUpdateScriptEngineTime = GetTickCount();
 
@@ -282,31 +276,8 @@ void GameWorld::DestroyInstance()
 	s_pGameWorld = NULL;
 }
 //////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-unsigned int GameWorld::WorldRun()
+unsigned int GameWorld::ProcessThreadMsg()
 {
-	static bool s_bWorldRunEntered = false;
-
-	if (!m_bWorldInit) {
-		return false;
-	}
-
-	if (!s_bWorldRunEntered) {
-		s_bWorldRunEntered = true;
-		m_eState = WS_WORKING;
-		LOG(INFO) << "World runner active";
-		srand((unsigned int)time(NULL));
-
-		//	发送世界启动消息
-		DispatchLuaEvent(kLuaEvent_WorldStartRunning, NULL);
-	}
-
-	static DWORD dwLastWorkTime = GetTickCount();
-	static DWORD dwCurrentWorkTime = dwLastWorkTime;
-	static DWORD dwTimeInterval = 0;
-
-	//	peek message
 	{
 		BMLockGuard guard(&m_csMsgStack);
 		while (!m_xMsgStack.empty()) {
@@ -325,6 +296,66 @@ unsigned int GameWorld::WorldRun()
 				SAFE_DELETE(pMsg);
 			}
 		}
+	}
+
+	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+void GameWorld::PostRunMessage(const MSG* _pMsg)
+{
+	if (WS_WORKING != m_eState &&
+		_pMsg->message == WM_WORLDCHECKCRC) {
+		// ignore all msg while not working
+		g_xConsole.CPrint("Error:Ignore crc message in %d status", _pMsg->message, m_eState);
+		return;
+	}
+
+	if (m_bThreadRunMode) {
+		if (m_hThread != NULL &&
+			m_dwThreadID != 0)
+		{
+			PostThreadMessage(m_dwThreadID, _pMsg->message, _pMsg->wParam, _pMsg->lParam);
+		}
+	}
+	else {
+		//	push into msg queue
+		MSG* pMsg = new MSG;
+		memcpy(pMsg, _pMsg, sizeof(MSG));
+
+		BMLockGuard guard(&m_csMsgStack);
+		m_xMsgStack.push(pMsg);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+unsigned int GameWorld::WorldRun()
+{
+	static bool s_bWorldRunEntered = false;
+
+	if (!m_bWorldInit) {
+		return 0;
+	}
+
+	if (!s_bWorldRunEntered) {
+		s_bWorldRunEntered = true;
+		m_eState = WS_WORKING;
+		LOG(INFO) << "World runner active";
+		srand((unsigned int)time(NULL));
+
+		//	发送世界启动消息
+		DispatchLuaEvent(kLuaEvent_WorldStartRunning, NULL);
+	}
+
+	static DWORD dwLastWorkTime = GetTickCount();
+	static DWORD dwCurrentWorkTime = dwLastWorkTime;
+	static DWORD dwTimeInterval = 0;
+
+	//	peek message
+	unsigned int uThreadMsgRet = ProcessThreadMsg();
+	if (0 != uThreadMsgRet)
+	{
+		return uThreadMsgRet;
 	}
 
 	//	run world
@@ -352,15 +383,11 @@ unsigned int GameWorld::WorldRun()
 	//	handle delayed process
 	DoWork_DelayedProcess(dwTimeInterval);
 	//	into sleep
-	SleepEx(1, TRUE);
+	//SleepEx(1, TRUE);
 
 	//	Test
 	if(dwCurrentWorkTime - dwLastWorkTime > 5000)
 	{
-		//	??
-		//m_nRetCode = 3;
-		//break;
-		//ZeroMemory(GameWorld::GetInstancePtr(), sizeof(GameWorld));
 		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
 		{
 			//	nothing
@@ -491,71 +518,22 @@ unsigned int THREAD_CALL GameWorld::WorkThread(void* _pData)
 }
 
 //////////////////////////////////////////////////////////////////////////
-
-/************************************************************************/
-/* unsigned int Run()
-/************************************************************************/
-unsigned int GameWorld::Run()
+int GameWorld::Init()
 {
-	if(m_eState == WS_WORKING)
-	{
-		LOG(ERROR) << "Main loop thread is already running!";
-		return 0;
-	}
-	//	Set the receive thread msg time
-	m_dwLastRecWatcherMsgTime = GetTickCount();
-
 	//	Set the global table to zero
 	memset(g_pxHeros, 0, sizeof(g_pxHeros));
-	//LoadMagicInfo();
 
 	//	First open database
 	char szPath[MAX_PATH];
 
-	ItemAttrib item;
-	item.id = 3333384305;
-	char szName[20] = {-104, 110, 67, 18, 6, 0, 4, 0, -7, 1, 12, 8, 96, 66, -22, 17, 72, 3, 62};
-	strcpy(item.name, szName);
-	char szDecrypt[20];
-	ObjectValid::GetItemName(&item, szDecrypt);
-
-	unsigned int nDecryptId = ObjectValid::GetItem_ID(&item);
-
-	unsigned int nId = DecryptValue(ATB_ID_MASK, 3333384305);
-	nId = DecryptValue(ATB_ID_MASK, 3333384267);
-	/*GetModuleFileName(NULL, szPath, MAX_PATH);
-	PathRemoveFileSpec(szPath);
-	strcat(szPath, "\\Help\\legend.bm");
-	if(!m_xDatabase->ConnectDB(szPath))
+	if(!m_xDatabase->Run())
 	{
-		LOG(ERROR) << "Can not connect to db[" << szPath << "]";
-		return 0;
+		//	Error occur
+		LOG(ERROR) << "Can not start database!";
+		return 1;
 	}
-	if(m_xDatabase->LoadItemsPrice())
-	{
-		AddInfomation("读取装备价格成功");
-	}
-	else
-	{
-		AddInfomation("读取装备价格失败");
-	}
-	if(m_xDatabase->LoadMagicAttrib())
-	{
-		AddInfomation("读取魔法信息成功");
-	}
-	else
-	{
-		AddInfomation("读取魔法信息失败");
-	}*/
- 	if(!m_xDatabase->Run())
- 	{
- 		//	Error occur
- 		LOG(ERROR) << "Can not start database!";
- 		return 0;
- 	}
 	//	Load script
-	GetModuleFileName(NULL, szPath, MAX_PATH);
-	PathRemoveFileSpec(szPath);
+	GetRootPath(szPath, MAX_PATH);
 
 	//	no reset
 	if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
@@ -573,7 +551,7 @@ unsigned int GameWorld::Run()
 		if(!OfflineSellSystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
 			LOG(ERROR) << "Can not initialize offline sell system";
-			return 0;
+			return 1;
 		}
 		OfflineSellSystem::GetInstance()->CopyFromSQL();
 	}
@@ -586,7 +564,7 @@ unsigned int GameWorld::Run()
 		if(!NotifySystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
 			LOG(ERROR) << "Can not initialize world notify";
-			return 0;
+			return 1;
 		}
 	}
 
@@ -594,7 +572,7 @@ unsigned int GameWorld::Run()
 	if(!StoveManager::GetInstance()->Init())
 	{
 		LOG(ERROR) << "Can't initialize stove manager";
-		return 0;
+		return 1;
 	}
 
 	//	load settings
@@ -614,10 +592,28 @@ unsigned int GameWorld::Run()
 #ifdef _DEBUG
 		LOG(ERROR) << "Can not load the world script file";
 #endif
-		return 0;
+		return 1;
 	}
 
 	LoadBlackList();
+
+	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+/************************************************************************/
+/* unsigned int Run()
+/************************************************************************/
+unsigned int GameWorld::Run()
+{
+	if(m_eState == WS_WORKING)
+	{
+		LOG(ERROR) << "Main loop thread is already running!";
+		return 0;
+	}
+	//	Set the receive thread msg time
+	m_dwLastRecWatcherMsgTime = GetTickCount();
 
 	//	If running on thread mode, create a thread
 	if (m_bThreadRunMode) {
@@ -1092,6 +1088,11 @@ void GameWorld::DoDelayGame(const DelayedProcess &_dp)
 			{
 				pObj->SetID(GenerateObjectID());
 
+				if (pHero->GetMapID() >= INSTANCE_MAPID_BEGIN)
+				{
+					// it is a instance map id
+					pHero->SetMapID(pHero->GetHomeMapID());
+				}
 				if(NULL == pObj->GetLocateScene())
 				{
 					LOG(ERROR) << "Nonexistent scene!";
@@ -1530,7 +1531,8 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 			{
 				GameScene* pScene = GameSceneManager::GetInstance()->GetScene(HIWORD(pParam->dwParam[3]));
 
-				if(pScene)
+				if(pScene &&
+					!pScene->GetAdditionPointCalc().Calculable())
 				{
 					std::list<int>::const_iterator begIter = pItems->begin();
 					std::list<int>::const_iterator endIter = pItems->end();
@@ -1587,6 +1589,38 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 
 							//	添加隐藏属性
 							SetItemHideAttrib(&pGroundItem->stAttrib);
+						}
+						else if (pGroundItem->stAttrib.id >= 1102 &&
+							pGroundItem->stAttrib.id <= 1105)
+						{
+							// 箱子的掉落
+							if (CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
+							{
+								lua_State* L = GetLuaState();
+								lua_getglobal(L, "GetChestOpenItemId");
+								if (lua_isnil(L, -1))
+								{
+									lua_pop(L, 1);
+									LOG(ERROR) << "Failed to call GetChestOpenItemId";
+								}
+								else
+								{
+									lua_pushnumber(L, pGroundItem->stAttrib.id);
+									if (0 != lua_pcall(L, 1, 2, 0))
+									{
+										LOG(ERROR) << "Call GetChestOpenItemId error : " << lua_tostring(L, -1);
+										lua_pop(L, 1);
+									}
+									else
+									{
+										// OK
+										WORD wItemLv = lua_tonumber(L, -1);
+										WORD wItemId = lua_tonumber(L, -2);
+										lua_pop(L, 2);
+										pGroundItem->stAttrib.maxHP = MAKELONG(wItemId, wItemLv);
+									}
+								}
+							}
 						}
 						else if(pGroundItem->stAttrib.type == ITEM_OTHER &&
 							(pGroundItem->stAttrib.curse == kMaterial_Ore ||
@@ -3169,7 +3203,7 @@ unsigned int GameWorld::Thread_ProcessMessage(const MSG* _pMsg)
 
 	static int s_nTimeoutCounter = 0;
 
-	if(_pMsg->message == WM_WORLDCHECKCRC)
+	if (_pMsg->message == WM_WORLDCHECKCRC)
 	{
 		if(dwCurrentTick - _pMsg->wParam >= 0 &&
 			dwCurrentTick - _pMsg->wParam <= 500)
@@ -3308,6 +3342,10 @@ unsigned int GameWorld::Thread_ProcessMessage(const MSG* _pMsg)
 			GameWorld::GetInstance().SetDifficultyLevel(nDiff);
 			GameSceneManager::GetInstance()->SendSystemMessageAllScene("更改难度配置成功");
 		}
+	}
+	else if (_pMsg->message == WM_STOPNETENGINE)
+	{
+		CMainServer::GetInstance()->StopEngine();
 	}
 
 	return uRet;
@@ -3476,68 +3514,89 @@ static int GetHideAttribValue(int _nType)
 	case HideAttrib_AC:
 	case HideAttrib_MAC:
 		{
-			//	1-4
-			nValue = rand() % 4 + 1;
-			//	1-8
-			if(rand() % 5 == 0)
+			//	1-15
+			if (rand() % 500)
 			{
-				nValue += rand() % 5;
+				return rand() % 16;
+			}
+			// 1-10
+			if (rand() % 400)
+			{
+				return rand() % 11;
+			}
+			// 1-6
+			if (rand() % 300)
+			{
+				return rand() % 7;
+			}
+			// 1-3
+			if (rand() % 100)
+			{
+				return rand() % 4;
+			}
+			return rand() % 2 + 1;
+
+
+
+			nValue = rand() % 2 + 1;
+			//	1-8
+			if(rand() % 50 == 0)
+			{
+				nValue += rand() % 7;
 			}
 			//	1-12
-			if(rand() % 20 == 0)
+			if(rand() % 80 == 0)
 			{
 				nValue += rand() % 5;
 			}
-
-			int nRand = rand() % 20;
-			if(nRand <= 10)
+			// 1-15
+			if (rand() % 150 == 0)
 			{
 				nValue += rand() % 4;
-			}
-			else if(nRand <= 17)
-			{
-				nValue += 4;
-				nValue += rand() % 4;
-			}
-			else
-			{
-				nValue += 8;
-				nValue += rand() % 6;
 			}
 		}break;
 	case HideAttrib_DC:
 	case HideAttrib_MC:
 	case HideAttrib_SC:
 		{
-			//	1-4
-			nValue = rand() % 4 + 1;
-			//	1-8
-			if(rand() % 8 == 0)
+			//	1-15
+			if (rand() % 500)
 			{
-				nValue += rand() % 5;
+				return rand() % 16;
+			}
+			// 1-10
+			if (rand() % 400)
+			{
+				return rand() % 11;
+			}
+			// 1-6
+			if (rand() % 300)
+			{
+				return rand() % 7;
+			}
+			// 1-3
+			if (rand() % 100)
+			{
+				return rand() % 4;
+			}
+			return rand() % 2 + 1;
+
+			//	1-2
+			nValue = rand() % 2 + 1;
+			//	1-8
+			if(rand() % 30 == 0)
+			{
+				nValue += rand() % 7;
 			}
 			//	1-12
-			if(rand() % 20 == 0)
+			if(rand() % 120 == 0)
 			{
 				nValue += rand() % 5;
 			}
-
-			nValue = 1;
-
-			int nRand = rand() % 30;
-			if(nRand <= 20)
+			// 1-15
+			if (rand() % 250 == 0)
 			{
 				nValue += rand() % 4;
-			}
-			else if(nRand <= 28)
-			{
-				nValue += 4;
-				nValue += rand() % 4;
-			}
-			else
-			{
-				nValue += 8;
-				nValue += rand() % 6;
 			}
 		}break;
 	case HideAttrib_DcHide:
@@ -3686,6 +3745,12 @@ int GameWorld::__cronActive(int _nJobId, int _nArg)
 //	sync process
 int GameWorld::SyncOnHeroDisconnected(HeroObject* _pHero) {
 	unsigned int uHeroId = _pHero->GetID();
+	// First try directly delete
+	GameScene* pScene = _pHero->GetLocateScene();
+	if (pScene->RemovePlayer(uHeroId))
+	{
+		return 0;
+	}
 	if(GameSceneManager::GetInstance()->RemovePlayer(uHeroId))
 	{
 		LOG(INFO) << "Delete object" << "[" << uHeroId << "]";
@@ -3856,4 +3921,55 @@ int GameWorld::SyncIsHeroExists(LoginQueryInfo* _pQuery) {
 	}
 
 	return 0;
+}
+
+WeightCalc& GameWorld::GetAdditionPointCalc()
+{
+	return m_xAdditionPointCalc;
+}
+
+bool GameWorld::LoadAdditionPointCalcDataFromScript()
+{
+	// 初始化极品掉落点数权重
+	m_xAdditionPointCalc.Reset();
+
+	lua_State* pState = GetLuaState();
+	lua_getglobal(pState, "InitWorldAdditionPoint");
+	if(!lua_isfunction(pState, -1))
+	{
+		return false;
+	}
+
+	tolua_pushusertype(pState, this, "GameScene");
+	int nRet = lua_pcall(pState, 1, 0, 0);
+	if(nRet != 0)
+	{
+		LOG(WARNING) << lua_tostring(pState, -1);
+		lua_pop(pState, 1);
+		return false;
+	}
+
+	return true;
+}
+
+void GameWorld::SetAdditionPointWeight(int _nPoint, int _nWeight)
+{
+	if (_nPoint < 1 ||
+		_nPoint > 8)
+	{
+		return;
+	}
+
+	m_xAdditionPointCalc.SetWeightByValue(_nPoint, _nWeight);
+}
+
+void GameWorld::AddAdditionPointWeight(int _nWeight, int _nPoint)
+{
+	if (_nPoint < 1 ||
+		_nPoint > 8)
+	{
+		return;
+	}
+
+	m_xAdditionPointCalc.AppendWeight(_nWeight, _nPoint);
 }

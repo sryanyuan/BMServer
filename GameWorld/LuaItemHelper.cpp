@@ -51,3 +51,18 @@ int LuaItemHelper::GetItemAtkPalsy(ItemAttrib* _pItem)
 {
 	return (int)GETITEMATB(_pItem, AtkPalsy);
 }
+
+unsigned int GetLoWord(unsigned int _nValue)
+{
+	return LOWORD(DWORD(_nValue));
+}
+
+unsigned int GetHiWord(unsigned int _nValue)
+{
+	return HIWORD(DWORD(_nValue));
+}
+
+unsigned int MakeLong(unsigned int _nLow, unsigned int _nHigh)
+{
+	return MAKELONG(_nLow, _nHigh);
+}

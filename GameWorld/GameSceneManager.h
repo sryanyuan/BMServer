@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <map>
 #include "../../BackMirClient/Common/MirMap.h"
-//#include "../../CommonModule/ScriptEngine.h"
+#include "../../CommonModule/MapConfigManager.h"
 #include "LuaServerEngine.h"
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/SaveFile.h"
@@ -12,6 +12,8 @@
 #include "../../CommonModule/SimpleIni.h"
 #include "SceneEvent.h"
 #include "FreeListManager.h"
+#include "MonsGenEngine.h"
+#include "WeightCalc.h"
 //////////////////////////////////////////////////////////////////////////
 #define MAX_SCENE_NUMBER		60/*60个地图场景*/
 #define EXECUTE_SCRIPT_INTERVAL	2*1000
@@ -31,6 +33,9 @@
 #define MAPPEDOBJECT_STATUE_ALIVE	(1 << 3)
 #define MAPPEDOBJECT_ALL			(MAPPEDOBJECT_PLAYER | MAPPEDOBJECT_MONSTER | MAPPEDOBJECT_SLAVE)
 #define MAPPEDOBJECT_ALL_ALIVE		(MAPPEDOBJECT_PLAYER | MAPPEDOBJECT_MONSTER | MAPPEDOBJECT_SLAVE | MAPPEDOBJECT_STATUE_ALIVE)
+
+#define FIXED_MAPID_BEGIN			0
+#define INSTANCE_MAPID_BEGIN		1000
 //////////////////////////////////////////////////////////////////////////
 enum MapPkType
 {
@@ -120,6 +125,7 @@ public:
 
 public:
 	virtual bool Initialize(DWORD _dwMapID);
+	virtual bool Initialize(DWORD _dwMapResID, DWORD _dwMapID);
 	virtual void Release();
 
 public:
@@ -131,6 +137,7 @@ public:
 	GameObject* GetPlayer(DWORD _dwID);
 	GameObject* GetPlayerByName(const char* _pszName);
 	GameObject* GetPlayerWithoutLock(DWORD _dwID);
+	GameObject* GetPlayerWithoutLockInt(int _dwID);
 	bool InsertNPC(GameObject* _pNPC);
 	bool RemoveNPC(DWORD _dwID, bool _bDelete = true);
 	bool InsertItem(GroundItem* _pItem, bool _bCopy = true);
@@ -141,6 +148,9 @@ public:
 
 	DWORD BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID = 0);
 	DWORD BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, DWORD _dwIgnoreID = 0);
+
+	void OnPlayerEnterScene();
+	void OnPlayerLeaveScene(GameScene* _pNewScene);
 
 	//	For broadcasting in a range
 	//DWORD BroadcastPacketRange(ByteBuffer* _pBuf, DWORD _dwIgnoreID = 0);
@@ -163,6 +173,7 @@ public:
 	inline WORD GetCityCenterX()			{return LOWORD(m_dwCityCenter);}
 	inline WORD GetCityCenterY()			{return HIWORD(m_dwCityCenter);}
 	inline WORD GetMapID()					{return m_dwMapID;}
+	inline WORD GetMapResID()				{return m_dwMapResID;}
 	inline int GetMapIDInt()				{return m_dwMapID;}
 	inline DWORD GetMapUID()				{return m_dwMapUID;}
 
@@ -210,6 +221,8 @@ public:
 	int GetSlaveSum();
 	int GetMonsterSum(unsigned int _uID);
 	void CreateNPC(unsigned int _uID, unsigned short _uX, unsigned short _uY);
+	// For mons gen engine
+	int CreateMonsterCallback(int _nID, int _nType, int _nPosX, int _nPosY);
 	//	Normal,elite and leader monster
 	int CreateMonster(unsigned int _uID, unsigned short _uX, unsigned short _uY);
 	//	Just elite monster
@@ -276,6 +289,7 @@ public:
 	inline void SetTreasureMap(bool _b)				{m_bIsTreasureMap = _b;}
 	void DeleteAllMonster();
 	void DeleteAllItem();
+	void DeleteAllNPC();
 	inline void ResetGiveReward()					{m_bGiveReward = false;m_bKilledMonster = false;m_dwTreasureGiveRewardTime = 0;}
 	inline void SetKilledMonster()					{m_bKilledMonster = true;}
 
@@ -324,6 +338,10 @@ public:
 	inline void AddWaitRemove(GameObject* _pObj)	{m_xWaitRemovePlayers.push_back(_pObj);}
 	inline void AddWaitDelete(GameObject* _pObj)	{m_xWaitDeletePlayers.push_back(_pObj);}
 
+	WeightCalc& GetAdditionPointCalc()				{return m_xAdditionPointCalc;}
+	void CopyAdditionPointCalcFromWorld();
+	void SetAdditionPointWeight(int _nValue, int _nWeight);
+
 public:
 	//	for scene event register, lua
 	void RegisterCallback(SceneEvent _eType, const char* _pszFuncName, int _nInterval);
@@ -345,6 +363,7 @@ protected:
 	LuaServerEngine m_xScript;
 	DWORD m_dwExecuteScriptInterval;
 	DWORD m_dwMapID;
+	DWORD m_dwMapResID;
 
 	DWORD m_dwLoopTime;
 	//DWORD m_dwLastUpdateObjectBlockTime;
@@ -412,6 +431,16 @@ protected:
 
 	//	Pk模式
 	MapPkType m_eMapPkType;
+
+	// 怪物生成器
+	MonsGenEngine m_xMonsGenEngine;
+	// 怪物数量统计
+	MonsCountRecorder m_xMonsCountRecorder;
+
+	// 场景的极品掉落权重
+	WeightCalc m_xAdditionPointCalc;
+
+	DWORD m_dwInstanceMapFreeTime;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -419,6 +448,7 @@ protected:
 //////////////////////////////////////////////////////////////////////////
 class GameInstanceScene;
 typedef std::list<GameInstanceScene*> INSTANCEMAPLIST;
+typedef std::list<GameScene*> GameSceneList;
 
 class GameSceneManager
 {
@@ -442,180 +472,39 @@ public:
 	GameObject* GetPlayer(WORD _wMapID, DWORD _dwID);
 	GameObject* GetPlayer(DWORD _dwID);
 	void GetPlayerByUid(int _nUid, GameObjectList& _refList);
-	GameObject* GetPlayerByName(const char* _pszName)
-	{
-		GameObject* pObj = NULL;
+	GameObject* GetPlayerByName(const char* _pszName);
 
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				pObj = m_pScenes[i]->GetPlayerByName(_pszName);
-				if(pObj)
-				{
-					return pObj;
-				}
-			}
-			else
-			{
-				break;
-			}
-		}
+	int CountPlayer();
 
-		return NULL;
-	}
+	int CountMonster();
 
-	inline int CountPlayer()
-	{
-		int nPlayerCounter = 0;
+	int GetMonsterSum(int _id);
 
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				nPlayerCounter += m_pScenes[i]->GetPlayerCount();
-			}
-			else
-			{
-				break;
-			}
-		}
+	void AllMonsterHPToFull();
 
-		return nPlayerCounter;
-	}
+	void BroadcastPacketAllScene(ByteBuffer* _xBuf, DWORD _dwIgnore = 0);
 
-	inline int CountMonster()
-	{
-		int nMonsterCounter = 0;
+	void SendRawSystemMessageAllScene(const char* _pszMsg);
 
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				nMonsterCounter += m_pScenes[i]->GetMonsterCount();
-			}
-			else
-			{
-				break;
-			}
-		}
+	void SendSystemMessageAllScene(const char* _pszMsg);
 
-		return nMonsterCounter;
-	}
-
-	inline int GetMonsterSum(int _id)
-	{
-		int nMonsterCounter = 0;
-
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				nMonsterCounter += m_pScenes[i]->GetMonsterSum(_id);
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		return nMonsterCounter;
-	}
-
-	void AllMonsterHPToFull()
-	{
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				m_pScenes[i]->AllMonsterHPToFull();
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-
-	void BroadcastPacketAllScene(ByteBuffer* _xBuf, DWORD _dwIgnore = 0)
-	{
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				m_pScenes[i]->BroadcastPacket(_xBuf, _dwIgnore);
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-
-	void SendRawSystemMessageAllScene(const char* _pszMsg)
-	{
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				m_pScenes[i]->BroadcastChatMessage(_pszMsg, 1);
-				//m_pScenes[i]->BroadcastSceneSystemMessage(_pszMsg);
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-
-	void SendSystemMessageAllScene(const char* _pszMsg)
-	{
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				//m_pScenes[i]->BroadcastChatMessage(_pszMsg, 1);
-				m_pScenes[i]->BroadcastSceneSystemMessage(_pszMsg);
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-
-	void SendSystemNotifyAllScene(const char* _pszMsg)
-	{
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				//m_pScenes[i]->BroadcastChatMessage(_pszMsg, 1);
-				m_pScenes[i]->BroadcastSystemNotify(_pszMsg);
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
+	void SendSystemNotifyAllScene(const char* _pszMsg);
 
 	GameInstanceScene* GetFreeInstanceScene(int _id);
+
+	MapConfigManager& GetMapConfigManager()
+	{
+		return m_xMapConfigManager;
+	}
 	
 public:
-	inline GameScene* GetScene(DWORD _dwMapID)
-	{
-		if(_dwMapID >= MAX_SCENE_NUMBER)
-		{
-			return NULL;
-		}
-		return m_pScenes[_dwMapID];
-	}
+	GameScene* GetScene(DWORD _dwMapID);
 	inline GameScene* GetSceneInt(int _nMapID)
 	{
 		return GetScene(_nMapID);
 	}
 	void Update(DWORD _dwTick);
+	// deprecate
 	inline const char* GetRunMap(int _id)
 	{
 		if(_id < 0 ||
@@ -626,6 +515,7 @@ public:
 		return m_xRunMapData[_id].c_str();
 	}
 	const char* GetMapChName(int _id);
+	// deprecate
 	inline const char* GetInstanceMap(int _id)
 	{
 		INSTANCEMAPDATA::const_iterator fndIter = m_xInsMapData.find(_id);
@@ -636,28 +526,9 @@ public:
 
 		return NULL;
 	}
-	inline bool IsUserNameExist(const char* _pszName)
-	{
-		bool bExist = false;
+	bool IsUserNameExist(const char* _pszName);
 
-		for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
-		{
-			if(m_pScenes[i])
-			{
-				if(m_pScenes[i]->IsUserNameExist(_pszName))
-				{
-					bExist = true;
-					break;
-				}
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		return bExist;
-	}
+	GameScene* CreateInstanceScene(int _nResID);
 
 protected:
 	GameScene* m_pScenes[MAX_SCENE_NUMBER];
@@ -669,6 +540,15 @@ protected:
 
 	DWORD m_dwLastNotifyPlayerCount;
 	CSimpleIniA m_xIniMapName;
+
+	// dynamic create instance scenes
+	GameSceneList m_xInstanceScenes;
+	// count limit of each map res id
+	int m_nMaxInstanceScenesCount;
+
+	MapConfigManager m_xMapConfigManager;
+	DWORD m_dwFixedMapIDSeed;
+	DWORD m_dwInstanceMapIDSeed;
 };
 
 //////////////////////////////////////////////////////////////////////////

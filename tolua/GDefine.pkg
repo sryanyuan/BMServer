@@ -50,6 +50,9 @@ struct ItemAttrib
 	int GetLevel();
 	void SetLevel(int _level);
 	
+	unsigned int GetMaxHP();
+	void SetMaxHP(unsigned int _maxHP);
+	
 	int GetType();
 };
 

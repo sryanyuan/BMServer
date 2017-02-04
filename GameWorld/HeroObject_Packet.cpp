@@ -109,6 +109,11 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		return;
 	}
 
+	if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
+	{
+		return;
+	}
+
 	bool bIsStone = TEST_FLAG_BOOL(m_dwHumEffFlag, MMASK_STONE);
 
 	if(req.uAction == ACTION_WALK)
@@ -694,23 +699,23 @@ void HeroObject::DoPacket(const PkgPlayerPickUpItemReq& req)
 			{
 				if(GETITEMATB(&pItem->stAttrib, ID) == 112)
 				{
-					nMoney = rand() % 50 + 20;
+					nMoney = rand() % 10 + 20;
 				}
 				else if(GETITEMATB(&pItem->stAttrib, ID) == 113)
 				{
-					nMoney = 70 + rand() % 50;
+					nMoney = 50 + rand() % 50;
 				}
 				else if(GETITEMATB(&pItem->stAttrib, ID) == 114)
 				{
-					nMoney = 120 + rand() % 100;
+					nMoney = 100 + rand() % 100;
 				}
 				else if(GETITEMATB(&pItem->stAttrib, ID) == 115)
 				{
-					nMoney = 220 + rand() % 400;
+					nMoney = 200 + rand() % 100;
 				}
 				else if(GETITEMATB(&pItem->stAttrib, ID) == 116)
 				{
-					nMoney = 620 + rand() % 1200;
+					nMoney = 300 + rand() % 800;
 				}
 
 				AddMoney(nMoney);
@@ -1015,6 +1020,11 @@ void HeroObject::DoPacket(const PkgPlayerDressItemReq& req)
 		ack.dwTag = req.dwTag;
 		ack.dwTex = GETITEMATB(pWantDressItem, Tex);
 		ack.uUserId = GETITEMATB(pWantDressItem, ID);
+		if (GETITEMATB(pWantDressItem, Type) == ITEM_WEAPON &&
+			GetItemUpgrade(GETITEMATB(pWantDressItem, Level)) > 5)
+		{
+			ack.dwFlag |= 0x1;
+		}
 		g_xThreadBuffer.Reset();
 		g_xThreadBuffer << ack;
 		//SendBuffer(GetUserIndex(), &g_xThreadBuffer);
@@ -1151,9 +1161,13 @@ void HeroObject::DoPacket(const PkgPlayerUseItemReq& req)
 					ack.dwTex = GETITEMATB(pItem, Tex);
 					ack.uTargetId = GetID();
 					ack.uUserId = GETITEMATB(pItem, ID);
+					if (GETITEMATB(pItem, Type) == ITEM_WEAPON &&
+						GetItemUpgrade(GETITEMATB(pItem, Level)) > 5)
+					{
+						ack.dwFlag |= 0x1;
+					}
 					g_xThreadBuffer.Reset();
 					g_xThreadBuffer << ack;
-					//SendBuffer(GetUserIndex(), &g_xThreadBuffer);
 					pScene->BroadcastPacket(&g_xThreadBuffer);
 
 					if(GETITEMATB(&m_stEquip[ack.bPos], Type) != ITEM_NO)
@@ -2187,22 +2201,23 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 {
 	ItemAttrib* pItem = NULL;
 	bool bCanUse = false;
+	GameScene* pScene = GetLocateScene();
 
 	if(req.dwOp == CMD_OP_MOVE)
 	{
-		/*pItem = GetEquip(PLAYER_ITEM_RING1);
-		if(GETITEMATB(pItem, ID) == 172)
+		pItem = GetEquip(PLAYER_ITEM_RING1);
+		if(GETITEMATB(pItem, ID) != 172)
 		{
-			bCanUse = true;
+			pItem = NULL;
 		}
-		if(!bCanUse)
+		if(NULL == pItem)
 		{
 			pItem = GetEquip(PLAYER_ITEM_RING2);
-			if(GETITEMATB(pItem, ID) == 172)
+			if(GETITEMATB(pItem, ID) != 172)
 			{
-				bCanUse = true;
+				pItem = NULL;
 			}
-		}*/
+		}
 
 		bCanUse = false;
 
@@ -2211,40 +2226,90 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			bCanUse = true;
 		}
 
-		if(bCanUse)
+		if(bCanUse &&
+			NULL != pItem)
 		{
-			//if(GetLocateScene()->IsAutoReset())
 			if(!GetLocateScene()->CanUseMove())
 			{
 				//SendSystemMessage("该地图无法传送");
 				SendQuickMessage(QMSG_CANNOTTRANSFER);
 				return;
 			}
-			if(GetTickCount() - m_dwLastUseMoveRingTime < 15 * 1000)
+			/*if(GetTickCount() - m_dwLastUseMoveRingTime < 15 * 1000)
 			{
 				//SendSystemMessage("间隔:8秒");
 				SendQuickMessage(QMSG_TRANSFERINTERVAL, 15);
+				return;
+			}*/
+			// Here check the durability of item
+			WORD wMaxDura = LOWORD(GETITEMATB(pItem, MaxHP));
+			WORD wCurDura = HIWORD(GETITEMATB(pItem, MaxHP));
+
+			WORD wDuraCost = 0;
+			if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
+			{
+				wDuraCost = 100;
+			}
+			// Normal game mode can use ring forever
+			if (0 != wDuraCost)
+			{
+				if (wDuraCost >= wMaxDura)
+				{
+					// clean item
+					int nTag = pItem->tag;
+					ZeroMemory(pItem, sizeof(ItemAttrib));
+					ObjectValid::EncryptAttrib(pItem);
+
+					PkgPlayerLostItemAck pplia;
+					pplia.uTargetId = GetID();
+					pplia.dwTag = nTag;
+					SendPacket(pplia);
+
+					RefleshAttrib();
+				}
+				else
+				{
+					WORD wLeftDura = wMaxDura - wDuraCost;
+					if (wCurDura > wLeftDura)
+					{
+						wCurDura = wLeftDura;
+					}
+					SETITEMATB(pItem, MaxHP, MAKELONG(wLeftDura, wCurDura));
+
+					PkgPlayerUpdateItemNtf ppuin;
+					ppuin.uTargetId = GetID();
+					memcpy(&ppuin.stItem, pItem, sizeof(ItemAttrib));
+					ObjectValid::DecryptAttrib(&ppuin.stItem);
+					SendPacket(ppuin);
+				}
 			}
 			else
 			{
-				int nX = 0;
-				int nY = 0;
-				nX = LOWORD(req.dwParam);
-				nY = HIWORD(req.dwParam);
-				if(nX > 0 &&
-					nX < 999 &&
-					nY > 0 &&
-					nY < 999)
+				// Check the interval of use ring
+				if(GetTickCount() - m_dwLastUseMoveRingTime < 15 * 1000)
 				{
-					if(GetLocateScene()->CanThrough(nX, nY))
-					{
-						FlyTo(nX, nY);
-						m_dwLastUseMoveRingTime = GetTickCount();
-					}
-					else
-					{
-						SendSystemMessage("无法到达目的地");
-					}
+					SendQuickMessage(QMSG_TRANSFERINTERVAL, 15);
+					return;
+				}
+			}
+
+			int nX = 0;
+			int nY = 0;
+			nX = LOWORD(req.dwParam);
+			nY = HIWORD(req.dwParam);
+			if (nX > 0 &&
+				nX < 999 &&
+				nY > 0 &&
+				nY < 999)
+			{
+				if (GetLocateScene()->CanThrough(nX, nY))
+				{
+					FlyTo(nX, nY);
+					m_dwLastUseMoveRingTime = GetTickCount();
+				}
+				else
+				{
+					SendSystemMessage("无法到达目的地");
 				}
 			}
 		}
@@ -2326,6 +2391,109 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			}
 		}
 	}
+	else if (req.dwOp == CMD_OP_SGIVE)
+	{
+		if (IsGmHide())
+		{
+
+		}
+	}
+	else if (req.dwOp == CMD_OP_RESETWORLDWEIGHT)
+	{
+		GameWorld::GetInstance().LoadAdditionPointCalcDataFromScript();
+	}
+	else if (req.dwOp == CMD_OP_RESETSCENEWEIGHT)
+	{
+		GetLocateScene()->GetAdditionPointCalc().Reset();
+	}
+	else if (req.dwOp == CMD_OP_SETWORLDWEIGHT)
+	{
+		WORD wValue = LOWORD(req.dwParam);
+		WORD wWeight = HIWORD(req.dwParam);
+
+		if (wValue > 0 &&
+			wValue < 9)
+		{
+			GameWorld::GetInstance().GetAdditionPointCalc().SetWeightByValue(wValue, wWeight);
+		}
+		else
+		{
+			SendSystemMessage("Invalid weight");
+		}
+	}
+	else if (req.dwOp == CMD_OP_SETSCENEWEIGHT)
+	{
+		if (!pScene->GetAdditionPointCalc().Calculable())
+		{
+			pScene->CopyAdditionPointCalcFromWorld();
+		}
+
+		WORD wValue = LOWORD(req.dwParam);
+		WORD wWeight = HIWORD(req.dwParam);
+
+		if (wValue > 0 &&
+			wValue < 9)
+		{
+			pScene->GetAdditionPointCalc().SetWeightByValue(wValue, wWeight);
+		}
+		else
+		{
+			SendSystemMessage("Invalid weight");
+		}
+	}
+	else if (req.dwOp == CMD_OP_SHOWWORLDWEIGHT)
+	{
+		if (!GameWorld::GetInstance().GetAdditionPointCalc().Calculable())
+		{
+			SendSystemMessage("无WEIGHT配置");
+		}
+		else
+		{
+			const WeightCalcItemVector& refData = GameWorld::GetInstance().GetAdditionPointCalc().GetWeightCalcItems();
+			char szMsg[64];
+			szMsg[0] = 0;
+			std::string xMsg;
+
+			for (size_t i = 0; i < refData.size(); ++i)
+			{
+				if (0 == refData[i].nID)
+				{
+					continue;
+				}
+				sprintf(szMsg, "%d=%d ", refData[i].nValue, refData[i].nWeight);
+				xMsg += szMsg;
+			}
+
+			SendSystemMessage(xMsg.c_str());
+		}
+	}
+	else if (req.dwOp == CMD_OP_SHOWSCENEWEIGHT)
+	{
+		if (!pScene->GetAdditionPointCalc().Calculable())
+		{
+			SendSystemMessage("无WEIGHT配置");
+		}
+		else
+		{
+			const WeightCalcItemVector& refData = pScene->GetAdditionPointCalc().GetWeightCalcItems();
+			char szMsg[64];
+			szMsg[0] = 0;
+			std::string xMsg;
+
+			for (size_t i = 0; i < refData.size(); ++i)
+			{
+				if (0 == refData[i].nID)
+				{
+					continue;
+				}
+				sprintf(szMsg, "%d=%d ", refData[i].nValue, refData[i].nWeight);
+				xMsg += szMsg;
+			}
+
+			SendSystemMessage(xMsg.c_str());
+		}
+
+	}
 	else if(req.dwOp == CMD_OP_LEVELUP)
 	{
 //#ifdef _DEBUG
@@ -2393,6 +2561,162 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			}
 		}
 //#endif
+	}
+	else if(req.dwOp == CMD_OP_SGET)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nItemId = LOWORD(req.dwParam);
+			int nValue = HIWORD(req.dwParam);
+			if(nValue > 8)
+			{
+				nValue = 8;
+			}
+			if (nValue < 0)
+			{
+				nValue = 0;
+			}
+
+			AddItemSuper_GM(nItemId, nValue);
+		}
+		//#endif
+	}
+	else if(req.dwOp == CMD_OP_SETWINGEFF)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nWing = LOWORD(req.dwParam);
+
+			m_stExtAttrib.uWing = nWing;
+
+			//	进行广播
+			PkgPlayerExtendAttribNot not;
+			not.uTargetId = GetID();
+			not.xAttrib.resize(1);
+			not.xAttrib[0].uType = kExtendAttrib_Wing;
+			not.xAttrib[0].nValue = nWing;
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << not;
+			GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+		}
+		//#endif
+	}
+	else if(req.dwOp == CMD_OP_SETCLOTHEFF)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nCloth = LOWORD(req.dwParam);
+
+			m_stExtAttrib.uClothLook = nCloth;
+
+			//	进行广播
+			PkgPlayerExtendAttribNot not;
+			not.uTargetId = GetID();
+			not.xAttrib.resize(1);
+			not.xAttrib[0].uType = kExtendAttrib_ClothLook;
+			not.xAttrib[0].nValue = nCloth;
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << not;
+			GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+		}
+		//#endif
+	}
+	else if(req.dwOp == CMD_OP_SETWEAPONEFF)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nWeapon = LOWORD(req.dwParam);
+
+			m_stExtAttrib.uWeaponLook = nWeapon;
+
+			//	进行广播
+			PkgPlayerExtendAttribNot not;
+			not.uTargetId = GetID();
+			not.xAttrib.resize(1);
+			not.xAttrib[0].uType = kExtendAttrib_WeaponLook;
+			not.xAttrib[0].nValue = nWeapon;
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << not;
+			GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+		}
+		//#endif
+	}
+	else if(req.dwOp == CMD_OP_SETHAIREFF)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nHair = LOWORD(req.dwParam);
+
+			m_stExtAttrib.uHair = nHair;
+
+			//	进行广播
+			PkgPlayerExtendAttribNot not;
+			not.uTargetId = GetID();
+			not.xAttrib.resize(1);
+			not.xAttrib[0].uType = kExtendAttrib_Hair;
+			not.xAttrib[0].nValue = nHair;
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << not;
+			GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+		}
+		//#endif
+	}
+	else if(req.dwOp == CMD_OP_SENDSUPERITEMMSG)
+	{
+		//#ifdef _DEBUG
+		if(IsGmHide())
+		{
+			int nItemId = LOWORD(req.dwParam);
+			int nValue = HIWORD(req.dwParam);
+
+			if (nValue < 5 ||
+				nValue > 8)
+			{
+				return;
+			}
+
+			//	通知世界
+			PkgSystemNotifyNot not;
+
+			switch(nValue)
+			{
+			case 6:
+				{
+					not.xMsg = "登峰珍品[";
+				}break;
+			case 7:
+				{
+					not.xMsg = "传说珍品[";
+				}break;
+			case 8:
+				{
+					not.xMsg = "史诗珍品[";
+				}break;
+			}
+
+			ItemAttrib item;
+			if (GetRecordInItemTable(nItemId, &item))
+			{
+				if (IsEquipItem(item.type))
+				{
+					not.xMsg += item.name;
+					not.xMsg += "]掉落在[";
+					not.xMsg += GameSceneManager::GetInstance()->GetMapChName(GetMapID());
+					not.xMsg += "]";
+					not.dwTimes = 1;
+					not.dwColor = 0xffff00ff;
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << not;
+					GameSceneManager::GetInstance()->BroadcastPacketAllScene(&g_xThreadBuffer);
+				}
+			}
+		}
+		//#endif
 	}
 	else if(req.dwOp == CMD_OP_EXPRMULTI)
 	{
@@ -4388,6 +4712,11 @@ void HeroObject::DoPacket(const PkgPlayerSmeltMaterialsReq& req)
 #ifdef _DEBUG
 		nAddExp *= 50;
 #endif
+		if (CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
+		{
+			nAddExp *= 5;
+		}
+
 		if(*pLevel >= pSkill->nMaxLevel)
 		{
 			//	nothing
@@ -4587,6 +4916,10 @@ void HeroObject::DoPacket(const PkgPlayerHandMakeItemReq &req)
 #ifdef _DEBUG
 	nAddExp *= 10;
 #endif
+	if (CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
+	{
+		nAddExp *= 4;
+	}
 	if(m_stExtAttrib.uMakeEquipLevel >= pSkill->nMaxLevel)
 	{
 		//	nothing

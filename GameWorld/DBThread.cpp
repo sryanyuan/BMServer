@@ -10,9 +10,6 @@
 #include "DBDropDownContext.h"
 #include "../Helper.h"
 //////////////////////////////////////////////////////////////////////////
-#pragma comment(lib, "sqlite3.lib")
-#pragma comment(lib, "shlwapi.lib")
-//////////////////////////////////////////////////////////////////////////
 const int g_nOpQueryItemAttrib = DO_QUERY_ITEMATTRIB;
 USHORT g_nItemPrice[ITEM_ID_MAX];
 

@@ -1,4 +1,4 @@
-#include <NetworkEngine.h>
+#include "netbase.h"
 #include "ObjectEngine.h"
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
@@ -12,6 +12,7 @@
 #include "../GameWorld/GameInstanceScene.h"
 #include "../../CommonModule/SettingLoader.h"
 #include "../../CommonModule/SimpleActionHelper.h"
+#include <google/protobuf/message.h>
 //////////////////////////////////////////////////////////////////////////
 static const int s_nMoveOft[] =
 {
@@ -96,6 +97,43 @@ unsigned int SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf)
 #endif
 		return dwPacketLength;
 	}
+	return 0;
+}
+
+unsigned int SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg)
+{
+	CNetbase* pNet = CMainServer::GetInstance()->GetEngine();
+	if(NULL == pNet)
+	{
+		return 0;
+	}
+
+	static char s_bytesBuffer[0xff];
+	//	write code
+	memcpy(s_bytesBuffer, &_nCode, sizeof(int));
+
+	int nSize = _refMsg.ByteSize();
+	if (0 == nSize)
+	{
+		return 0;
+	}
+	if (nSize > sizeof(s_bytesBuffer))
+	{
+		g_xConsole.CPrint("Byte buffer overflow : %d, size %d", _nCode, nSize);
+		return 0;
+	}
+
+	if (!_refMsg.SerializeToArray(s_bytesBuffer + sizeof(int), sizeof(s_bytesBuffer) - sizeof(int)))
+	{
+		g_xConsole.CPrint("Serialize protobuf failed");
+		return 0;
+	}
+
+	if (TRUE == pNet->SendToServer(_nIdx, (char*)s_bytesBuffer, 4 + nSize, 0))
+	{
+		return 4 + nSize;
+	}
+
 	return 0;
 }
 

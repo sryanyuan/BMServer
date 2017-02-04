@@ -142,17 +142,31 @@ void CSettingDlg::OnBnClickedButton1()
 			info.xName = szIP;
 
 			int nMapID = g_pxHeros[i]->GetUserData()->wMapID;
+			GameScene* pScene = g_pxHeros[i]->GetLocateScene();
+			if (NULL == pScene)
+			{
+				continue;
+			}
+			nMapID = pScene->GetMapID();
+			int nMapResID = pScene->GetMapResID();
 			itoa(nMapID, szIP, 10);
 			//const char* pszMapName = xIniFile.GetValue("MapNameInfo", szIP);
 			const char* pszMapName = GameSceneManager::GetInstance()->GetRunMap(nMapID);
 			const char* pszChMapName = xIniFile.GetValue("MapNameInfo", pszMapName);
+			const LuaMapInfo* pMapInfo = GameSceneManager::GetInstance()->GetMapConfigManager().GetLuaMapInfo(nMapResID);
 
-			if(pszChMapName)
+			if (NULL == pMapInfo)
 			{
-				info.xMap = pszChMapName;
-				info.xMap += " ID:";
-				info.xMap += szIP;
+				continue;
 			}
+
+			info.xMap = pMapInfo->szMapChName;
+			info.xMap += " ID:";
+			info.xMap += szIP;
+
+			itoa(nMapResID, szIP, 10);
+			info.xMap += " RESID:";
+			info.xMap += szIP;
 
 			info.dwDelay = g_pxHeros[i]->GetServerNetDelay();
 
@@ -279,6 +293,6 @@ void CSettingDlg::OnBnClickedButton4()
 		DWORD dwCnnIndex = begIter->dwCnnIndex;
 		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(dwCnnIndex);
 
-		Sleep(100);
+		Sleep(1);
 	}
 }

@@ -5,8 +5,6 @@
 #include <afxwin.h>
 #include <Shlwapi.h>
 
-#pragma comment(lib, "shlwapi.lib")
-
 void AddInfomation(const char* fmt, ...)
 {
 	extern HWND g_hServerDlg;
@@ -44,11 +42,34 @@ const char* GetRootPath()
 
 	if(s_szRootPath[0] == 0)
 	{
-		GetModuleFileName(NULL, s_szRootPath, MAX_PATH);
-		PathRemoveFileSpec(s_szRootPath);
+		GetRootPath(s_szRootPath, MAX_PATH);
 	}
 
 	return s_szRootPath;
+}
+
+void GetRootPath(char* _pszBuf, unsigned int _sz)
+{
+	GetModuleFileName(NULL, _pszBuf, _sz);
+	PathRemoveFileSpec(_pszBuf);
+#ifdef _BIN_PATH
+	// remove current path
+	size_t uStrlen = strlen(_pszBuf);
+	if (0 == uStrlen)
+	{
+		return;
+	}
+	for (size_t i = uStrlen - 1; i >= 0; --i)
+	{
+		if (_pszBuf[i] == '\\' ||
+			_pszBuf[i] == '/')
+		{
+			// done
+			break;
+		}
+		_pszBuf[i] = '\0';
+	}
+#endif
 }
 
 void UpdateDialogInfo(const ServerState* _pState)

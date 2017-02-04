@@ -1,0 +1,2 @@
+µÇÂ¼·şÎñÆ÷
+listenip=127.0.0.1:8400 loginsvr=127.0.0.1:8201 outerip=127.0.0.1:8400 serverid=1

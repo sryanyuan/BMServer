@@ -14,6 +14,7 @@
 #include "GameDbBuffer.h"
 #include "WorldEventDispatcher.h"
 #include "MSGStack.h"
+#include "WeightCalc.h"
 //////////////////////////////////////////////////////////////////////////
 //	For encrypt
 #ifdef _THEMIDA_
@@ -106,8 +107,10 @@ private:
 public:
 	//	timer process
 	unsigned int WorldRun();
+	unsigned int ProcessThreadMsg();
 	//	world control
 	void Initialize(const char* _pszDestFile = NULL);
+	int Init();
 	unsigned int Run();
 	void Stop()
 	{
@@ -226,23 +229,7 @@ public:
 		return m_pRankListData;
 	}
 
-	void PostRunMessage(const MSG* _pMsg)
-	{
-		if (m_bThreadRunMode) {
-			if(m_hThread != NULL &&
-				m_dwThreadID != 0)
-			{
-				PostThreadMessage(m_dwThreadID, _pMsg->message, _pMsg->wParam, _pMsg->lParam);
-			}
-		} else {
-			//	push into msg queue
-			MSG* pMsg = new MSG;
-			memcpy(pMsg, _pMsg, sizeof(MSG));
-
-			BMLockGuard guard(&m_csMsgStack);
-			m_xMsgStack.push(pMsg);
-		}
-	}
+	void PostRunMessage(const MSG* _pMsg);
 
 	void SetSchedule(int _nEventId, const char* _pszCronExpr);
 	void ResetSchedule(int _nEventId);
@@ -252,6 +239,12 @@ public:
 	int SyncOnHeroConnected(HeroObject* _pHero, bool _bNew);
 	int SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf);
 	int SyncIsHeroExists(LoginQueryInfo* _pQuery);
+
+	// addition point calc
+	bool LoadAdditionPointCalcDataFromScript();
+	WeightCalc& GetAdditionPointCalc();
+	void SetAdditionPointWeight(int _nPoint, int _nWeight);
+	void AddAdditionPointWeight(int _nWeight, int _nPoint);
 
 public:
 	//	working process
@@ -379,12 +372,15 @@ private:
 	//	放烟花产生的状态
 	DWORD m_dwLastExpFireworkTime;
 	std::string m_xExpFireworkUserName;
+	int m_nExpFireworkUID;
 
 	DWORD m_dwLastBurstFireworkTime;
 	std::string m_xBurstFireworkUserName;
+	int m_nBurstFireworkUID;
 
 	DWORD m_dwLastMagicDropFireworkTime;
 	std::string m_xMagicDropFireworkUserName;
+	int m_nMagicDropFireworkUID;
 
 	//	更新脚本引擎的时间
 	DWORD m_dwLastUpdateScriptEngineTime;
@@ -399,6 +395,9 @@ private:
 	//	消息队列
 	MSGStack m_xMsgStack;
 	CRITICAL_SECTION m_csMsgStack;
+
+	// 极品权重
+	WeightCalc m_xAdditionPointCalc;
 
 protected:
 	CRITICAL_SECTION m_stCsProcess;

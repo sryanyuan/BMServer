@@ -1,7 +1,7 @@
 #ifndef CMAINSERVER_H_
 #define CMAINSERVER_H_
 
-#include <NetworkEngine.h>
+#include "netbase.h"
 #include "../CMainServer/CUser.h"
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
@@ -77,14 +77,13 @@ public:
 	bool InitNetWork();
 	bool StartServer(char* _szIP, WORD _wPort);
 	void StopServer();
+	void StopEngine();
+	void WaitForStopEngine();
 	bool InitDatabase();
 	bool InitCRCThread();
 
 	void SendPacket(DWORD _dwIndex, PacketBase* _pPacket);
-	inline CNetbase* GetEngine()
-	{
-		return m_pxServer;
-	}
+	CNetbase* GetEngine();
 	void InsertUserConnectionMapKey(WPARAM _wParam, LPARAM _lParam);
 
 	inline GAME_MODE GetServerMode()						{return m_eMode;}
@@ -110,6 +109,8 @@ public:
 	void SendNetThreadEvent(const NetThreadEvent& _refEvt);
 	void ProcessNetThreadEvent();
 
+	inline int GetNetEngineVersion()						{return m_nNetEngineVersion;}
+
 public:
 	inline void SetRunningMode(BYTE _bMode)					{m_bMode = _bMode;}
 	inline BYTE GetRunningMode()							{return m_bMode;}
@@ -120,6 +121,7 @@ public:
 	void OnDisconnectUser(DWORD _dwIndex);
 	void OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf);
 	void OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf);
+	void OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf);
 
 protected:
 	//	玩家连接
@@ -130,7 +132,7 @@ protected:
 	static void STDCALL _OnRecvFromUserTCP(DWORD _dwIndex, char* _pMsg, DWORD _dwLen);
 	//	登陆服务器连接成功
 	static void STDCALL _OnLsConnSuccess(DWORD _dwIndex, void* _pParam);
-	static void STDCALL _OnLsConnFailed(void* _pParam);
+	static void STDCALL _OnLsConnFailed(DWORD _dwIndex, void* _pParam);
 	static void STDCALL _OnRecvFromServerTCP(DWORD _dwIndex, char* _pMsg, DWORD _dwLen);
 	static void STDCALL _OnAcceptServer(DWORD _dwIndex);
 	static void STDCALL _OnDisconnectServer(DWORD _dwIndex);
@@ -194,6 +196,8 @@ protected:
 	//	NetThreadEvent processed by timer loop
 	NetThreadEventList m_xNetThreadEventList;
 	CRITICAL_SECTION m_csNetThreadEventList;
+
+	int m_nNetEngineVersion;
 
 public:
 	HWND m_hDlgHwnd;

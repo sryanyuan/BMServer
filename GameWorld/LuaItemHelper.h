@@ -1,6 +1,8 @@
 #ifndef _INC_LUAITEMHELPER_
 #define _INC_LUAITEMHELPER_
 //////////////////////////////////////////////////////////////////////////
+#include <windows.h>
+//////////////////////////////////////////////////////////////////////////
 struct ItemAttrib;
 
 class LuaItemHelper
@@ -18,5 +20,12 @@ public:
 	static void DecryptItem(ItemAttrib* _pItem);
 	static bool IsEncrypt(ItemAttrib* _pItem);
 };
+
+// bit operations
+unsigned int GetLoWord(unsigned int _nValue);
+
+unsigned int GetHiWord(unsigned int _nValue);
+
+unsigned int MakeLong(unsigned int _nLow, unsigned int _nHigh);
 //////////////////////////////////////////////////////////////////////////
 #endif

@@ -13,4 +13,6 @@ enum LuaEvent
 	kLuaEvent_ScenePlayerEnter,
 	//	连接上了登陆服务器
 	kLuaEvent_WorldLoginServerConnected,
+	// 离开场景
+	kLuaEvent_ScenePlayerLeave,
 };

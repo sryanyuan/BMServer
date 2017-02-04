@@ -7,6 +7,7 @@
 #include "../CommonModule/GDefine.h"
 #include "Helper.h"
 #include "GameWorld/GameWorld.h"
+#include "runarg.h"
 
 // CConfigDlg ¶Ô»°¿ò
 
@@ -18,6 +19,7 @@ CConfigDlg::CConfigDlg(CWnd* pParent /*=NULL*/)
 	m_bAutoKickDoorObstacle = false;
 	m_bEnableElite = false;
 	m_bShowDifficultySelect = true;
+	m_bUsingOldEngine = false;
 }
 
 CConfigDlg::~CConfigDlg()
@@ -48,7 +50,15 @@ BOOL CConfigDlg::OnInitDialog()
 	if(TRUE == bRet)
 	{
 		char szFile[MAX_PATH];
-		sprintf(szFile, "%s/cfg.ini", GetRootPath());
+		if (NULL == GetRunArg("cfgfile") ||
+			strlen(GetRunArg("cfgfile")) == 0)
+		{
+			sprintf(szFile, "%s\\conf\\cfg.ini", GetRootPath());
+		}
+		else
+		{
+			sprintf(szFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
+		}
 		//	load config
 		int nValue = ::GetPrivateProfileInt("SETTING", "GENELITEMONS", 0, szFile);
 		if(0 != nValue)
@@ -61,6 +71,13 @@ BOOL CConfigDlg::OnInitDialog()
 		if(0 != nValue)
 		{
 			CButton *pButton = (CButton *)GetDlgItem(IDC_CHECK2);
+			pButton->SetCheck(1);
+		}
+
+		nValue = ::GetPrivateProfileInt("SETTING", "USINGOLDENGINE", 0, szFile);
+		if(0 != nValue)
+		{
+			CButton *pButton = (CButton *)GetDlgItem(IDC_CHECK3);
 			pButton->SetCheck(1);
 		}
 
@@ -97,7 +114,15 @@ BOOL CConfigDlg::OnInitDialog()
 void CConfigDlg::OnOK()
 {
 	char szFile[MAX_PATH];
-	sprintf(szFile, "%s/cfg.ini", GetRootPath());
+	if (NULL == GetRunArg("cfgfile") ||
+		strlen(GetRunArg("cfgfile")) == 0)
+	{
+		sprintf(szFile, "%s\\conf\\cfg.ini", GetRootPath());
+	}
+	else
+	{
+		sprintf(szFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
+	}
 	//	write config
 	CButton *pButton = (CButton *)GetDlgItem(IDC_CHECK1);
 	if(pButton->GetCheck() != 0)
@@ -111,9 +136,16 @@ void CConfigDlg::OnOK()
 		m_bAutoKickDoorObstacle = true;
 	}
 
+	pButton = (CButton *)GetDlgItem(IDC_CHECK3);
+	if(pButton->GetCheck() != 0)
+	{
+		m_bUsingOldEngine = true;
+	}
+
 	char szValue[10] = {0};
 	WritePrivateProfileString("SETTING", "GENELITEMONS", itoa(m_bEnableElite ? 1 : 0, szValue, 10), szFile);
 	WritePrivateProfileString("SETTING", "AUTOKICKDOOROBSTACLE", itoa(m_bAutoKickDoorObstacle ? 1 : 0, szValue, 10), szFile);
+	WritePrivateProfileString("SETTING", "USINGOLDENGINE", itoa(m_bUsingOldEngine ? 1 : 0, szValue, 10), szFile);
 
 	//	get difficulty setting
 	if(m_bShowDifficultySelect)

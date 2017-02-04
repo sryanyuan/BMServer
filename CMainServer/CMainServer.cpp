@@ -1,4 +1,5 @@
 #include <afx.h>
+#include "netbase.h"
 #include "../CMainServer/CMainServer.h"
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
@@ -21,24 +22,10 @@
 #include "../GameWorld/ConnCode.h"
 #include "../../CommonModule/DataEncryptor.h"
 #include "../CpuQueryDlg.h"
-
-
-#if 0
+#include "../../CommonModule/loginsvr.pb.h"
+#include "../../CommonModule/ProtoType.h"
+#include "../runarg.h"
 #include <NetbaseWrapper.h>
-
-#ifdef _DEBUG
-#pragma comment(lib, "SServerEngine_d.lib")
-#else
-#pragma comment(lib, "SServerEngine.lib")
-#endif
-
-#endif
-
-#ifdef _DEBUG
-#pragma comment(lib, "libglog_static_d.lib")
-#else
-#pragma comment(lib, "libglog_static.lib")
-#endif
 
 #define MAX_SAVEDATA_SIZE 20480
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
@@ -67,24 +54,26 @@ CMainServer::CMainServer()
 	m_dwListenPort = 0;
 	m_bUseHTTech = false;
 	InitializeCriticalSection(&m_csNetThreadEventList);
+	m_nNetEngineVersion = 0;
 }
 
 CMainServer::~CMainServer()
 {
 	if(m_pxServer)
 	{
-		if(!m_bUseHTTech)
+		//if (0 == m_nNetEngineVersion)
+		{
+			DestroyNetbaseWrapper(m_pxServer);
+		}
+		/*else
 		{
 			DestoryNetEngineObject(m_pxServer);
-		}
-		else
-		{
-			delete m_pxServer;
-		}
+		}*/
 		
 		m_pxServer = NULL;
 	}
 	GameWorld::DestroyInstance();
+	GameSceneManager::DestroyInstance();
 
 	DeleteCriticalSection(&m_csNetThreadEventList);
 	/*m_pWatcherThread->Stop();
@@ -94,11 +83,35 @@ CMainServer::~CMainServer()
 
 //////////////////////////////////////////////////////////////////////////
 
+CNetbase* CMainServer::GetEngine()
+{
+	return m_pxServer;
+}
+
 /************************************************************************/
 /* 初始化网络
 /************************************************************************/
 bool CMainServer::InitNetWork()
 {
+	//	Get global settings
+	char szPath[MAX_PATH];
+	if (NULL == GetRunArg("cfgfile") ||
+		strlen(GetRunArg("cfgfile")) == 0)
+	{
+		sprintf(szPath, "%s\\conf\\cfg.ini", GetRootPath());
+	}
+	else
+	{
+		sprintf(szPath, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
+	}
+	g_xConsole.CPrint("Using server config file : %s", szPath);
+	SettingLoader::GetInstance()->LoadSetting(szPath);
+	GameWorld::GetInstancePtr()->SetGenElitMons((SettingLoader::GetInstance()->GetIntValue("GENELITEMONS") != 0));
+	GameWorld::GetInstancePtr()->SetEnableOfflineSell((SettingLoader::GetInstance()->GetIntValue("OFFLINESELL") != 0));
+	GameWorld::GetInstancePtr()->SetEnableWorldNotify((SettingLoader::GetInstance()->GetIntValue("WORLDNOTIFY") != 0));
+	int nUsingOldEngine = SettingLoader::GetInstance()->GetIntValue("USINGOLDENGINE");
+	m_nNetEngineVersion = nUsingOldEngine;
+
 	DESC_NETWORK desc;
 	ZeroMemory(&desc, sizeof(desc));
 
@@ -127,27 +140,14 @@ bool CMainServer::InitNetWork()
 	ev[desc.dwCustomDefineEventNum++].pEventFunc = &CMainServer::_OnGameLoop;
 	desc.pEvent = ev;
 
-/*#if 1
-	//desc.dwFlag = 1;
-	m_pxServer = new NetbaseWrapper;
-	WSADATA wsa={0};
-	WSAStartup(MAKEWORD(2,2),&wsa);
-#else
-	m_pxServer = CreateNetEngineObject(1);
-#endif*/
-#if 0
-	CCpuQueryDlg dlg;
-	if(IDOK == dlg.DoModal())
 	{
-		m_bUseHTTech = true;
-		m_pxServer = new NetbaseWrapper;
-		WSADATA wsa={0};
-		WSAStartup(MAKEWORD(2,2),&wsa);
-	}
-	else
-#endif
-	{
-		m_pxServer = CreateNetEngineObject(1);
+		WSADATA data = {0};
+		if (0 != WSAStartup(MAKEWORD(2, 2), &data))
+		{
+			LOG(FATAL) << "WSASTARTUP ERROR";
+			return false;
+		}
+		m_pxServer = CreateNetbaseWrapper();
 	}
 
 	if(!m_pxServer->CreateNetwork(&desc, 50, 0))
@@ -160,6 +160,7 @@ bool CMainServer::InitNetWork()
 	{
 		LOG(INFO) << "网络引擎创建成功";
 	}
+
 	return true;
 }
 
@@ -181,6 +182,13 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 	}
 
 	AddInfomation("服务端版本: %s", BACKMIR_CURVERSION);
+
+	// Initialize game world
+	if (0 != GameWorld::GetInstance().Init())
+	{
+		LOG(ERROR) << "初始化游戏世界失败";
+		return false;
+	}
 
 	//	Initialize game scene
 	if(!GameSceneManager::GetInstance()->CreateAllScene())
@@ -221,8 +229,6 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 		g_xConsole.CPrint("Final expr multi:%d", GameWorld::GetInstance().GetFinnalExprMulti());
 #endif
 	}
-
-	//ConnectToLoginSvr();
 	
 	return true;
 }
@@ -254,6 +260,7 @@ bool CMainServer::ConnectToLoginSvr()
 			char szIP[50];
 			strcpy(szIP, xLsAddr.c_str());
 
+			AddInfomation("开始尝试链接登录服务器：%s:%d", szIP, nPort);
 			return m_pxServer->ConnectToServerWithServerSide(szIP, nPort, &CMainServer::_OnLsConnSuccess, &CMainServer::_OnLsConnFailed, NULL) ? true : false;
 		}
 		else
@@ -273,10 +280,14 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	CMainServer::GetInstance()->m_dwLsConnIndex = _dwIndex;
 	AddInfomation("连接登陆服务器成功");
 
-	CommandLineHelper xHelper;
-	xHelper.InitParam();
-	const char* pszLsAddr = xHelper.GetParam("outerip");
+	const char* pszLsAddr = GetRunArg("outerip");
+	const char* pszServerId = GetRunArg("serverid");
+
 	if(NULL == pszLsAddr)
+	{
+		return;
+	}
+	if (NULL == pszServerId)
 	{
 		return;
 	}
@@ -300,7 +311,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
 }
 
-void STDCALL CMainServer::_OnLsConnFailed(void* _pParam)
+void STDCALL CMainServer::_OnLsConnFailed(DWORD _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 	CMainServer::GetInstance()->m_dwLsConnIndex = 0;
@@ -323,11 +334,11 @@ void CMainServer::StopServer()
 
 	if(m_pxServer)
 	{
-		if(!m_bUseHTTech)
+		/*if(!m_bUseHTTech)
 		{
 			DestoryNetEngineObject(m_pxServer);
 		}
-		else
+		else*/
 		{
 			delete m_pxServer;
 		}
@@ -339,6 +350,41 @@ void CMainServer::StopServer()
 	m_pxServer = NULL;
 }
 
+void CMainServer::WaitForStopEngine()
+{
+	// 等待网络引擎停止 给网络线程中的GameWorld发送消息
+	if (0 == GetNetEngineVersion() &&
+		!GameWorld::GetInstance().GetThreadRunMode())
+	{
+		NetbaseWrapper* pWrapper = (NetbaseWrapper*)GetEngine();
+		SServerEngine* pEngine = (SServerEngine*)pWrapper;
+
+		MSG msg = {0};
+		msg.message = WM_STOPNETENGINE;
+		msg.wParam = 0;
+		msg.lParam = 0;
+		GameWorld::GetInstance().PostRunMessage(&msg);
+
+		while(pEngine->GetServerStatus() == kSServerStatus_Running)
+		{
+			Sleep(1);
+		}
+		LOG(INFO) << "Net engine stop";
+	}
+}
+
+void CMainServer::StopEngine()
+{
+	/*if (0 != m_nNetEngineVersion)
+	{
+		return;
+	}*/
+
+	NetbaseWrapper* pWrapper = (NetbaseWrapper*)m_pxServer;
+	SServerEngine* pEngine = (SServerEngine*)pWrapper;
+	pEngine->Stop();
+}
+
 //////////////////////////////////////////////////////////////////////////
 bool CMainServer::InitDatabase()
 {
@@ -347,8 +393,7 @@ bool CMainServer::InitDatabase()
 	ObjectValid::GenerateEncryptTable();
 	//	First open database
 	char szPath[MAX_PATH];
-	GetModuleFileName(NULL, szPath, MAX_PATH);
-	PathRemoveFileSpec(szPath);
+	GetRootPath(szPath, MAX_PATH);
 	strcat(szPath, "\\Help\\legend.bm");
 	if(!DBThread::GetInstance()->ConnectDB(szPath))
 	{
@@ -403,13 +448,6 @@ bool CMainServer::InitDatabase()
 		LOG(ERROR) << "无法读取套装信息";
 	}
 
-	//	Get global settings
-	sprintf(szPath, "%s\\cfg.ini", GetRootPath());
-	SettingLoader::GetInstance()->LoadSetting(szPath);
-	GameWorld::GetInstancePtr()->SetGenElitMons((SettingLoader::GetInstance()->GetIntValue("GENELITEMONS") != 0));
-	GameWorld::GetInstancePtr()->SetEnableOfflineSell((SettingLoader::GetInstance()->GetIntValue("OFFLINESELL") != 0));
-	GameWorld::GetInstancePtr()->SetEnableWorldNotify((SettingLoader::GetInstance()->GetIntValue("WORLDNOTIFY") != 0));
-
 	//	Get item grade information
 	if(!InitItemGradeForServer())
 	{
@@ -459,33 +497,18 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	DWORD dwConnCode = GetNewConnCode();
 	SetConnCode(_dwIndex, dwConnCode);
 
-	//CUser* pUser = new CUser(_dwIndex);
-	//PlayerMap::iterator iter = m_xPlayers.find(_dwIndex);
-	//if(iter == m_xPlayers.end())
-	{
-		m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
-		AddInfomation("玩家[%s]:[%d]连接", szIP, wPort);
-		LOG(INFO) << "玩家[" << szIP << "]:" << wPort << "连接, INDEX:[" << _dwIndex << "], conn code[" << dwConnCode << "]";
+	m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
+	AddInfomation("玩家[%s]:[%d]连接", szIP, wPort);
+	LOG(INFO) << "玩家[" << szIP << "]:" << wPort << "连接, INDEX:[" << _dwIndex << "], conn code[" << dwConnCode << "]";
 
-		//pUser->OnConnect();
-		//m_xPlayers.insert(std::make_pair(_dwIndex, pUser));
-		UpdateServerState();
+	UpdateServerState();
 
-		/*
-		MSG msg;
-				msg.message = WM_USERCONNECTED;
-				msg.wParam = _dwIndex;
-				GameWorld::GetInstance().PostRunMessage(&msg);*/
-		
-		{
-			PkgLoginGameTypeNot not;
-			not.bType = PLGTN_GAMESERVER;
-			not.dwConnIdx = _dwIndex;
-			s_xMainTcpBuf.Reset();
-			s_xMainTcpBuf << not;
-			SendBuffer(_dwIndex, &s_xMainTcpBuf);
-		}
-	}
+	PkgLoginGameTypeNot not;
+	not.bType = PLGTN_GAMESERVER;
+	not.dwConnIdx = _dwIndex;
+	s_xMainTcpBuf.Reset();
+	s_xMainTcpBuf << not;
+	SendBuffer(_dwIndex, &s_xMainTcpBuf);
 }
 
 /************************************************************************/
@@ -597,6 +620,22 @@ void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 				s_xMainTcpBuf << plgcin;
 				SendBufferToServer(m_dwLsConnIndex, &s_xMainTcpBuf);
 			}
+			else if(dwOpCode == protocol::RegisterClientReq)
+			{
+				protocol::MRegisterClientReq req;
+				if (!req.ParseFromArray(_xBuf->GetBuffer() + 8, _xBuf->GetLength() - 8))
+				{
+					LOG(ERROR) << "Failed to parse protobuf";
+					return;
+				}
+
+				protocol::MUserInternalVerifyReq ir;
+				ir.set_lid(req.lid());
+				ir.set_gid(req.sid());
+				ir.set_accesstoken(req.accesstoken());
+				ir.set_conncode(GetConnCode(_dwIndex));
+				SendProtoToServer(m_dwLsConnIndex, protocol::UserInternalVerifyReq, ir);
+			}
 		}
 	}
 	else
@@ -631,6 +670,22 @@ void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 {
 	DWORD dwOpCode = GET_PACKET_OP((*_xBuf));
+
+	if (dwOpCode >= protocol::LSOp_MIN &&
+		dwOpCode <= protocol::LSOp_MAX)
+	{
+		if (GetProtoType() != ProtoType_Protobuf)
+		{
+			SetProtoType(ProtoType_Protobuf);
+			g_xConsole.CPrint("Using protobuf protocol");
+		}
+	}
+
+	if (ProtoType_Protobuf == GetProtoType())
+	{
+		OnRecvFromServerTCPProtobuf(_dwIndex, _xBuf);
+		return;
+	}
 
 	if(dwOpCode == PKG_LOGIN_SENDHUMDATA_NOT)
 	{
@@ -691,7 +746,15 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 				pHero->PushMessage(&s_xExtDataBuffer);
 			} else {
 				PacketHeader* pHeader = (PacketHeader*)s_xExtDataBuffer.GetHead();
-				pHero->DispatchPacket(s_xExtDataBuffer, pHeader);
+				try
+				{
+					pHero->DispatchPacket(s_xExtDataBuffer, pHeader);
+				}
+				catch(std::exception& e)
+				{
+					LOG(ERROR) << "!!!Packet unserialize failed while processing hero <" << pHero->GetName() << "> UID(" << pHero->GetUID() << ") packet <" << pHeader->uOp << "> , exception:" << e.what();
+					CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_dwIndex);
+				}
 			}
 		}
 	}
@@ -772,6 +835,97 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 	}
 }
 
+void CMainServer::OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf)
+{
+	DWORD dwOpCode = GET_PACKET_OP((*_xBuf));
+	g_xConsole.CPrint("Process protobuf : %d", dwOpCode);
+
+	switch (dwOpCode)
+	{
+	case protocol::ProtoTypeNtf:
+		{
+			//	register server
+			protocol::MRegisterServerReq req;
+			const char* szServerName = GetRunArg("servername");
+			if (NULL == szServerName)
+			{
+				szServerName = "Undefined";
+			}
+			req.set_servername(szServerName);
+			req.set_exposeaddress(GetRunArg("outerip"));
+			req.set_serverid(atoi(GetRunArg("serverid")));
+			SendProtoToServer(_dwIndex, protocol::RegisterServerReq, req);
+		}break;
+	case protocol::PlayerLoginHumDataNtf:
+		{
+			//	recv hum data
+			protocol::MPlayerLoginHumDataNtf ntf;
+			if (!ntf.ParseFromArray(_xBuf->GetBuffer() + 8, _xBuf->GetLength() - 8))
+			{
+				LOG(ERROR) << "Failed to parse proto " << dwOpCode;
+				return;
+			}
+
+			//	检查conn code
+			if(GetConnCode(ntf.gid()) != ntf.connid())
+			{
+				LOG(ERROR) << "conn code not equal! index[" << ntf.gid() << "] " << GetConnCode(ntf.gid()) << "!=" << ntf.connid();
+				return;
+			}
+			if(ntf.connid() == 0)
+			{
+				LOG(ERROR) << "conn code invalid.";
+				return;
+			}
+
+			HeroHeader header;
+			header.bJob = ntf.job();
+			header.bSex = ntf.sex();
+			header.uLevel = ntf.level();
+			strcpy(header.szName, ntf.name().c_str());
+			PkgUserLoginReq req;
+			memcpy(&req.stHeader, &header, sizeof(HeroHeader));
+			if (ntf.data().size() != 0)
+			{
+				req.xData.resize(ntf.data().size());
+				memcpy(&req.xData[0], &ntf.data()[0], ntf.data().size());
+			}
+			OnPreProcessPacket(ntf.gid(), ntf.lid(), ntf.uid(), ntf.jsondata().c_str(), req);
+
+			//
+			GameWorld::GetInstance().DisableAutoReset();
+		}break;
+	case protocol::SyncPlayerRankNtf:
+		{
+			//	recv rank
+			protocol::MSyncPlayerRankNtf ntf;
+			if (!ntf.ParseFromArray(_xBuf->GetBuffer() + 8, _xBuf->GetLength() - 8))
+			{
+				LOG(ERROR) << "Failed to parse proto " << dwOpCode;
+				return;
+			}
+
+			//	post 给游戏线程
+			char* pszRankCopy = new char[ntf.data().size() + 1];
+			strcpy(pszRankCopy, ntf.data().c_str());
+			MSG msgQuery;
+			msgQuery.message = WM_PLAYERRANKLIST;
+			msgQuery.wParam = (WPARAM)pszRankCopy;
+			msgQuery.lParam = 0;
+
+			if (GameWorld::GetInstance().GetThreadRunMode()) {
+				GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
+			} else {
+				GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
+			}
+		}break;
+	default:
+		{
+			g_xConsole.CPrint("Unknown protobuf opcode : %d", dwOpCode);
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 void CMainServer::ForceCloseConnection(DWORD _dwIndex)
@@ -785,7 +939,7 @@ void CMainServer::ForceCloseConnection(DWORD _dwIndex)
 bool CMainServer::InitLogFile()
 {
 	char szFilePath[MAX_PATH];
-	::GetModuleFileName(NULL, szFilePath, MAX_PATH);
+	GetRootPath(szFilePath, MAX_PATH);
 
 	google::InitGoogleLogging(szFilePath);
 	PathRemoveFileSpec(szFilePath);
@@ -866,7 +1020,8 @@ void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
 
 		if(GetTickCount() - s_dwLastConnTime > 5000)
 		{
-			if(!CMainServer::GetInstance()->m_xLoginAddr.empty())
+			if(!CMainServer::GetInstance()->m_xLoginAddr.empty() &&
+				NULL != GetRunArg("serverid"))
 			{
 				CMainServer::GetInstance()->ConnectToLoginSvr();
 			}
@@ -885,7 +1040,12 @@ void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
 	static unsigned int s_nWorldRunState = 0;
 	if (0 == s_nWorldRunState) {
 		s_nWorldRunState = GameWorld::GetInstance().WorldRun();;
+	} else {
+		// process stop engine msg
+		GameWorld::GetInstance().ProcessThreadMsg();
 	}
+
+	ASSERT(_CrtCheckMemory());
 }
 
 void CMainServer::ProcessNetThreadEvent()
@@ -986,7 +1146,7 @@ void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
 		PacketHeader header;
 		memcpy((char*)&header + 4, _pMsg, sizeof(unsigned int) * 3);
 		dwOpCode = LOWORD(header.uOp);
-		if(dwOpCode >= GAME_PKG_END)
+		if(dwOpCode >= protocol::LSOp_MAX)
 		{
 			LOG(ERROR) << "Invalid packet opcode:" << dwOpCode;
 			bValid = false;

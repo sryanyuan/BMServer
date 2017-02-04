@@ -13,6 +13,7 @@ enum SceneEvent
 	SceneEvent_None,
 	SceneEvent_Update,
 	SceneEvent_PlayerEnter,
+	SceneEvent_PlayerLeave,
 	SceneEvent_Total
 };
 
@@ -49,6 +50,7 @@ public:
 	bool IsEventExist(SceneEvent _eEvent);
 	int Call_SceneUpdate(GameScene* _pScene);
 	int Call_ScenePlayerEnter(GameScene* _pScene, HeroObject* _pHero);
+	int Call_ScenePlayerLeave(GameScene* _pPrevScene, GameScene* _pScene, HeroObject* _pHero);
 
 protected:
 	bool m_bExistCache[SceneEvent_Total];

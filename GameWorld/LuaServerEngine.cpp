@@ -5,10 +5,6 @@
 #include "../../CommonModule/ConsoleHelper.h"
 #include <Shlwapi.h>
 //////////////////////////////////////////////////////////////////////////
-#ifdef _LUAJIT_
-#pragma comment(lib, "lua51.lib")
-#endif
-//////////////////////////////////////////////////////////////////////////
 extern ConsoleHelper g_xConsole;
 //////////////////////////////////////////////////////////////////////////
 LuaServerEngine::LuaServerEngine()
@@ -118,6 +114,15 @@ int LuaServerEngine::OnDispatchEvent(const LuaDispatchEvent* _pEvent, LuaDispatc
 		const LuaEvent_WorldScheduleActive* pEvent = (const LuaEvent_WorldScheduleActive*)_pEvent->pEvent;
 		PushInt(pEvent->nScheduleId);
 		_pInfo->nArgs = 1;
+	}
+	else if(_pEvent->nEventId == kLuaEvent_ScenePlayerLeave)
+	{
+		const LuaEvent_ScenePlayerLeave* pEvent = (const LuaEvent_ScenePlayerLeave*)_pEvent->pEvent;
+
+		tolua_pushusertype(L, pEvent->pHero, "HeroObject");
+		tolua_pushusertype(L, pEvent->pPrevScene, "GameScene");
+		tolua_pushusertype(L, pEvent->pNewScene, "GameScene");
+		_pInfo->nArgs = 3;
 	}
 
 	return 0;

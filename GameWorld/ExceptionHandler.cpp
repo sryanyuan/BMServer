@@ -8,8 +8,6 @@
 #include <Shlwapi.h>
 #include "../Helper.h"
 //////////////////////////////////////////////////////////////////////////
-#pragma comment(lib, "DbgHelp.lib")
-//////////////////////////////////////////////////////////////////////////
 const char* g_pszExecuteFunc_WorldThread = NULL;
 const char* g_pszExecuteFunc_ServerThread = NULL;
 const char* g_pszExecuteFunc_DBThread = NULL;

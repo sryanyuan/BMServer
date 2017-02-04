@@ -12,3 +12,9 @@ class LuaItemHelper
 	static void DecryptItem(ItemAttrib* _pItem);
 	static bool IsEncrypt(ItemAttrib* _pItem);
 };
+
+unsigned int GetLoWord(unsigned int _nValue);
+
+unsigned int GetHiWord(unsigned int _nValue);
+
+unsigned int MakeLong(unsigned int _nLow, unsigned int _nHigh);

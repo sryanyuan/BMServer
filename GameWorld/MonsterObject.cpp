@@ -862,6 +862,7 @@ void MonsterObject::ProcessAttackProcess()
 #endif
 		return;
 	}
+
 	if(m_stData.eGameState == OS_DEAD ||
 		m_stData.eGameState == OS_APPEAR ||
 		m_stData.eGameState == OS_SHOW)
@@ -869,19 +870,23 @@ void MonsterObject::ProcessAttackProcess()
 		//m_xAttackBuf.Reset();
 		//	Return all msg
 		//	所有攻击无效
-		AttackMsgList::const_iterator begIter = m_xAttackMsgList.begin();
-		AttackMsgList::const_iterator endIter = m_xAttackMsgList.end();
-		AttackMsg* pMsg = NULL;
-
-		for(begIter;
-			begIter != endIter;
-			++begIter)
+		if (!m_xAttackMsgList.empty())
 		{
-			pMsg = *begIter;
-			FreeListManager::GetInstance()->PushFreeAttackMsg(pMsg);
-		}
+			AttackMsgList::const_iterator begIter = m_xAttackMsgList.begin();
+			AttackMsgList::const_iterator endIter = m_xAttackMsgList.end();
+			AttackMsg* pMsg = NULL;
 
-		m_xAttackMsgList.clear();
+			for(begIter;
+				begIter != endIter;
+				++begIter)
+			{
+				pMsg = *begIter;
+				FreeListManager::GetInstance()->PushFreeAttackMsg(pMsg);
+			}
+
+			m_xAttackMsgList.clear();
+		}
+		
 		return;
 	}
 
@@ -2203,17 +2208,34 @@ void MonsterObject::OnMonsterDead(HeroObject *_pAttacher, bool _bKilledBySlave)
 		}
 	}
 
-	lua_getglobal(GetLocateScene()->GetLuaState(), "OnMonsterDead");
-	tolua_pushusertype(GetLocateScene()->GetLuaState(), this, "MonsterObject");
-	tolua_pushusertype(GetLocateScene()->GetLuaState(), pHero, "HeroObject");
+	lua_State* L = GetLocateScene()->GetLuaState();
+	// call scene
+	lua_getglobal(L, "OnMonsterDead");
+	tolua_pushusertype(L, this, "MonsterObject");
+	tolua_pushusertype(L, pHero, "HeroObject");
 
-	int nRet = lua_pcall(GetLocateScene()->GetLuaState(), 2, 0, 0);
+	int nRet = lua_pcall(L, 2, 0, 0);
 	if(nRet != 0)
 	{
 #ifdef _DEBUG
-		LOG(ERROR) << "ERROR ON EXECUTE OnMonsterDead : " << lua_tostring(GetLocateScene()->GetLuaState(), -1);
+		LOG(ERROR) << "ERROR ON EXECUTE OnMonsterDead : " << lua_tostring(L, -1);
 #endif
-		lua_pop(GetLocateScene()->GetLuaState(), 1);
+		lua_pop(L, 1);
+	}
+
+	// call world
+	L = GameWorld::GetInstance().GetLuaState();
+	lua_getglobal(L, "OnMonsterDead");
+	tolua_pushusertype(L, this, "MonsterObject");
+	tolua_pushusertype(L, pHero, "HeroObject");
+
+	nRet = lua_pcall(L, 2, 0, 0);
+	if (nRet != 0)
+	{
+#ifdef _DEBUG
+		LOG(ERROR) << "ERROR ON EXECUTE OnMonsterDead : " << lua_tostring(L, -1);
+#endif
+		lua_pop(L, 1);
 	}
 
 	if(IsBoss())
@@ -2309,14 +2331,14 @@ void MonsterObject::ProcessDelayAction()
 		}
 	}
 
-	if(m_bSlaveKilledByMaster)
+	/*if(m_bSlaveKilledByMaster)
 	{
 		//	被主人杀死了 则添加必死攻击
 		m_bSlaveKilledByMaster = false;
 		DelayActionAttacked* pAction = new DelayActionAttacked;
 		pAction->nDamage = 0xffff;
 		AddDelayAction(pAction);
-	}
+	}*/
 
 	DWORD dwTick = GetTickCount();
 	DelayActionList::iterator it = m_xDelayActions.begin();

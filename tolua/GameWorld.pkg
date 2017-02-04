@@ -3,4 +3,5 @@ class GameWorld
 	static GameWorld* GetInstancePtr();
 	void SetSchedule(int _nEventId, const char* _pszCronExpr);
 	void ResetSchedule(int _nEventId);
+	void AddAdditionPointWeight(int _nPoint, int _nWeight);
 }
