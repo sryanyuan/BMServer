@@ -9,3 +9,4 @@ Release/
 libevent_core_vc12.lib
 libevent_extras_vc12.lib
 libevent_vc12.lib
+lib/

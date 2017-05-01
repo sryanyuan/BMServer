@@ -5180,6 +5180,43 @@ void GameScene::RemoveStaticMagicByFire(GameObject* _pFire)
 		if(pMgc->pFire != NULL &&
 			pMgc->pFire == _pFire)
 		{
+			// Here we need delete mapped object to avoid invalid pointer
+			MapCellInfo* pCell = GetMapData(pMgc->sPosX, pMgc->sPoxY);
+			bool bFind = false;
+			if(pCell != NULL)
+			{
+				if(pCell->pCellObjects == NULL)
+				{
+					//pCell->pCellObjects = new CELLDATALIST;
+					DEBUG_BREAK;
+				}
+				CELLDATALIST::const_iterator begciter = pCell->pCellObjects->begin();
+				CELLDATALIST::const_iterator endciter = pCell->pCellObjects->end();
+				CellData* pData = NULL;
+				for(begciter; begciter != endciter;)
+				{
+					pData = *begciter;
+					if(pData->bType == CELL_MAGIC)
+					{
+						StaticMagic* pGetMgc = (StaticMagic*)pData->pData;
+						if(pGetMgc == pMgc)
+						{
+							//	Remove the node
+							delete pData;
+							pCell->pCellObjects->erase(begciter);
+							bFind = true;
+							break;
+						}
+					}
+					++begciter;
+				}
+
+				if(!bFind)
+				{
+					DEBUG_BREAK;
+				}
+			}
+
 			pMgc->pFire = NULL;
 			delete *begiter;
 			begiter = m_xStaticMagic.erase(begiter);
