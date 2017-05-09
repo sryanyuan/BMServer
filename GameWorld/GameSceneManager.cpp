@@ -183,37 +183,6 @@ bool GameSceneManager::CreateAllScene()
 	m_dwLoadedMap = m_dwFixedMapIDSeed;
 	LOG(INFO) << "载入场景数量[" << m_dwFixedMapIDSeed << "]个";
 	return true;
-
-	/*if(m_xRunMapData.empty())
-	{
-		return false;
-	}
-	DWORD dwTotal = 0;
-	bool bSuc = true;
-	dwTotal = m_xRunMapData.size();
-
-	if(dwTotal > 0)
-	{
-		for(DWORD i = 0; i < dwTotal; ++i)
-		{
-			m_pScenes[i] = new GameScene;
-			bSuc = bSuc && m_pScenes[i]->Initialize(i);
-			if(!bSuc)
-			{
-				break;
-			}
-			++m_dwLoadedMap;
-		}
-	}
-	LOG(INFO) << "载入场景数量[" << m_dwLoadedMap << "]个";
-
-	//	读入地图名配置
-	char szPath[MAX_PATH];
-	sprintf(szPath, "%s\\Config\\map.ini",
-		GetRootPath());
-	m_xIniMapName.LoadFile(szPath);
-
-	return bSuc;*/
 }
 //////////////////////////////////////////////////////////////////////////
 void GameSceneManager::ReleaseAllScene()
