@@ -647,24 +647,6 @@ GameInstanceScene* GameSceneManager::GetFreeInstanceScene(int _id)
 
 const char* GameSceneManager::GetMapChName(int _id)
 {
-	/*const char* pszRunmapName = GetRunMap(_id);
-	if(NULL == pszRunmapName)
-	{
-		return "未知地图";
-	}
-	else
-	{
-		const char* pszChMapName = m_xIniMapName.GetValue("MapNameInfo", pszRunmapName);
-		if(NULL == pszChMapName)
-		{
-			return "未知地图";
-		}
-		if(strlen(pszChMapName) == 0)
-		{
-			return "未知地图";
-		}
-		return pszChMapName;
-	}*/
 	GameScene* pScene = GetScene(_id);
 	if (NULL == pScene)
 	{
