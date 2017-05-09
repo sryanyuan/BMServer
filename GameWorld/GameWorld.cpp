@@ -3769,6 +3769,12 @@ int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
 	//	set object id
 	pHero->SetID(GenerateObjectID());
 
+	// If is a instance scene id, set to home map id
+	if (pHero->GetMapID() >= INSTANCE_MAPID_BEGIN)
+	{
+		pHero->SetMapID(pHero->GetHomeMapID());
+	}
+
 	//	check is in a valid map
 	if(NULL == pHero->GetLocateScene())
 	{

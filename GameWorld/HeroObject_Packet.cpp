@@ -10,8 +10,10 @@
 #include <math.h>
 #include <zlib.h>
 #include <algorithm>
+#include "../runarg.h"
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/StoveManager.h"
+#include "../../CommonModule/DataEncryptor.h"
 #include "ObjectValid.h"
 #include "../../CommonModule/PotentialAttribHelper.h"
 
@@ -2796,15 +2798,40 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 	}
 	else if(req.dwOp == CMD_OP_GMHIDE)
 	{
-		//	Nothing
-		if(req.dwParam != 55837413)
+#define _ENABLE_GM
+#ifdef _ENABLE_GM
+		// Get code from launch arguments
+		const char* pszGMCode = GetRunArg("gmcode");
+		if (NULL == pszGMCode)
 		{
-			m_bGmHide = false;
+			// GM not enabled
 			return;
 		}
-		m_bGmHide = true;
+		
+		if (0 == strlen(pszGMCode))
+		{
+			// GM not enabled
+			return;
+		}
+		else
+		{
+			int nGMCode = atoi(pszGMCode);
+			if (0 == nGMCode)
+			{
+				m_bGmHide = false;
+				ForceDisconnectHero();
+				return;
+			}
+			if (nGMCode != DataEncryptor::DecryptGMCode(req.dwParam))
+			{
+				ForceDisconnectHero();
+				return;
+			}
+			m_bGmHide = true;
+		}
 
 		GetLocateScene()->EraseTarget(this);
+#endif
 	}
 	else if(req.dwOp == CMD_OP_CREATETEAM)
 	{
