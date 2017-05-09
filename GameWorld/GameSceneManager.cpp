@@ -672,7 +672,7 @@ const char* GameSceneManager::GetMapChName(int _id)
 	}
 	const LuaMapInfo* pMapInfo = m_xMapConfigManager.GetLuaMapInfo(pScene->GetMapResID());
 	if (NULL == pMapInfo ||
-		strlen(pMapInfo->szMapChName))
+		strlen(pMapInfo->szMapChName) == 0)
 	{
 		return "н╢ж╙╣ьм╪";
 	}
