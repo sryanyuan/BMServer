@@ -2800,22 +2800,32 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 	{
 #define _ENABLE_GM
 #ifdef _ENABLE_GM
-		// Get code from launch arguments
-		const char* pszGMCode = GetRunArg("gmcode");
-		if (NULL == pszGMCode)
+		// Get code from env
+		static const char* s_pszGMCode = NULL;
+
+		if (NULL == s_pszGMCode) {
+			const char* pszGMCode = getenv("gmcode");
+			if (NULL == pszGMCode) {
+				// Get code from launch arguments
+				pszGMCode = GetRunArg("gmcode");
+			}
+			s_pszGMCode = pszGMCode;
+		}
+		
+		if (NULL == s_pszGMCode)
 		{
 			// GM not enabled
 			return;
 		}
 		
-		if (0 == strlen(pszGMCode))
+		if (0 == strlen(s_pszGMCode))
 		{
 			// GM not enabled
 			return;
 		}
 		else
 		{
-			int nGMCode = atoi(pszGMCode);
+			int nGMCode = atoi(s_pszGMCode);
 			if (0 == nGMCode)
 			{
 				m_bGmHide = false;

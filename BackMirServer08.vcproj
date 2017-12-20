@@ -1126,11 +1126,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\BackMirClient\Common\MirMap.cpp"
+				RelativePath="..\CommonModule\MirMap.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\BackMirClient\Common\MirMap.h"
+				RelativePath="..\CommonModule\MirMap.h"
 				>
 			</File>
 			<File
@@ -1138,11 +1138,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\BackMirClient\Common\SKnl3Helper.cpp"
+				RelativePath="..\CommonModule\SKnl3Helper.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\BackMirClient\Common\SKnl3Helper.h"
+				RelativePath="..\CommonModule\SKnl3Helper.h"
 				>
 			</File>
 		</Filter>

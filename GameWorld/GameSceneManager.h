@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include <Windows.h>
 #include <map>
-#include "../../BackMirClient/Common/MirMap.h"
+#include "../../CommonModule/MirMap.h"
 #include "../../CommonModule/MapConfigManager.h"
 #include "LuaServerEngine.h"
 #include "../../CommonModule/ByteBuffer.h"

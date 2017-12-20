@@ -17,6 +17,9 @@ int g_nExecuteFunc_WorldThread = 0;
 //////////////////////////////////////////////////////////////////////////
 LONG WINAPI BM_UnhandledExceptionFilter(_EXCEPTION_POINTERS* pExceptionInfo)
 {
+#ifdef _DEBUG
+	return EXCEPTION_EXECUTE_HANDLER;
+#endif
 	CMainServer::GetInstance()->SetAppException();
 
 	char szBuf[MAX_PATH];

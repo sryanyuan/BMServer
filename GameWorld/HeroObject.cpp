@@ -13,7 +13,7 @@
 #include "ExceptionHandler.h"
 #include "../CMainServer/CMainServer.h"
 #include "../../CommonModule/SettingLoader.h"
-#include "../../BackMirClient/Common/StatusDefine.h"
+#include "../../CommonModule/StatusDefine.h"
 #include "../../CommonModule/ItemGrowUtils.h"
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/PotentialAttribHelper.h"
@@ -11782,6 +11782,17 @@ void HeroObject::OnItemDataLoaded(ItemAttrib* _pItem)
 					_pItem->tag = nTag;
 				}
 			}
+		}
+	}
+
+	if (GetVersion() == BACKMIR_VERSION210) {
+		// fuzhu type to consume type (11)
+		if (_pItem->id >= 784 &&
+			_pItem->id <= 790) {
+				if (GETITEMATB(_pItem, Type) == ITEM_OTHER) {
+					GetRecordInItemTable(_pItem->id, _pItem);
+					SETITEMATB(_pItem, AtkSpeed, 1);
+				}
 		}
 	}
 }
