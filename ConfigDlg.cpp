@@ -49,7 +49,7 @@ BOOL CConfigDlg::OnInitDialog()
 
 	if(TRUE == bRet)
 	{
-		char szFile[MAX_PATH];
+		/*char szFile[MAX_PATH];
 		if (NULL == GetRunArg("cfgfile") ||
 			strlen(GetRunArg("cfgfile")) == 0)
 		{
@@ -58,7 +58,8 @@ BOOL CConfigDlg::OnInitDialog()
 		else
 		{
 			sprintf(szFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
-		}
+		}*/
+		const char* szFile = RunArgGetConfigFile();
 		//	load config
 		int nValue = ::GetPrivateProfileInt("SETTING", "GENELITEMONS", 0, szFile);
 		if(0 != nValue)
@@ -113,7 +114,7 @@ BOOL CConfigDlg::OnInitDialog()
 
 void CConfigDlg::OnOK()
 {
-	char szFile[MAX_PATH];
+	/*char szFile[MAX_PATH];
 	if (NULL == GetRunArg("cfgfile") ||
 		strlen(GetRunArg("cfgfile")) == 0)
 	{
@@ -122,7 +123,8 @@ void CConfigDlg::OnOK()
 	else
 	{
 		sprintf(szFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
-	}
+	}*/
+	const char* szFile = RunArgGetConfigFile();
 	//	write config
 	CButton *pButton = (CButton *)GetDlgItem(IDC_CHECK1);
 	if(pButton->GetCheck() != 0)

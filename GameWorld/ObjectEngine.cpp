@@ -196,6 +196,7 @@ GameObject::~GameObject()
 {
 	SAFE_DELETE(m_pValid);
 	ClearDelayAction();
+	SAFE_DELETE(m_pStatusCtrl);
 }
 
 
@@ -1347,7 +1348,11 @@ bool GameObject::TurnTo(int _nDrt)
 	{
 		GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
 	}
-	/*m_stData.*/m_dwLastWalkTime = m_dwCurrentTime;
+	// Monster can update walk time when turning, but hero not
+	if (GetType() == SOT_MONSTER) {
+		m_dwLastWalkTime = m_dwCurrentTime;
+	}
+	
 	return true;
 }
 //////////////////////////////////////////////////////////////////////////

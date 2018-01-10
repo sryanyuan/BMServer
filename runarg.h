@@ -5,6 +5,10 @@ bool InitRunArg();
 const char* GetRunArg(const char* _arg);
 int GetRunArgInt(const char* _arg);
 
+// Following are run command as serverid=<serverid> ...
+// serverid
 int GetServerID();
+// cfgfile
+const char* RunArgGetConfigFile();
 //////////////////////////////////////////////////////////////////////////
 #endif

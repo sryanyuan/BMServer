@@ -26,6 +26,13 @@ using std::string;
 //////////////////////////////////////////////////////////////////////////
 void SetRandomTitle(HWND _hWnd)
 {
+	if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN) {
+		char szTitle[250];
+		szTitle[0] = 0;
+		sprintf(szTitle, "ServerID[%d] ServerName[%s]", GetServerID(), GetRunArg("servername"));
+		SetWindowText(_hWnd, szTitle);
+		return;
+	}
 	char str[]="ABCDEFGHIJKLMHOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	char szCaption[256]={0};
 	INT i,leg;
@@ -243,7 +250,7 @@ void CServerDlg::OnBnStartClicked()
 		return;
 	}
 
-	char szCfgFile[MAX_PATH];
+	/*char szCfgFile[MAX_PATH];
 	if (NULL == GetRunArg("cfgfile") ||
 		strlen(GetRunArg("cfgfile")) == 0)
 	{
@@ -252,11 +259,12 @@ void CServerDlg::OnBnStartClicked()
 	else
 	{
 		sprintf(szCfgFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
-	}
+	}*/
+	const char* szCfgFile = RunArgGetConfigFile();
 
 	if(!PathFileExists(szCfgFile))
 	{
-		AddInfomation("无法读取服务器配置信息");
+		AddInfomation("无法读取服务器配置信息 (%s)", szCfgFile);
 		LOG(INFO) << "无法读取服务器配置信息:" << szCfgFile;
 		return;
 	}
@@ -294,15 +302,6 @@ void CServerDlg::OnBnStartClicked()
 		AddInfomation("服务器启动失败");
 		LOG(ERROR) << "服务器启动失败 IP[" << szValue << "] PORT[" << wPort << "]";
 	}
-
-	//	Login?
-	/*::GetPrivateProfileString("LOGIN", "IP", "", szValue, sizeof(szValue), szCfgFile);
-	if(strlen(szValue) != 0)
-	{
-		std::string xLSAddr = szValue;
-		CMainServer::GetInstance()->SetLoginAddr(xLSAddr);
-		CMainServer::GetInstance()->SetServerMode(GM_LOGIN);
-	}*/
 }
 
 /************************************************************************/

@@ -178,9 +178,14 @@ protected:
 	FreeListManager();
 
 public:
-	static FreeListManager* GetInstance()
+	static FreeListManager* GetInstance(bool _bDestroy = false)
 	{
 		static FreeListManager* s_pIns = NULL;
+		if (_bDestroy) {
+			delete s_pIns;
+			s_pIns = NULL;
+			return s_pIns;
+		}
 		if(NULL == s_pIns)
 		{
 			s_pIns = new FreeListManager;
@@ -197,6 +202,8 @@ public:
 
 	DelayActionBase* GetFreeDelayAction(DelayActionType _eType);
 	void PushFreeDelayAction(DelayActionBase* _pAction);
+
+	void Clear();
 
 protected:
 	SceneDelayMsgStack m_xSceneDelayMsgStack;

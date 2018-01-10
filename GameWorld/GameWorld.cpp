@@ -17,6 +17,7 @@
 #include "../../CommonModule/NotifySystem.h"
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/StoveManager.h"
+#include "../runarg.h"
 //////////////////////////////////////////////////////////////////////////
 //	For glog
 #define GLOG_NO_ABBREVIATED_SEVERITIES
@@ -197,7 +198,8 @@ GameWorld::GameWorld()
 	m_dwWorkTotalTime = 0;
 	m_bTerminate = false;
 	m_bPause = false;
-	m_xDatabase = DBThread::GetInstance();
+	//m_xDatabase = DBThread::GetInstance();
+	m_xDatabase = NULL;
 	m_nOnlinePlayers = 0;
 	//m_nRetCode = 0;
 	m_nDropMultiple = m_nExprMultiple = 0;
@@ -239,7 +241,7 @@ GameWorld::~GameWorld()
 		}
 	}*/
 	DeleteCriticalSection(&m_stCsProcess);
-	delete m_xDatabase;
+
 	SAFE_DELETE_ARRAY(m_pRankListData);
 
 	GameSceneManager::DestroyInstance();
@@ -526,7 +528,7 @@ int GameWorld::Init()
 	//	First open database
 	char szPath[MAX_PATH];
 
-	if(!m_xDatabase->Run())
+	if(!DBThread::GetInstance()->Run())
 	{
 		//	Error occur
 		LOG(ERROR) << "Can not start database!";
@@ -546,8 +548,8 @@ int GameWorld::Init()
 		GameWorld::GetInstancePtr()->IsEnableOfflineSell())
 	{
 		char szOfflineSellFile[MAX_PATH];
-		sprintf(szOfflineSellFile, "%s/login/offlinesell.db",
-			GetRootPath());
+		sprintf(szOfflineSellFile, "%s/login/offlinesell_%d.db",
+			GetRootPath(), GetServerID());
 		if(!OfflineSellSystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
 			LOG(ERROR) << "Can not initialize offline sell system";
@@ -657,6 +659,15 @@ unsigned int GameWorld::Run()
 	}
 }
 
+void GameWorld::Join() {
+	if (0 == m_dwThreadID) {
+		return;
+	}
+
+	WaitForSingleObject(m_hThread, INFINITE);
+	m_dwThreadID = 0;
+}
+
 /************************************************************************/
 /* void Initialize(const char* _pszDestFile = NULL)
 /*
@@ -733,13 +744,13 @@ void GameWorld::DoWork_System(DWORD _dwTick)
 		m_dwLastBurstFireworkTime != 0)
 	{
 		m_dwLastBurstFireworkTime = 0;
-		GameSceneManager::GetInstance()->SendSystemNotifyAllScene("礼花过期，经验恢复正常");
+		GameSceneManager::GetInstance()->SendSystemNotifyAllScene("礼花过期，爆率恢复正常");
 	}
 	if(GetTickCount() > m_dwLastExpFireworkTime &&
 		m_dwLastExpFireworkTime != 0)
 	{
 		m_dwLastExpFireworkTime = 0;
-		GameSceneManager::GetInstance()->SendSystemNotifyAllScene("礼花过期，爆率恢复正常");
+		GameSceneManager::GetInstance()->SendSystemNotifyAllScene("礼花过期，经验恢复正常");
 	}
 	if(GetTickCount() > m_dwLastMagicDropFireworkTime &&
 		m_dwLastMagicDropFireworkTime != 0)
@@ -3651,6 +3662,11 @@ void GameWorld::SetItemHideAttrib(ItemAttrib *_pItem)
 
 	UINT uAttribCode = 0;
 	HideAttribHelper::SetAllAttribCount(uAttribCode, nAttribSum);
+	int nItemGrade =  GetItemGrade(_pItem->id);
+	int nMaxValue = nItemGrade + 1;
+	if (nItemGrade == 0) {
+		nMaxValue = 5;
+	}
 
 	int nTypes[3] = {0};
 	if(GetHideAttribType(_pItem->type, nAttribSum, nTypes))
@@ -3663,6 +3679,9 @@ void GameWorld::SetItemHideAttrib(ItemAttrib *_pItem)
 			if(nAttribValue == 0)
 			{
 				return;
+			}
+			if (nAttribValue > nMaxValue) {
+				nAttribValue = nMaxValue;
 			}
 
 			HideAttribHelper::SetActiveAttribType(uAttribCode, i, nTypes[i]);
@@ -3744,15 +3763,37 @@ int GameWorld::__cronActive(int _nJobId, int _nArg)
 //////////////////////////////////////////////////////////////////////////
 //	sync process
 int GameWorld::SyncOnHeroDisconnected(HeroObject* _pHero) {
+	PkgLoginGSRoleUpdateNtf ntf;
+	ntf.nUID = _pHero->GetUID();
+	ntf.xName = _pHero->GetName();
+	ntf.sType = RoleUpdateTypeLogout;
+
+	bool bPushEvent = _pHero->GetPushLSLogoutEvent();
+
 	unsigned int uHeroId = _pHero->GetID();
 	// First try directly delete
 	GameScene* pScene = _pHero->GetLocateScene();
 	if (pScene->RemovePlayer(uHeroId))
 	{
+		if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
+			bPushEvent) {
+			DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << ntf;
+			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
+		}
 		return 0;
 	}
 	if(GameSceneManager::GetInstance()->RemovePlayer(uHeroId))
 	{
+		if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
+			bPushEvent) {
+			DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << ntf;
+			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
+		}
+
 		LOG(INFO) << "Delete object" << "[" << uHeroId << "]";
 	}
 	else
@@ -3869,6 +3910,7 @@ int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
 	{
 		//	无法进入
 		pOldHero->SendSystemMessage("您的账号被别人登录");
+		pOldHero->DisablePushLSLogoutEvent();
 		//PostMessage(g_hServerDlg, WM_CLOSECONNECTION, pOldHero->GetUserIndex(), 0);
 		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(pOldHero->GetUserIndex());
 	}

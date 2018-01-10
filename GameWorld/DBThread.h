@@ -92,9 +92,14 @@ class DBThread
 {
 public:
 	~DBThread();
-	static DBThread* GetInstance()
+	static DBThread* GetInstance(bool _bDestroy = false)
 	{
 		static DBThread* pIns = NULL;
+		if (_bDestroy) {
+			delete pIns;
+			pIns = NULL;
+			return pIns;
+		}
 		if(NULL == pIns)
 		{
 			pIns = new DBThread;
@@ -108,6 +113,7 @@ protected:
 public:
 	unsigned int Run();
 	void Stop();
+	void Join();
 
 	bool ConnectDB(const char* _pszDBName);
 	void DisconnectDB();

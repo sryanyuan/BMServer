@@ -74,6 +74,43 @@ GameScene::~GameScene()
 	m_pCellData = NULL;
 	//m_pMapData = NULL;
 	DeleteCriticalSection(&m_csPlayer);
+
+	// New add delete
+	// Delete all door events
+	// m_xDoorEvts records door event create by CreateDoorEvent with expire time
+	// just delete all door event in map data
+	DOOREVENTLIST::iterator dit = m_xDoorEvts.begin();
+	for (dit; dit != m_xDoorEvts.end(); ++dit) {
+		delete *dit;
+	}
+	m_xDoorEvts.clear();
+
+	// Delete all monsters and npcs
+	std::map<DWORD, GameObject*>::iterator it = m_xPlayers.begin();
+	for (it; it != m_xPlayers.end(); ++it) {
+		delete it->second;
+	}
+	m_xPlayers.clear();
+
+	it = m_xNPCs.begin();
+	for (it; it != m_xNPCs.end(); ++it) {
+		delete it->second;
+	}
+	m_xNPCs.clear();
+
+	std::map<DWORD, GroundItem*>::iterator iit = m_xItems.begin();
+	for (iit; iit != m_xItems.end(); ++iit) {
+		delete iit->second;
+	}
+	m_xItems.clear();
+
+	MONSTERGENERATEINFOLIST::iterator mit = m_xMonsterGenerator.begin();
+	for (mit; mit != m_xMonsterGenerator.end(); ++mit) {
+		delete *mit;
+	}
+	m_xMonsterGenerator.clear();
+
+	LOG(INFO) << "Release scene " << GetMapID();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -906,6 +943,36 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 		if(IsAutoReset())
 		{
 			AllMonsterHPToFull();
+		}
+
+		if (_pObj->GetType() == SOT_HERO &&
+			CMainServer::GetInstance()->GetServerMode() == GM_LOGIN) {
+				HeroObject* pHero = (HeroObject*)_pObj;
+
+				// Push login event to ls
+				DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+				if (!pHero->GetLSLoginPushed()) {
+					PkgLoginGSRoleUpdateNtf ntf;
+					ntf.nUID = pHero->GetUID();
+					ntf.xName = pHero->GetName();
+					ntf.sType = RoleUpdateTypeLogin;
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << ntf;
+					SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
+					pHero->SetLSLoginPushed();
+				}
+
+				// Push changemap event to ls
+				PkgLoginGSRoleUpdateNtf ntf;
+				ntf.nUID = pHero->GetUID();
+				ntf.xName = pHero->GetName();
+				ntf.sType = RoleUpdateTypeChangeMap;
+				ntf.xIntValues.push_back(GetMapID());
+				ntf.xIntValues.push_back(GetMapResID());
+				ntf.xStrValue = GameSceneManager::GetInstance()->GetMapChName(GetMapID());
+				g_xThreadBuffer.Reset();
+				g_xThreadBuffer << ntf;
+				SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
 		}
 	}
 
@@ -5276,7 +5343,7 @@ void GameScene::CreateDoorEvent(unsigned int _uMapID, unsigned int _ux, unsigned
 		pDoorEvt->dwTime = 0;
 		pCell->pCellObjects->push_back(pCellData);
 
-		//m_xDoorEvts.push_back(pDoorEvt);
+		m_xDoorEvts.push_back(pDoorEvt);
 		m_xDoorPos.push_back(MAKELONG(_ux, _uy));
 	}
 }

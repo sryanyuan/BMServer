@@ -7,7 +7,7 @@ FreeListManager::FreeListManager()
 
 FreeListManager::~FreeListManager()
 {
-
+	Clear();
 }
 
 
@@ -52,6 +52,19 @@ AttackMsg* FreeListManager::GetFreeAttackMsg()
 		m_xAttackMsgStack.pop();
 		ZeroMemory(pMsg, sizeof(AttackMsg));
 		return pMsg;
+	}
+}
+
+void FreeListManager::Clear() {
+	while (!m_xAttackMsgStack.empty()) {
+		AttackMsg* pMsg = m_xAttackMsgStack.top();
+		delete pMsg;
+		m_xAttackMsgStack.pop();
+	}
+	while (!m_xSceneDelayMsgStack.empty()) {
+		SceneDelayMsg* pMsg = m_xSceneDelayMsgStack.top();
+		delete pMsg;
+		m_xSceneDelayMsgStack.pop();
 	}
 }
 //////////////////////////////////////////////////////////////////////////

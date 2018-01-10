@@ -26,6 +26,8 @@
 #include "../../CommonModule/ProtoType.h"
 #include "../runarg.h"
 #include <NetbaseWrapper.h>
+#include "../GameWorld/GlobalAllocRecord.h"
+#include "../GameWorld/TeammateControl.h"
 
 #define MAX_SAVEDATA_SIZE 20480
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
@@ -260,7 +262,7 @@ bool CMainServer::ConnectToLoginSvr()
 			char szIP[50];
 			strcpy(szIP, xLsAddr.c_str());
 
-			AddInfomation("开始尝试链接登录服务器：%s:%d", szIP, nPort);
+			AddInfomation("开始尝试连接登录服务器：%s:%d", szIP, nPort);
 			return m_pxServer->ConnectToServerWithServerSide(szIP, nPort, &CMainServer::_OnLsConnSuccess, &CMainServer::_OnLsConnFailed, NULL) ? true : false;
 		}
 		else
@@ -282,6 +284,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 
 	const char* pszLsAddr = GetRunArg("outerip");
 	const char* pszServerId = GetRunArg("serverid");
+	const char* pszServerName = GetRunArg("servername");
 
 	if(NULL == pszLsAddr)
 	{
@@ -292,6 +295,8 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 		return;
 	}
 
+	// VerifyV1 
+	/*
 	//	服务器注册
 	ByteBuffer xBuf;
 	xBuf.Reset();
@@ -301,6 +306,17 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	xBuf << (int)0;
 	xBuf << (char)strlen(pszLsAddr);
 	xBuf.Write(pszLsAddr, strlen(pszLsAddr));
+	SendBufferToServer(_dwIndex, &xBuf);*/
+	ByteBuffer xBuf;
+	xBuf.Reset();
+	xBuf << int(0)
+		<< (int)PKG_LOGIN_SERVERVERIFYV2_REQ
+		<< (short)GetServerID()
+		<< (int)0
+		<< (char)strlen(pszLsAddr);
+	xBuf.Write(pszLsAddr, strlen(pszLsAddr));
+	xBuf << (char)strlen(pszServerName);
+	xBuf.Write(pszServerName, strlen(pszServerName));
 	SendBufferToServer(_dwIndex, &xBuf);
 
 	//	发送登陆服务器注册成功事件
@@ -359,18 +375,43 @@ void CMainServer::WaitForStopEngine()
 		NetbaseWrapper* pWrapper = (NetbaseWrapper*)GetEngine();
 		SServerEngine* pEngine = (SServerEngine*)pWrapper;
 
+		GameWorld* pWorld = GameWorld::GetInstancePtr();
+
 		MSG msg = {0};
 		msg.message = WM_STOPNETENGINE;
 		msg.wParam = 0;
 		msg.lParam = 0;
-		GameWorld::GetInstance().PostRunMessage(&msg);
+		pWorld->PostRunMessage(&msg);
 
 		while(pEngine->GetServerStatus() == kSServerStatus_Running)
 		{
 			Sleep(1);
 		}
-		LOG(INFO) << "Net engine stop";
+		//pWorld->Join();
+		LOG(INFO) << "Net process stop";
 	}
+
+	// Where we can destory all gamescene and gameworld
+	GameSceneManager::GetInstance()->ReleaseAllScene();
+	//GameSceneManager::DestroyInstance();
+	//GameWorld::DestroyInstance();
+	FreeListManager::GetInstance()->Clear();
+	FreeListManager::GetInstance(true);
+	SettingLoader::GetInstance()->Clear();
+	SettingLoader::GetInstance(true);
+	StoveManager::GetInstance(true);
+	GameTeamManager::GetInstance(true);
+	DBThread::GetInstance()->Stop();
+	DBThread::GetInstance()->Join();
+	DBThread::GetInstance(true);
+	ReleaseGlobalSuitExtraAttrib();
+	google::protobuf::ShutdownProtobufLibrary();
+	GlobalAllocRecord::GetInstance()->DeleteAll();
+	GlobalAllocRecord::DestroyInstance();
+	// Stop wathcing thread
+	m_pWatcherThread->Stop();
+	m_pWatcherThread->Join();
+	SAFE_DELETE(m_pWatcherThread);
 }
 
 void CMainServer::StopEngine()
@@ -5291,6 +5332,7 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 		DWORD dwDataLen = req.xData.size();
 
 		static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
+		GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
 		uLongf buflen = MAX_SAVEDATA_SIZE;
 		uLongf srclen = dwDataLen;
 		int nRet = uncompress((Bytef*)s_pBuf, &buflen, (const Bytef*)pData, srclen);

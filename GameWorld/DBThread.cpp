@@ -93,6 +93,15 @@ unsigned int DBThread::Run()
 
 	return 1;
 }
+
+void DBThread::Join() {
+	if (0 == m_hThread) {
+		return;
+	}
+	WaitForSingleObject(m_hThread, INFINITE);
+	m_hThread = 0;
+
+}
 //////////////////////////////////////////////////////////////////////////
 bool DBThread::LoadScript()
 {
@@ -815,6 +824,7 @@ unsigned int __stdcall DBThread::WorkThread(void* _pData)
 	}
 
 	_endthreadex(uRet);
+	pIns->m_hThread = 0;
 	return uRet;
 }
 

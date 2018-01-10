@@ -1,5 +1,8 @@
 #include "runarg.h"
 #include "../CommonModule/CommandLineHelper.h"
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
+#include "Helper.h"
 //////////////////////////////////////////////////////////////////////////
 CommandLineHelper g_Cl;
 
@@ -8,6 +11,35 @@ bool InitRunArg()
 	if (!g_Cl.InitParam())
 	{
 		return false;
+	}
+
+	// Load run arg values from configfile
+	const char* pszCfgFile = RunArgGetConfigFile();
+
+	// Verify run args
+	const char* pszServerID = GetRunArg("serverid");
+	if (NULL != pszServerID) {
+		if (strlen(pszServerID) == 0) {
+			// Invalid
+			LOG(ERROR) << "Server id set to empty string";
+			return false;
+		}
+		int nValue = atoi(pszServerID);
+		if (0 == nValue) {
+			LOG(ERROR) << "Server id set to zero";
+			return false;
+		}
+
+		// If serverid is set, servername must be set
+		const char* pszServerName = GetRunArg("servername");
+		if (NULL == pszServerName) {
+			LOG(ERROR) << "Server name must be set";
+			return false;
+		}
+		if (strlen(pszServerName) == 0) {
+			LOG(ERROR) << "Server name must be set";
+			return false;
+		}
 	}
 
 	return true;
@@ -28,4 +60,19 @@ int GetRunArgInt(const char* _arg)
 int GetServerID()
 {
 	return GetRunArgInt("serverid");
+}
+
+const char* RunArgGetConfigFile() {
+	static char s_szDefaultCfgFile[MAX_PATH] = {0};
+	if (s_szDefaultCfgFile[0] == 0) {
+		sprintf(s_szDefaultCfgFile, "%s\\conf\\cfg.ini", GetRootPath());
+	}
+	const char* pszValue = GetRunArg("cfgfile");
+	if (NULL == pszValue) {
+		return s_szDefaultCfgFile;
+	}
+	if (strlen(pszValue) == 0) {
+		return s_szDefaultCfgFile;
+	}
+	return pszValue;
 }

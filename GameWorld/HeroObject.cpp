@@ -20,6 +20,7 @@
 #include "../../CommonModule/loginsvr.pb.h"
 #include "../../CommonModule/ProtoType.h"
 #include "../runarg.h"
+#include "GlobalAllocRecord.h"
 //////////////////////////////////////////////////////////////////////////
 static const int s_nMoveOft[] =
 {
@@ -138,6 +139,9 @@ HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 	m_bBigStoreReceived = false;
 
 	m_nInvalidMagicAttackTimes = 0;
+
+	m_bPushLSLogoutEvent = true;
+	m_bLSLoginPushed = false;
 }
 
 HeroObject::~HeroObject()
@@ -1637,6 +1641,7 @@ bool HeroObject::AcceptLogin(bool _bNew)
 
 #define MAX_DATA_SIZE 20480
 	static char* s_pData = new char[MAX_DATA_SIZE];
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pData);
 	uLongf srcsize = g_xThreadBuffer.GetLength();
 	uLongf cmpsize = MAX_DATA_SIZE;
 	PkgUserLoginAck ack;
@@ -13045,6 +13050,7 @@ bool HeroObject::WriteHumBigStoreDataToBuffer(std::vector<char>& _refCharVector,
 	}
 
 	static char* s_pData = new char[MAX_DATA_SIZE];
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pData);
 	uLongf cmpsize = MAX_DATA_SIZE;
 	uLongf srcsize = g_xThreadBuffer.GetLength();
 	bool bRet = false;
@@ -13250,6 +13256,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 
 	//	Now compress it
 	static char* s_pData = new char[MAX_DATA_SIZE];
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pData);
 	uLongf cmpsize = MAX_DATA_SIZE;
 	uLongf srcsize = g_xThreadBuffer.GetLength();
 	bool bRet = false;
@@ -13289,6 +13296,11 @@ void HeroObject::SyncItemAttrib(int _nTag)
 	ppuin.stItem = *pItem;
 	ObjectValid::DecryptAttrib(&ppuin.stItem);
 	SendPacket(ppuin);
+}
+
+void HeroObject::SyncItemAttribHideIdentAttr(int _nTag)
+{
+	
 }
 
 bool HeroObject::ReceiveGift(int _nGiftID)
@@ -14426,8 +14438,10 @@ bool HeroObject::IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY)
 	int nSelfY = m_stData.wCoordY;
 
 	// check target in attack range
-	if (abs(nSelfX - _nTargetX) > VIEW_WIDTH / UNIT_WIDTH / 2 + 3 ||
-		abs(nSelfY - _nTargetY) > VIEW_HEIGHT / UNIT_HEIGHT / 2 + 3)
+// 	if (abs(nSelfX - _nTargetX) > VIEW_WIDTH / UNIT_WIDTH / 2 + 3 ||
+// 		abs(nSelfY - _nTargetY) > VIEW_HEIGHT / UNIT_HEIGHT / 2 + 3)
+	if (abs(nSelfX - _nTargetX) >= VIEW_WIDTH / UNIT_WIDTH / 2 + 3 ||
+		abs(nSelfY - _nTargetY) >= VIEW_HEIGHT / UNIT_HEIGHT / 2 + 3)
 	{
 		m_nInvalidMagicAttackTimes++;
 

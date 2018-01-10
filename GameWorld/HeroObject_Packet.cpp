@@ -16,6 +16,7 @@
 #include "../../CommonModule/DataEncryptor.h"
 #include "ObjectValid.h"
 #include "../../CommonModule/PotentialAttribHelper.h"
+#include "GlobalAllocRecord.h"
 
 //////////////////////////////////////////////////////////////////////////
 bool SortAttribID(const ItemAttrib* _pLeft, const ItemAttrib* _pRight)
@@ -1253,6 +1254,7 @@ void HeroObject::DoPacket(const PkgGameLoadedAck& ack)
 		g_xThreadBuffer.Reset();
 		g_xThreadBuffer << m_xQuest;
 		static char* s_pData = new char[MAX_DATA_SIZE];
+		GlobalAllocRecord::GetInstance()->RecordArray(s_pData);
 		uLongf srcsize = g_xThreadBuffer.GetLength();
 		uLongf cmpsize = MAX_DATA_SIZE;
 
@@ -5126,6 +5128,7 @@ void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 	DWORD dwDataLen = req.xData.size();
 
 	static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
 	uLongf buflen = MAX_SAVEDATA_SIZE;
 	uLongf srclen = dwDataLen;
 	int nRet = uncompress((Bytef*)s_pBuf, &buflen, (const Bytef*)pData, srclen);

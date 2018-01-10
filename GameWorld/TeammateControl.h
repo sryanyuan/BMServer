@@ -59,9 +59,14 @@ protected:
 class GameTeamManager
 {
 public:
-	static GameTeamManager* GetInstance()
+	static GameTeamManager* GetInstance(bool _bDestroy = false)
 	{
 		static GameTeamManager* s_pIns = NULL;
+		if (_bDestroy) {
+			delete s_pIns;
+			s_pIns = NULL;
+			return s_pIns;
+		}
 		if(NULL == s_pIns)
 		{
 			s_pIns = new GameTeamManager;

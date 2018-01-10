@@ -20,6 +20,7 @@
 #include "../../CommonModule/StoveManager.h"
 #include "FreeListManager.h"
 #include <google/protobuf/message.h>
+//#include "../common/memleak.h"
 //////////////////////////////////////////////////////////////////////////
 extern ByteBuffer g_xThreadBuffer;
 extern ConsoleHelper g_xConsole;
@@ -678,6 +679,7 @@ public:
 	bool RemoveItem(int _nTag);
 	int ItemTagToAttribID(int _nTag);
 	void SyncItemAttrib(int _nTag);
+	void SyncItemAttribHideIdentAttr(int _nTag);
 	bool AddCostItem(int _nAttribID);
 	int GetBagStoreBodyItemCount(int _nAttribID);
 	void SyncQuestData(int _nStage);
@@ -1042,6 +1044,12 @@ public:
 	inline BYTE GetDifficultyLevel()		{return m_byteDifficultyLevel;}
 	inline void SetDifficultyLevel(BYTE _bLevel)	{m_byteDifficultyLevel = _bLevel;}
 
+	inline void DisablePushLSLogoutEvent()	{m_bPushLSLogoutEvent  = false;}
+	inline bool GetPushLSLogoutEvent()		{return m_bPushLSLogoutEvent;}
+
+	inline void SetLSLoginPushed()			{m_bLSLoginPushed = true;}
+	inline bool GetLSLoginPushed()			{return m_bLSLoginPushed;}
+
 public:
 	// lua export functions
 	void Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv);
@@ -1240,6 +1248,11 @@ protected:
 
 	// 非法的魔法攻击包
 	int m_nInvalidMagicAttackTimes;
+
+	// Send ls logout event, if the hero is kick out by same player,do not send logout event
+	bool m_bPushLSLogoutEvent;
+	// If not pushed login event when insert player, push it
+	bool m_bLSLoginPushed;
 
 //public:
 	//int m_nConnectionIndex;

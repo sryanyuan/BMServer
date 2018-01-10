@@ -157,6 +157,7 @@ public:
 	{
 		return m_eState;
 	}
+	void Join();
 
 	//	get the id
 	inline unsigned int GenerateObjectID()

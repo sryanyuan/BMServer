@@ -19,6 +19,10 @@
 #define new DEBUG_NEW
 #endif
 
+#ifdef _DEBUG
+#include <vld.h>
+#endif
+
 
 // CBackMirServerApp
 
@@ -54,6 +58,9 @@ int CreateGameDirs()
 }
 
 // CBackMirServerApp ≥ı ºªØ
+static bool VerifyRunArg() {
+	return true;
+}
 
 BOOL CBackMirServerApp::InitInstance()
 {
@@ -105,6 +112,7 @@ BOOL CBackMirServerApp::InitInstance()
 	dlg.DoModal();
 
 	google::FlushLogFiles(google::GLOG_INFO);
+	google::ShutdownGoogleLogging();
 
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();

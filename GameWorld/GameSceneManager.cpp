@@ -461,6 +461,8 @@ void GameSceneManager::ReloadScript()
 //////////////////////////////////////////////////////////////////////////
 void GameSceneManager::Update(DWORD _dwTick)
 {
+	int nInstanceMoveCount = 0;
+
 	for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
 	{
 		if(m_pScenes[i])
@@ -477,6 +479,10 @@ void GameSceneManager::Update(DWORD _dwTick)
 	{
 		if(m_pScenes[i])
 		{
+			nInstanceMoveCount += m_pScenes[i]->m_xWaitInsertPlayers.size();
+			nInstanceMoveCount += m_pScenes[i]->m_xWaitRemovePlayers.size();
+			nInstanceMoveCount += m_pScenes[i]->m_xWaitDeletePlayers.size();
+
 			m_pScenes[i]->ProcessWaitInsert();
 			m_pScenes[i]->ProcessWaitRemove();
 			m_pScenes[i]->ProcessWaitDelete();
@@ -517,18 +523,34 @@ void GameSceneManager::Update(DWORD _dwTick)
 		it = m_xInstanceScenes.begin();
 		for (it;
 			it != m_xInstanceScenes.end();
-			)
+			++it)
 		{
 			GameScene* pScene = *it;
+
+			nInstanceMoveCount += pScene->m_xWaitInsertPlayers.size();
+			nInstanceMoveCount += pScene->m_xWaitRemovePlayers.size();
+			nInstanceMoveCount += pScene->m_xWaitDeletePlayers.size();
+
 			pScene->ProcessWaitInsert();
 			pScene->ProcessWaitRemove();
 			pScene->ProcessWaitDelete();
 
 			// TODO free some unused scene ?
+		}
+
+		// Release instance scene
+		it = m_xInstanceScenes.begin();
+		for (it;
+			it != m_xInstanceScenes.end();
+			)
+		{
+			GameScene* pScene = *it;
+
 			if (pScene->GetPlayerCount() == 0 &&
-				pScene->GetSlaveSum() == 0)
+				pScene->GetSlaveSum() == 0) // No move actions in the scene, if instance scene has move event, delay delete
 			{
-				if (_dwTick - pScene->m_dwInstanceMapFreeTime > DEFAULT_INSTANCE_MAP_FREE_TIME)
+				if (_dwTick - pScene->m_dwInstanceMapFreeTime > DEFAULT_INSTANCE_MAP_FREE_TIME &&
+					0 == nInstanceMoveCount)
 				{
 					//	free the instance map
 					int nMapID = pScene->GetMapID();

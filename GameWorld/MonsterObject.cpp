@@ -1314,10 +1314,19 @@ void MonsterObject::AttackHero()
 		int nOftY = m_pTarget->GetUserData()->wCoordY - m_stData.wCoordY;
 		if(abs(nOftX) > 10 ||
 			abs(nOftY) > 10)*/
-	if(IsOutOfView())
-	{
-		SetTarget(NULL);
-		return;
+	// If is unmove monster if target is not null
+	if (TEST_FLAG_BOOL(GetObject_Weight(), WEIGHT_MASK_UNMOVE)) {
+		if(IsOutOfView())
+		{
+			SetTarget(NULL);
+			return;
+		}
+	} else {
+		if(IsOutOfView())
+		{
+			SetTarget(NULL);
+			return;
+		}
 	}
 
 	if(!CanAttack())

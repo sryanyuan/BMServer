@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;"
+				AdditionalIncludeDirectories="&quot;$(DEVLIB_DIR)\Inc\Zlib&quot;;&quot;$(DEVLIB_DIR)\Inc\luajit&quot;;&quot;$(DEVLIB_DIR)\Inc\ZipArchive&quot;;&quot;$(DEVLIB_DIR)\Inc\glog&quot;;&quot;$(DEVLIB_DIR)\Inc\Sqlite&quot;;&quot;$(DEVLIB_DIR)\Inc\curl&quot;;&quot;$(DEVLIB_DIR)\Inc\fastdelegate&quot;;&quot;$(DEVLIB_DIR)\Inc\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Inc\libevent&quot;;&quot;$(DEVLIB_DIR)\Inc\pthread&quot;;&quot;$(DEVLIB_DIR)\Inc\protobuf&quot;;&quot;$(DEVLIB_DIR)\Inc\vld&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;__THEMIDA_;_SHIELDEN_;_ZIPARCHIVE_;_SYNC_CREATE;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;_BIN_PATH"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -71,7 +71,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(SolutionDir)..\BackMir\BinDebug\GameSvr.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib&quot;;&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;"
+				AdditionalLibraryDirectories="&quot;$(DEVLIB_DIR)\Lib&quot;;&quot;$(DEVLIB_DIR)\Lib\glog&quot;;&quot;$(DEVLIB_DIR)\Lib\luajit&quot;;&quot;$(DEVLIB_DIR)\Lib\sqlite3&quot;;&quot;$(DEVLIB_DIR)\Lib\ziparchive&quot;;&quot;$(DEVLIB_DIR)\Lib\zlib&quot;;&quot;$(DEVLIB_DIR)\Lib\curl&quot;;&quot;$(DEVLIB_DIR)\Lib\SServerEngine&quot;;&quot;$(DEVLIB_DIR)\Lib\pthread&quot;;&quot;$(DEVLIB_DIR)\Lib\libevent&quot;;&quot;$(DEVLIB_DIR)\Lib\protobuf&quot;;&quot;$(DEVLIB_DIR)\Lib\vld&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -815,6 +815,14 @@
 			</File>
 			<File
 				RelativePath=".\GameWorld\GameWorld.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GameWorld\GlobalAllocRecord.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GameWorld\GlobalAllocRecord.h"
 				>
 			</File>
 			<File
