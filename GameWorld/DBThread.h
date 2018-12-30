@@ -167,6 +167,8 @@ public:
 		return 0;
 	}
 
+	int ExecuteDropItemEx2(DBOperationParam *pParam);
+
 public:
 	static unsigned int __stdcall WorkThread(void* _pData);
 	static int DBCALLBACK DBItemAttribCallBack(void* _pParam,int _nCount, char** _pValue, char** _pName);

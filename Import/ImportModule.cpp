@@ -1,10 +1,13 @@
 // Import all lib
 
 // SServerEngine
+#if _MSC_VER == 1800
+#else
 #ifdef _DEBUG
 #pragma comment(lib, "SServerEngine_d.lib")
 #else
 #pragma comment(lib, "SServerEngine.lib")
+#endif
 #endif
 
 // glog

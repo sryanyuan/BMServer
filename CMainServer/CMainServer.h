@@ -1,7 +1,11 @@
 #ifndef CMAINSERVER_H_
 #define CMAINSERVER_H_
-
+#if _MSC_VER == 1800
+#include <set>
+#include "../IOServer/netbase.h"
+#else
 #include "netbase.h"
+#endif
 #include "../CMainServer/CUser.h"
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
@@ -192,6 +196,9 @@ protected:
 
 	//	CPUÊÇ·ñ¿ªÆôÁËHT
 	bool m_bUseHTTech;
+
+	// Distinct ip set
+	std::map<std::string, int> m_xIPs;
 
 	//	NetThreadEvent processed by timer loop
 	NetThreadEventList m_xNetThreadEventList;

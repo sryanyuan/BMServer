@@ -3873,6 +3873,16 @@ int GameScene::CreateLeaderMonster(unsigned int _uID)
 
 	return 0;
 }
+
+static int adjustMonsterNumber(int num) {
+	if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN) {
+		return num;
+	}
+	if (num <= 4) {
+		return num;
+	}
+	return num / 2;
+}
 //////////////////////////////////////////////////////////////////////////
 void GameScene::CreateMonster(unsigned int _uID, unsigned short _ux, unsigned short _uy, unsigned short _oft, unsigned short _number, unsigned int _uinterval)
 {
@@ -3902,7 +3912,7 @@ void GameScene::CreateMonster(unsigned int _uID, unsigned short _ux, unsigned sh
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	m_xMonsGenEngine.Insert(&record);
 }
@@ -3935,7 +3945,7 @@ void GameScene::CreateEliteMonster(unsigned int _uID, unsigned short _ux, unsign
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateElite;
 	m_xMonsGenEngine.Insert(&record);
 }
@@ -3968,7 +3978,7 @@ void GameScene::CreateLeaderMonster(unsigned int _uID, unsigned short _ux, unsig
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateLeader;
 	m_xMonsGenEngine.Insert(&record);
 }
@@ -4002,7 +4012,7 @@ void GameScene::CreateMonsterLater(unsigned int _uID, unsigned short _ux, unsign
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
 	m_xMonsGenEngine.Insert(&record);
@@ -4037,7 +4047,7 @@ void GameScene::CreateEliteMonsterLater(unsigned int _uID, unsigned short _ux, u
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
 	m_xMonsGenEngine.Insert(&record);
@@ -4072,7 +4082,7 @@ void GameScene::CreateLeaderMonsterLater(unsigned int _uID, unsigned short _ux, 
 	record.nPosY = _uy;
 	record.nOffset = _oft;
 	record.nInterval = _uinterval / 1000;
-	record.nCount = _number;
+	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
 	m_xMonsGenEngine.Insert(&record);

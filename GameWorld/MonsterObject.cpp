@@ -1031,7 +1031,7 @@ void MonsterObject::DropMonsterItems(HeroObject* _pHero)
 	}
 
 	DBOperationParam* pParam = new DBOperationParam;
-	pParam->dwOperation = DO_QUERY_DROPITEMEX;
+	pParam->dwOperation = DO_QUERY_DROPITEMEX2;
 	pParam->dwParam[0] = GetObject_ID();
 	pParam->dwParam[1] = MAKE_POSITION_DWORD(this);
 	std::list<int>* pDropItems = new std::list<int>;

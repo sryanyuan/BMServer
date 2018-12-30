@@ -50,6 +50,7 @@ public:
 	afx_msg LRESULT OnUpdateDialogInfo(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnRemoveHeroObject(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnUpdatePlayerCount(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnUpdateDistinctIP(WPARAM wParam, LPARAM lParam);
 
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 

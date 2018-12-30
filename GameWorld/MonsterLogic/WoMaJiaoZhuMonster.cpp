@@ -134,6 +134,10 @@ void WoMaJiaoZhuMonster::MonsterLogic()
 		}
 	}
 
+	if (GetObject_ID() == 158) {
+		bNeedFly = false;
+	}
+
 	if(dwCurTick - m_dwLastAttackTime > 3 * 1000 &&
 		dwCurTick - m_dwLastFlyTime > dwInterval &&
 		bNeedFly)

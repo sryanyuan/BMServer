@@ -7,6 +7,7 @@
 #include "../GameWorld/GameWorld.h"
 #include "../GameWorld/GameSceneManager.h"
 #include "../GameWorld/ExceptionHandler.h"
+#include "../../CommonModule/version.h"
 #include "DBDropDownContext.h"
 #include "../Helper.h"
 //////////////////////////////////////////////////////////////////////////
@@ -190,6 +191,9 @@ void DBThread::DoQuery()
 							pParam->dwParam[0]);
 						nRet = sqlite3_exec(sql, szExpr, &DBThread::DBDropItemExCallback_Lua2, (void*)pParam, &pszErr);
 					}
+					else if (pParam->dwOperation == DO_QUERY_DROPITEMEX2) {
+						nRet = ExecuteDropItemEx2(pParam);
+					}
 					else if(pParam->dwOperation == DO_QUERY_RELOADSCRIPT)
 					{
 						if(LoadScript())
@@ -220,6 +224,45 @@ void DBThread::DoQuery()
 		}
 		//m_xTransactionQuery.Reset();
 	}
+}
+
+int DBThread::ExecuteDropItemEx2(DBOperationParam *_pParam) {
+	RECORD_FUNCNAME_DB;
+
+	DBOperationParam* pParam = (DBOperationParam*)_pParam;
+	DBDropDownContext xLuaDropContext(pParam);
+
+	// Convert drop item table to lua table
+	lua_State* L = DBThread::GetInstance()->GetLuaState();
+	lua_getglobal(L, "DropDownMonsterItemsLua");
+	if (!lua_isfunction(L, -1)) {
+		g_xConsole.CPrint("Nil lua call function");
+		lua_pop(L, 1);
+		SAFE_DELETE(_pParam);
+		return 0;
+	}
+	lua_newtable(L);
+	MonsDropItemInfoVec *pVec = nullptr;
+	GetRecordsInMonsDropTable(int(_pParam->dwParam[0]), &pVec);
+	if (nullptr != pVec) {
+		for (auto &di : *pVec) {
+			lua_pushnumber(L, di.nItemId);
+			lua_pushnumber(L, di.nProb);
+			lua_settable(L, -3);
+		}
+	}
+	tolua_pushusertype(L, &xLuaDropContext, "DBDropDownContext");
+	int nRet = lua_pcall(L, 2, 0, 0);
+	if (0 != nRet)
+	{
+#ifdef _DEBUG
+		LOG(WARNING) << lua_tostring(L, -1);
+#endif
+		lua_pop(L, 1);
+	}
+
+	DBThread::GetInstance()->PushGameDelay(pParam);
+	return 0;
 }
 
 /************************************************************************/
@@ -596,7 +639,8 @@ void DBThread::ProcessGameDelay()
 			dp.uParam0 = (unsigned int)pParam;
 			GameWorld::GetInstance().AddDelayedProcess(&dp);
 		}
-		else if(pParam->dwOperation == DO_QUERY_DROPITEMEX)
+		else if(pParam->dwOperation == DO_QUERY_DROPITEMEX ||
+			pParam->dwOperation == DO_QUERY_DROPITEMEX2)
 		{
 			dp.uOp = DP_DROPITEMEXLOADED;
 			dp.uParam0 = (unsigned int)pParam;

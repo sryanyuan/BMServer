@@ -1,5 +1,9 @@
 #include <afx.h>
+#if _MSC_VER == 1800
+#include "../IOServer/netbase.h"
+#else
 #include "netbase.h"
+#endif
 #include "../CMainServer/CMainServer.h"
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
@@ -25,9 +29,14 @@
 #include "../../CommonModule/loginsvr.pb.h"
 #include "../../CommonModule/ProtoType.h"
 #include "../runarg.h"
+#if _MSC_VER == 1800
+#include "../IOServer/NetbaseWrapper.h"
+#else
 #include <NetbaseWrapper.h>
+#endif
 #include "../GameWorld/GlobalAllocRecord.h"
 #include "../GameWorld/TeammateControl.h"
+#include "../../CommonModule/version.h"
 
 #define MAX_SAVEDATA_SIZE 20480
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
@@ -478,12 +487,7 @@ bool CMainServer::InitDatabase()
 
 	EncryptGlobalValue();
 
-	//	读套装属性
-	/*const char* pszTestData = "1:圣战套装|203,303,403,823|2,1;3,2;4,3|0,3;1,2;4,1";
-	ItemExtraAttribList extraAttrib;
-	ParseExtraItemData(pszTestData, &extraAttrib);*/
-
-	g_bEncryptSuitName = true;
+	/*g_bEncryptSuitName = true;
 	if(!InitItemExtraAttribForServer())
 	{
 		LOG(ERROR) << "无法读取套装信息";
@@ -493,7 +497,7 @@ bool CMainServer::InitDatabase()
 	if(!InitItemGradeForServer())
 	{
 		LOG(ERROR) << "无法读取装备额外信息";
-	}
+	}*/
 	
 	PROTECT_END_VM
 	return bRet;
@@ -542,6 +546,16 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	AddInfomation("玩家[%s]:[%d]连接", szIP, wPort);
 	LOG(INFO) << "玩家[" << szIP << "]:" << wPort << "连接, INDEX:[" << _dwIndex << "], conn code[" << dwConnCode << "]";
 
+	// Add to distinct ip set
+	std::map<std::string, int>::iterator it = m_xIPs.find(szIP);
+	if (it == m_xIPs.end()) {
+		m_xIPs.insert(std::make_pair(szIP, 1));
+	}
+	else {
+		it->second++;
+	}
+	PostMessage(g_hServerDlg, WM_DISTINCTIP, m_xIPs.size(), 0);
+
 	UpdateServerState();
 
 	PkgLoginGameTypeNot not;
@@ -561,6 +575,16 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 
 	char szIP[20];
 	WORD wPort = 0;
+	if (m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort)) {
+		std::map<std::string, int>::iterator it = m_xIPs.find(szIP);
+		if (it != m_xIPs.end()) {
+			it->second--;
+			if (0 == it->second) {
+				m_xIPs.erase(it);
+			}
+		}
+		PostMessage(g_hServerDlg, WM_DISTINCTIP, m_xIPs.size(), 0);
+	}
 
 	//	连接序号归位0
 	SetConnCode(_dwIndex, 0);

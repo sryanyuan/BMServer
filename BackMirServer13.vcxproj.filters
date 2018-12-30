@@ -49,6 +49,9 @@
     <Filter Include="Import">
       <UniqueIdentifier>{62a2fe08-3fa6-4acd-9011-7d11a9a75ca3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="IOServer">
+      <UniqueIdentifier>{c013a373-329d-4e44-a0e1-de279ddfd072}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackMirServer.cpp">
@@ -408,17 +411,53 @@
     <ClCompile Include="GameWorld\MonsterLogic\ZuMaJiaoZhuMonster.cpp">
       <Filter>GameWorld\MonsterLogic</Filter>
     </ClCompile>
-    <ClCompile Include="..\BackMirClient\Common\MirMap.cpp">
-      <Filter>GameCommon</Filter>
-    </ClCompile>
-    <ClCompile Include="..\BackMirClient\Common\SKnl3Helper.cpp">
-      <Filter>GameCommon</Filter>
-    </ClCompile>
     <ClCompile Include="tolua\luaServer.cpp">
       <Filter>LuaExport</Filter>
     </ClCompile>
     <ClCompile Include="Import\ImportModule.cpp">
       <Filter>Import</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\SKnl3Helper.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\MirMap.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GameScene.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\MapConfigManager.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\LuaConfigLoader.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\LuaIterator.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\utils.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\GlobalAllocRecord.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\IndexManager.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\main.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\NetbaseWrapper.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\SServerConn.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\SServerEngine.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\LuaDataLoader.cpp">
+      <Filter>Module</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -677,14 +716,71 @@
     <ClInclude Include="common\memleak.h">
       <Filter>GameCommon</Filter>
     </ClInclude>
-    <ClInclude Include="..\BackMirClient\Common\MirMap.h">
-      <Filter>GameCommon</Filter>
-    </ClInclude>
     <ClInclude Include="common\shared.h">
       <Filter>GameCommon</Filter>
     </ClInclude>
-    <ClInclude Include="..\BackMirClient\Common\SKnl3Helper.h">
+    <ClInclude Include="..\CommonModule\SKnl3Helper.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\MirMap.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\MapConfigManager.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\LuaConfigLoader.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\LuaIterator.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\utils.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\GlobalAllocRecord.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\Def.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\IndexManager.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\Logger.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\netbase.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\NetbaseWrapper.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\SServerBuffer.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\SServerConn.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\SServerEngine.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\typedef.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view.h">
       <Filter>GameCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\LuaDataLoader.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\LuaStackGuard.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\stove_def.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\item_extra_suit_def.h">
+      <Filter>Module</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

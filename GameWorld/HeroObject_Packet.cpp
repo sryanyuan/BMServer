@@ -17,6 +17,7 @@
 #include "ObjectValid.h"
 #include "../../CommonModule/PotentialAttribHelper.h"
 #include "GlobalAllocRecord.h"
+#include "../../CommonModule/version.h"
 
 //////////////////////////////////////////////////////////////////////////
 bool SortAttribID(const ItemAttrib* _pLeft, const ItemAttrib* _pRight)
@@ -568,6 +569,11 @@ void HeroObject::DoPacket(const PkgPlayerDropItemReq& req)
 				memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
 				item.wID = GetTickCount();*/
 		//if(pDropedItem->atkPois > 0)
+		if (TEST_FLAG_BOOL(GETITEMATB(pDropedItem, Expr), EXPR_MASK_NOSELL))
+		{
+			SendSystemMessage("任务物品无法丢弃");
+			return;
+		}
 		if(TEST_FLAG_BOOL(GETITEMATB(pDropedItem, AtkPois), POIS_MASK_BIND))
 		{
 			//	destory
@@ -3152,7 +3158,7 @@ void HeroObject::DoPacket(const PkgPlayerDecomposeReq& req)
 
 		if(GetRecordInItemTable(GETITEMATB(pItem, ID), &oriItem))
 		{
-			int nItemLevel = GetItemGrade(oriItem.id);
+			int nItemLevel = GetItemGradeInFullAttrib(oriItem.id);
 
 			if(0 != nItemLevel)
 			{
@@ -3466,7 +3472,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 				if(nUpgradeValue < 5 &&
 					nUpgradeValue >= 0)
 				{
-					int nItemGrade = GetItemGrade(pCheckItem->id);
+					int nItemGrade = GetItemGradeInFullAttrib(pCheckItem->id);
 					if(0 == nItemGrade)
 					{
 						return;
@@ -4231,7 +4237,7 @@ void HeroObject::DoPacket(const PkgPlayerIdentifyItemReq &req)
 	}
 
 	//	获得装备的阶级
-	int nEquipLevel = GetItemGrade(GETITEMATB(pItem, ID));
+	int nEquipLevel = GetItemGradeInFullAttrib(GETITEMATB(pItem, ID));
 	if (nEquipLevel >= 1 &&
 		nEquipLevel <= 3)
 	{

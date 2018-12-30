@@ -21,6 +21,7 @@
 #include "../CommonModule/cJSON.h"
 #include "ConfigDlg.h"
 #include "runarg.h"
+#include "../CommonModule/version.h"
 
 using std::string;
 //////////////////////////////////////////////////////////////////////////
@@ -171,6 +172,7 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialog)
 	ON_MESSAGE(WM_CLOSECONNECTION, &CServerDlg::OnCloseConnection)
 	ON_MESSAGE(WM_REMOVEPLAYER, &CServerDlg::OnRemoveHeroObject)
 	ON_MESSAGE(WM_PLAYERCOUNT, &CServerDlg::OnUpdatePlayerCount)
+	ON_MESSAGE(WM_DISTINCTIP, &CServerDlg::OnUpdateDistinctIP)
 	ON_BN_CLICKED(IDC_BUTTON4, &CServerDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_BUTTON5, &CServerDlg::OnBnClickedButton5)
 	ON_WM_TIMER()
@@ -455,6 +457,17 @@ LRESULT CServerDlg::OnUpdatePlayerCount(WPARAM wParam, LPARAM lParam)
 	sprintf(szOutput, "处理怪物逻辑: %d",
 		lParam);
 	GetDlgItem(IDC_SVRINFO)->SetWindowText(szOutput);
+
+	return S_OK;
+}
+
+LRESULT CServerDlg::OnUpdateDistinctIP(WPARAM wParam, LPARAM lParam)
+{
+	char szOutput[MAX_PATH];
+	sprintf(szOutput, "独立IP数: %d",
+		wParam);
+	m_nOnlinePlayerCount = wParam;
+	GetDlgItem(IDC_DISTINCTIP)->SetWindowText(szOutput);
 
 	return S_OK;
 }

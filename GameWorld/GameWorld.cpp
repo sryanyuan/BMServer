@@ -570,13 +570,6 @@ int GameWorld::Init()
 		}
 	}
 
-	//	stove manager
-	if(!StoveManager::GetInstance()->Init())
-	{
-		LOG(ERROR) << "Can't initialize stove manager";
-		return 1;
-	}
-
 	//	load settings
 	//m_bGenElitMons = (SettingLoader::GetInstance()->GetIntValue("GENELITEMONS") != 0);
 #ifdef _DEBUG
@@ -594,6 +587,13 @@ int GameWorld::Init()
 #ifdef _DEBUG
 		LOG(ERROR) << "Can not load the world script file";
 #endif
+		return 1;
+	}
+
+	//	stove manager
+	if (!StoveManager::GetInstance()->Init(GameWorld::GetInstance().GetLuaState()))
+	{
+		LOG(ERROR) << "Can't initialize stove manager";
 		return 1;
 	}
 
@@ -3662,7 +3662,7 @@ void GameWorld::SetItemHideAttrib(ItemAttrib *_pItem)
 
 	UINT uAttribCode = 0;
 	HideAttribHelper::SetAllAttribCount(uAttribCode, nAttribSum);
-	int nItemGrade =  GetItemGrade(_pItem->id);
+	int nItemGrade = GetItemGradeInFullAttrib(_pItem->id);
 	int nMaxValue = nItemGrade + 1;
 	if (nItemGrade == 0) {
 		nMaxValue = 5;
@@ -3956,7 +3956,23 @@ int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
 
 int GameWorld::SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf) {
 	PacketHeader* pHeader = (PacketHeader*)_refBuf.GetHead();
-	_pHero->DispatchPacket(_refBuf, pHeader);
+	// Catch exceptions
+	try
+	{
+		_pHero->DispatchPacket(_refBuf, pHeader);
+	}
+	catch (std::exception excp)
+	{
+		// Buffer un-serialize error, disconnect user and report error
+		LOG(ERROR) << "Hero " << _pHero->GetName() << " unserialize packet failed:" << excp.what();
+		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_pHero->GetUserIndex());
+	}
+	catch (...)
+	{
+		LOG(ERROR) << "Hero " << _pHero->GetName() << " dispatch packet fatal error";
+		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_pHero->GetUserIndex());
+	}
+	
 	return 0;
 }
 

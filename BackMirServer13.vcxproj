@@ -44,13 +44,13 @@
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\BackMir\</OutDir>
+    <OutDir>$(SolutionDir)..\BackMir\BinDebug</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <TargetName>GameSvr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)..\BackMir\</OutDir>
+    <OutDir>$(SolutionDir)..\BackMir\Bin\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <TargetName>GameSvr</TargetName>
@@ -63,8 +63,8 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(DEVLIB_DIR)\Inc\Zlib;$(DEVLIB_DIR)\Inc\luajit;$(DEVLIB_DIR)\Inc\ZipArchive;$(DEVLIB_DIR)\Incvc12\glog;$(DEVLIB_DIR)\Inc\Sqlite;$(DEVLIB_DIR)\Inc\curl;$(DEVLIB_DIR)\Inc\fastdelegate;$(DEVLIB_DIR)\Inc\SServerEngine;$(DEVLIB_DIR)\Inc\libevent;$(DEVLIB_DIR)\Inc\pthread;$(DEVLIB_DIR)\Inc\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;__THEMIDA_;_SHIELDEN_;_ZIPARCHIVE_;_SYNC_CREATE;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(DEVLIB_DIR)\Inc\Zlib;$(DEVLIB_DIR)\Inc\luajit;$(DEVLIB_DIR)\Inc\ZipArchive;$(DEVLIB_DIR)\Incvc12\glog;$(DEVLIB_DIR)\Inc\Sqlite;$(DEVLIB_DIR)\Inc\curl;$(DEVLIB_DIR)\Inc\fastdelegate;$(DEVLIB_DIR)\Inc\libevent;$(DEVLIB_DIR)\Inc\pthread;$(DEVLIB_DIR)\Inc\protobuf;$(DEVLIB_DIR)\Inc\vld;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;__THEMIDA_;_SHIELDEN_;_ZIPARCHIVE_;_SYNC_CREATE;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;_BIN_PATH;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -72,6 +72,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4018;4244;4996;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -79,12 +80,12 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <OutputFile>$(SolutionDir)..\BackMir\GameSvr.exe</OutputFile>
-      <AdditionalLibraryDirectories>$(DEVLIB_DIR)\Libvc12;$(DEVLIB_DIR)\Libvc12\glog;$(DEVLIB_DIR)\Libvc12\luajit;$(DEVLIB_DIR)\Libvc12\sqlite3;$(DEVLIB_DIR)\Libvc12\ziparchive;$(DEVLIB_DIR)\Libvc12\zlib;$(DEVLIB_DIR)\Libvc12\curl;$(DEVLIB_DIR)\Libvc12\SServerEngine;$(DEVLIB_DIR)\Libvc12\pthread;$(DEVLIB_DIR)\Libvc12\libevent;$(DEVLIB_DIR)\Libvc12\protobuf;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(SolutionDir)..\BackMir\BinDebug\GameSvr.exe</OutputFile>
+      <AdditionalLibraryDirectories>$(DEVLIB_DIR)\Libvc12;$(DEVLIB_DIR)\Libvc12\glog;$(DEVLIB_DIR)\Libvc12\luajit;$(DEVLIB_DIR)\Libvc12\sqlite3;$(DEVLIB_DIR)\Libvc12\ziparchive;$(DEVLIB_DIR)\Libvc12\zlib;$(DEVLIB_DIR)\Libvc12\curl;$(DEVLIB_DIR)\Libvc12\pthread;$(DEVLIB_DIR)\Libvc12\libevent;$(DEVLIB_DIR)\Libvc12\protobuf;$(DEVLIB_DIR)\Libvc12\vld;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <DelayLoadDLLs>libcurlvc12d.dll;lua51vc12_d.dll;zlibwapivc12_d.dll;sqlite3.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,7 +98,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>$(DEVLIB_DIR)\Inc\ZipArchive;$(DEVLIB_DIR)\Inc\Zlib;$(DEVLIB_DIR)\Inc\luajit;$(DEVLIB_DIR)\Incvc12\glog;$(DEVLIB_DIR)\Inc\Sqlite;$(DEVLIB_DIR)\Inc\curl;$(DEVLIB_DIR)\Inc\fastdelegate;$(DEVLIB_DIR)\Inc\SServerEngine;$(DEVLIB_DIR)\Inc\libevent;$(DEVLIB_DIR)\Inc\pthread;$(DEVLIB_DIR)\Inc\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;_THEMIDA_;_ZIPARCHIVE_;_SYNC_CREATE;_DISABLE_CONSOLE;__SHIELDEN_;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;GOOGLE_GLOG_DLL_DECL=;ZLIB_WINAPI;_THEMIDA_;_ZIPARCHIVE_;_SYNC_CREATE;_DISABLE_CONSOLE;__SHIELDEN_;_LUAJIT_;_CRT_SECURE_NO_WARNINGS;_BIN_PATH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -105,6 +106,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DisableSpecificWarnings>4018;4244;4996;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -112,19 +114,19 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <OutputFile>$(SolutionDir)..\BackMir\GameSvr.exe</OutputFile>
+      <OutputFile>$(SolutionDir)..\BackMir\Bin\GameSvr.exe</OutputFile>
       <AdditionalLibraryDirectories>$(DEVLIB_DIR)\Libvc12\glog;$(DEVLIB_DIR)\Libvc12\luajit;$(DEVLIB_DIR)\Libvc12\sqlite3;$(DEVLIB_DIR)\Libvc12\ziparchive;$(DEVLIB_DIR)\Libvc12\zlib;$(DEVLIB_DIR)\Libvc12\themida;$(DEVLIB_DIR)\Libvc12\curl;$(DEVLIB_DIR)\Libvc12\SServerEngine;$(DEVLIB_DIR)\Libvc12\libevent;$(DEVLIB_DIR)\Libvc12\pthread;$(DEVLIB_DIR)\Libvc12\protobuf;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <DelayLoadDLLs>libcurlvc12.dll;lua51vc12.dll;zlibwapivc12.dll;sqlite3.dll;pthreadvc2.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\BackMirClient\Common\MirMap.cpp" />
-    <ClCompile Include="..\BackMirClient\Common\SKnl3Helper.cpp" />
     <ClCompile Include="..\CommonModule\BMHttpManager.cpp" />
     <ClCompile Include="..\CommonModule\ByteBuffer.cpp" />
     <ClCompile Include="..\CommonModule\cJSON.c" />
@@ -147,9 +149,14 @@
     <ClCompile Include="..\CommonModule\LuaBaseEngine_Dispatcher.cpp" />
     <ClCompile Include="..\CommonModule\LuaBaseEngine_ScriptLoader.cpp" />
     <ClCompile Include="..\CommonModule\LuaBaseExecutor.cpp" />
+    <ClCompile Include="..\CommonModule\LuaConfigLoader.cpp" />
+    <ClCompile Include="..\CommonModule\LuaDataLoader.cpp" />
     <ClCompile Include="..\CommonModule\LuaEventDispatcher.cpp" />
+    <ClCompile Include="..\CommonModule\LuaIterator.cpp" />
     <ClCompile Include="..\CommonModule\lua_extend.cpp" />
     <ClCompile Include="..\CommonModule\MagicEffectID.cpp" />
+    <ClCompile Include="..\CommonModule\MapConfigManager.cpp" />
+    <ClCompile Include="..\CommonModule\MirMap.cpp" />
     <ClCompile Include="..\CommonModule\NotifySystem.cpp" />
     <ClCompile Include="..\CommonModule\OfflineSellSystem.cpp" />
     <ClCompile Include="..\CommonModule\ProtoType.cpp" />
@@ -157,8 +164,10 @@
     <ClCompile Include="..\CommonModule\SaveFile.cpp" />
     <ClCompile Include="..\CommonModule\ScriptEngine.cpp" />
     <ClCompile Include="..\CommonModule\ShareData.cpp" />
+    <ClCompile Include="..\CommonModule\SKnl3Helper.cpp" />
     <ClCompile Include="..\CommonModule\StackWalker\StackWalker.cpp" />
     <ClCompile Include="..\CommonModule\StoveManager.cpp" />
+    <ClCompile Include="..\CommonModule\utils.cpp" />
     <ClCompile Include="..\CommonModule\xxtea.cpp" />
     <ClCompile Include="..\CommonModule\ZipDataReader.cpp" />
     <ClCompile Include="BackMirServer.cpp" />
@@ -175,8 +184,10 @@
     <ClCompile Include="GameWorld\FreeListManager.cpp" />
     <ClCompile Include="GameWorld\GameDbBuffer.cpp" />
     <ClCompile Include="GameWorld\GameInstanceScene.cpp" />
+    <ClCompile Include="GameWorld\GameScene.cpp" />
     <ClCompile Include="GameWorld\GameSceneManager.cpp" />
     <ClCompile Include="GameWorld\GameWorld.cpp" />
+    <ClCompile Include="GameWorld\GlobalAllocRecord.cpp" />
     <ClCompile Include="GameWorld\HeroObject.cpp" />
     <ClCompile Include="GameWorld\HeroObject_Packet.cpp" />
     <ClCompile Include="GameWorld\LibImport.cpp" />
@@ -239,6 +250,11 @@
     <ClCompile Include="GameWorld\WorldEventDispatcher.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Import\ImportModule.cpp" />
+    <ClCompile Include="IOServer\IndexManager.cpp" />
+    <ClCompile Include="IOServer\main.cpp" />
+    <ClCompile Include="IOServer\NetbaseWrapper.cpp" />
+    <ClCompile Include="IOServer\SServerConn.cpp" />
+    <ClCompile Include="IOServer\SServerEngine.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="RegisterGameRoomDlg.cpp" />
     <ClCompile Include="runarg.cpp" />
@@ -251,8 +267,6 @@
     <ClCompile Include="tolua\luaServer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\BackMirClient\Common\MirMap.h" />
-    <ClInclude Include="..\BackMirClient\Common\SKnl3Helper.h" />
     <ClInclude Include="..\CommonModule\BMHttpManager.h" />
     <ClInclude Include="..\CommonModule\ByteBuffer.h" />
     <ClInclude Include="..\CommonModule\cJSON.h" />
@@ -273,14 +287,21 @@
     <ClInclude Include="..\CommonModule\GameStructSerialize.h" />
     <ClInclude Include="..\CommonModule\GDefine.h" />
     <ClInclude Include="..\CommonModule\HideAttribHelper.h" />
+    <ClInclude Include="..\CommonModule\item_extra_suit_def.h" />
     <ClInclude Include="..\CommonModule\json.h" />
     <ClInclude Include="..\CommonModule\LoginExtendInfoParser.h" />
     <ClInclude Include="..\CommonModule\loginsvr.pb.h" />
     <ClInclude Include="..\CommonModule\LuaBaseEngine.h" />
     <ClInclude Include="..\CommonModule\LuaBaseExecutor.h" />
+    <ClInclude Include="..\CommonModule\LuaConfigLoader.h" />
+    <ClInclude Include="..\CommonModule\LuaDataLoader.h" />
     <ClInclude Include="..\CommonModule\LuaEventDispatcher.h" />
+    <ClInclude Include="..\CommonModule\LuaIterator.h" />
+    <ClInclude Include="..\CommonModule\LuaStackGuard.h" />
     <ClInclude Include="..\CommonModule\lua_extend.h" />
     <ClInclude Include="..\CommonModule\MagicEffectID.h" />
+    <ClInclude Include="..\CommonModule\MapConfigManager.h" />
+    <ClInclude Include="..\CommonModule\MirMap.h" />
     <ClInclude Include="..\CommonModule\NotifySystem.h" />
     <ClInclude Include="..\CommonModule\OfflineSellSystem.h" />
     <ClInclude Include="..\CommonModule\ProtoType.h" />
@@ -291,8 +312,11 @@
     <ClInclude Include="..\CommonModule\ShareData.h" />
     <ClInclude Include="..\CommonModule\SimpleActionHelper.h" />
     <ClInclude Include="..\CommonModule\SimpleIni.h" />
+    <ClInclude Include="..\CommonModule\SKnl3Helper.h" />
     <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h" />
     <ClInclude Include="..\CommonModule\StoveManager.h" />
+    <ClInclude Include="..\CommonModule\stove_def.h" />
+    <ClInclude Include="..\CommonModule\utils.h" />
     <ClInclude Include="..\CommonModule\xxtea.h" />
     <ClInclude Include="..\CommonModule\ZipDataReader.h" />
     <ClInclude Include="BackMirServer.h" />
@@ -301,6 +325,7 @@
     <ClInclude Include="CMainServer\CUser.h" />
     <ClInclude Include="common\memleak.h" />
     <ClInclude Include="common\shared.h" />
+    <ClInclude Include="common\view.h" />
     <ClInclude Include="ConfigDlg.h" />
     <ClInclude Include="CpuQueryDlg.h" />
     <ClInclude Include="GameWorld\ConnCode.h" />
@@ -313,6 +338,7 @@
     <ClInclude Include="GameWorld\GameInstanceScene.h" />
     <ClInclude Include="GameWorld\GameSceneManager.h" />
     <ClInclude Include="GameWorld\GameWorld.h" />
+    <ClInclude Include="GameWorld\GlobalAllocRecord.h" />
     <ClInclude Include="GameWorld\LuaItemHelper.h" />
     <ClInclude Include="GameWorld\LuaServerEngine.h" />
     <ClInclude Include="GameWorld\MonsGenEngine.h" />
@@ -330,6 +356,15 @@
     <ClInclude Include="GameWorld\WeightCalc.h" />
     <ClInclude Include="GameWorld\WorldEventDispatcher.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="IOServer\Def.h" />
+    <ClInclude Include="IOServer\IndexManager.h" />
+    <ClInclude Include="IOServer\Logger.h" />
+    <ClInclude Include="IOServer\netbase.h" />
+    <ClInclude Include="IOServer\NetbaseWrapper.h" />
+    <ClInclude Include="IOServer\SServerBuffer.h" />
+    <ClInclude Include="IOServer\SServerConn.h" />
+    <ClInclude Include="IOServer\SServerEngine.h" />
+    <ClInclude Include="IOServer\typedef.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Net\Packet.h" />
     <ClInclude Include="RegisterGameRoomDlg.h" />

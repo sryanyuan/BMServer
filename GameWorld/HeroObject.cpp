@@ -21,6 +21,8 @@
 #include "../../CommonModule/ProtoType.h"
 #include "../runarg.h"
 #include "GlobalAllocRecord.h"
+#include "../../CommonModule/version.h"
+#include "../common/view.h"
 //////////////////////////////////////////////////////////////////////////
 static const int s_nMoveOft[] =
 {
@@ -2863,7 +2865,7 @@ void HeroObject::UpdateSuitAttrib()
 			//if(m_equip[i].atkPalsy != 0)
 			if(GETITEMATB(&m_stEquip[i], AtkPalsy) != 0)
 			{
-				pCurAttribList = GetGlobalSuitExtraAttrib(GETITEMATB(&m_stEquip[i], AtkPalsy));
+				pCurAttribList = GetItemExtraSuitAttribList(GETITEMATB(&m_stEquip[i], AtkPalsy));
 
 				if(pCurAttribList != NULL)
 				{
@@ -2884,7 +2886,7 @@ void HeroObject::UpdateSuitAttrib()
 
 					if(!bExist)
 					{
-						xSuitAttribInfoList.push_back(GetGlobalSuitExtraAttrib(GETITEMATB(&m_stEquip[i], AtkPalsy)));
+						xSuitAttribInfoList.push_back(GetItemExtraSuitAttribList(GETITEMATB(&m_stEquip[i], AtkPalsy)));
 					}
 				}
 			}
@@ -3133,8 +3135,8 @@ void HeroObject::UpdateSuitSameLevelAttrib()
 		}
 	}
 
-	//	check active
-	for (int i = 0; i < 9; ++i)
+	//	check active, high level -> low level
+	for (int i = 8; i >= 0; --i)
 	{
 		if (nSuitCount[i] >= 5)
 		{
@@ -6794,14 +6796,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	case MEFF_ICEPALM:			//"º®±ùÕÆ"
 	case MEFF_SKYFIRE:
 		{
-			if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-			{
-				if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-				{
-					ForceDisconnectHero();
-				}
-				return false;
-			}
+			bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 			pMagic = GetUserMagic(LOWORD(req.uParam1));
 			if(pMagic)
@@ -6864,7 +6859,9 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 										nDamage *= fMulti;
 									}
 								}
-
+								if (!bMagicValid) {
+									nDamage = 0;
+								}
 								if(0 != pObj->ReceiveDamage(this, true, nDamage, 1600))
 								{
 									SetSlaveTarget(pObj);
@@ -6887,14 +6884,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 			}
 
 
-			if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-			{
-				if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-				{
-					ForceDisconnectHero();
-				}
-				return false;
-			}
+			bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 			pMagic = GetUserMagic(LOWORD(req.uParam1));
 			int nDamage = 0;
@@ -6934,6 +6924,9 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 								GameObject* pAttacked = *it;
 								nDamage = GetMagicDamageNoDefence(pMagic);
 								nDamage *= fMulti;
+								if (!bMagicValid) {
+									nDamage = 0;
+								}
 								if(nDamage > 0)
 								{
 									pAttacked->ReceiveDamage(this, true, nDamage, 1800);
@@ -6948,14 +6941,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 		//case MEFF_ICESTORM:
 			{
 
-				if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-				{
-					if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-					{
-						ForceDisconnectHero();
-					}
-					return false;
-				}
+				bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 				pMagic = GetUserMagic(LOWORD(req.uParam1));
 				int nDamage = 0;
@@ -6996,6 +6982,9 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 												nDamage *= 1.5f;
 											}
 										}
+										if (!bMagicValid) {
+											nDamage = 0;
+										}
 
 										if(nDamage > 0)
 										{
@@ -7024,14 +7013,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 				}
 
 
-				if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-				{
-					if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-					{
-						ForceDisconnectHero();
-					}
-					return false;
-				}
+				bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 				pMagic = GetUserMagic(LOWORD(req.uParam1));
 				int nDamage = 0;
@@ -7047,20 +7029,22 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 							m_pValid->DecMP(nCost);
 							SyncMP(this);
 
-							StaticMagic sm = {0};
-							sm.dwEnableTime = 0;
-							sm.dwEffectActive = 2;
-							sm.dwFire = GetID();
-							sm.sPosX = nTargetX;
-							sm.sPoxY = nTargetY;
-							sm.wMaxDC = GetMagicMaxDC(pMagic);
-							sm.wMinDC = GetMagicMinDC(pMagic);
-							not.uParam3 = 2500 + GetRandomAbility(AT_MC) * 600;
-							sm.dwExpire = GetTickCount() + not.uParam3;
-							sm.wMgcID = LOWORD(req.uParam1);
-							sm.pFire = this;
-							GetLocateScene()->PushStaticMagic(&sm);
-							bBroadcast = true;
+							if (bMagicValid) {
+								StaticMagic sm = { 0 };
+								sm.dwEnableTime = 0;
+								sm.dwEffectActive = 2;
+								sm.dwFire = GetID();
+								sm.sPosX = nTargetX;
+								sm.sPoxY = nTargetY;
+								sm.wMaxDC = GetMagicMaxDC(pMagic);
+								sm.wMinDC = GetMagicMinDC(pMagic);
+								not.uParam3 = 2500 + GetRandomAbility(AT_MC) * 600;
+								sm.dwExpire = GetTickCount() + not.uParam3;
+								sm.wMgcID = LOWORD(req.uParam1);
+								sm.pFire = this;
+								GetLocateScene()->PushStaticMagic(&sm);
+								bBroadcast = true;
+							}
 						}
 					}
 				}
@@ -7070,14 +7054,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 		{
 			//	»ðÁúÆøÑæ
 
-			if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-			{
-				if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-				{
-					ForceDisconnectHero();
-				}
-				return false;
-			}
+			bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 			pMagic = GetUserMagic(LOWORD(req.uParam1));
 			if(pMagic)
@@ -7117,19 +7094,21 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 						}
 						pMsg->dwDelayTime = GetTickCount() + 300;
 						GetLocateScene()->PushDelayBuf(pMsg);*/
-						DelayActionStaticMagic* pAction = new DelayActionStaticMagic;
-						pAction->nPosX = nTargetX;
-						pAction->nPosY = nTargetY;
-						pAction->wMaxDC = GetMagicMaxDC(pMagic);
-						pAction->wMinDC = GetMagicMaxDC(pMagic) / 2;
-						pAction->nContinueTime = 3000;
-						pAction->nMagicId = MEFF_DRAGONBLUSTER;
-						pAction->nMagicLevel = pMagic->bLevel;
-						pAction->nMapId = GetMapID();
-						pAction->dwActiveTime = GetTickCount() + 300;
-						AddDelayAction(pAction);
+						if (bMagicValid) {
+							DelayActionStaticMagic* pAction = new DelayActionStaticMagic;
+							pAction->nPosX = nTargetX;
+							pAction->nPosY = nTargetY;
+							pAction->wMaxDC = GetMagicMaxDC(pMagic);
+							pAction->wMinDC = GetMagicMaxDC(pMagic) / 2;
+							pAction->nContinueTime = 3000;
+							pAction->nMagicId = MEFF_DRAGONBLUSTER;
+							pAction->nMagicLevel = pMagic->bLevel;
+							pAction->nMapId = GetMapID();
+							pAction->dwActiveTime = GetTickCount() + 300;
+							AddDelayAction(pAction);
 
-						not.uParam3 = 3000 + GetRandomAbility(AT_SC) * 100;
+							not.uParam3 = 3000 + GetRandomAbility(AT_SC) * 100;
+						}
 					}
 				}
 			}
@@ -7137,14 +7116,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	case MEFF_BIGPOISON:
 		{
 
-			if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-			{
-				if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-				{
-					ForceDisconnectHero();
-				}
-				return false;
-			}
+			bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 			pMagic = GetUserMagic(LOWORD(req.uParam1));
 			if(pMagic)
@@ -7186,19 +7158,21 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 							pMsg->uParam[4] = pMagic->bLevel;
 							pMsg->dwDelayTime = GetTickCount() + 800;
 							GetLocateScene()->PushDelayBuf(pMsg);*/
-							DelayActionStaticMagic* pAction = new DelayActionStaticMagic;
-							pAction->nPosX = nTargetX;
-							pAction->nPosY = nTargetY;
-							pAction->wMaxDC = GetObject_MaxSC();
-							pAction->wMinDC = GetObject_SC();
-							pAction->nContinueTime = 3000 + GetRandomAbility(AT_SC) * 100;
-							pAction->nMagicId = MEFF_BIGPOISON;
-							pAction->nMagicLevel = pMagic->bLevel;
-							pAction->nMapId = GetMapID();
-							pAction->dwActiveTime = GetTickCount() + 800;
-							AddDelayAction(pAction);
+							if (bMagicValid) {
+								DelayActionStaticMagic* pAction = new DelayActionStaticMagic;
+								pAction->nPosX = nTargetX;
+								pAction->nPosY = nTargetY;
+								pAction->wMaxDC = GetObject_MaxSC();
+								pAction->wMinDC = GetObject_SC();
+								pAction->nContinueTime = 3000 + GetRandomAbility(AT_SC) * 100;
+								pAction->nMagicId = MEFF_BIGPOISON;
+								pAction->nMagicLevel = pMagic->bLevel;
+								pAction->nMapId = GetMapID();
+								pAction->dwActiveTime = GetTickCount() + 800;
+								AddDelayAction(pAction);
 
-							not.uParam3 = 3000 + GetRandomAbility(AT_SC) * 100;
+								not.uParam3 = 3000 + GetRandomAbility(AT_SC) * 100;
+							}
 						}
 					}
 				}
@@ -7328,14 +7302,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 		case MEFF_SUPERHEAL:
 		{
 
-			if (!IsMagicAttackValid(dwMgcID, nTargetX, nTargetY))
-			{
-				if (m_nInvalidMagicAttackTimes > INVALID_MAGIC_KICK_TIMES)
-				{
-					ForceDisconnectHero();
-				}
-				return false;
-			}
+			bool bMagicValid = IsMagicAttackValid(dwMgcID, nTargetX, nTargetY);
 
 			pMagic = GetUserMagic(LOWORD(req.uParam1));
 			if(pMagic)
@@ -7405,7 +7372,8 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 													}
 
 													if(nDamage > 0 &&
-														bCanAttack)
+														bCanAttack &&
+														bMagicValid)
 													{
 														if(nDamage > 0)
 														{
@@ -9073,6 +9041,7 @@ bool HeroObject::ShowShopDlg(NPCObject* _pnpc, int _type)
 {
 #define MAX_SHOP_BUFFER_SIZE	(MAX_BIGSTORE_NUMBER * sizeof(ItemAttrib) + 1)
 	static char* s_pBuffer = new char[MAX_SHOP_BUFFER_SIZE];
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pBuffer);
 
 	if(_type == SHOP_SELLSHOP)
 	{
@@ -9321,14 +9290,14 @@ int HeroObject::GetRandomAbility(ABILITY_TYPE _type)
 
 	static float s_fSuitSameLevelFactor[] = {
 		1.0f,
-		1.03f,
+		1.02f,
+		1.04f,
 		1.06f,
-		1.09f,
+		1.08f,
+		1.10f,
 		1.12f,
-		1.15f,
-		1.20f,
-		1.30f,
-		1.40f
+		1.14f,
+		1.16f
 	};
 
 	if (m_nExtraSuitType > 0 &&
@@ -14440,13 +14409,31 @@ bool HeroObject::IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY)
 	// check target in attack range
 // 	if (abs(nSelfX - _nTargetX) > VIEW_WIDTH / UNIT_WIDTH / 2 + 3 ||
 // 		abs(nSelfY - _nTargetY) > VIEW_HEIGHT / UNIT_HEIGHT / 2 + 3)
-	if (abs(nSelfX - _nTargetX) >= VIEW_WIDTH / UNIT_WIDTH / 2 + 3 ||
-		abs(nSelfY - _nTargetY) >= VIEW_HEIGHT / UNIT_HEIGHT / 2 + 3)
+	int nOffsetX = abs(nSelfX - _nTargetX);
+	int nOffsetY = nSelfY - _nTargetY;
+	if (nOffsetX >= (VIEW_WIDTH / UNIT_WIDTH + 1) / 2) {
+		m_nInvalidMagicAttackTimes++;
+		return false;
+	}
+	if (nOffsetY <= 0) {
+		if (-1 * nOffsetY > (VIEW_HEIGHT / UNIT_HEIGHT + 1) / 2 + 1) {
+			m_nInvalidMagicAttackTimes++;
+			return false;
+		}
+	}
+	else {
+		if (nOffsetY >= (VIEW_HEIGHT / UNIT_HEIGHT + 1) / 2 + 1) {
+			m_nInvalidMagicAttackTimes++;
+			return false;
+		}
+	}
+	/*if (abs(nSelfX - _nTargetX) >= (VIEW_WIDTH / UNIT_WIDTH - 1) / 2 + 1 ||
+		abs(nSelfY - _nTargetY) >= (VIEW_HEIGHT / UNIT_HEIGHT - 1) / 2 + 1)
 	{
 		m_nInvalidMagicAttackTimes++;
 
 		return false;
-	}
+	}*/
 
 	return true;
 }

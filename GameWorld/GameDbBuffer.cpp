@@ -1,6 +1,13 @@
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
 #include "GameDbBuffer.h"
 #include "DBThread.h"
+#include "../../CommonModule/LuaDataLoader.h"
+#include "ObjectEngine.h"
 //////////////////////////////////////////////////////////////////////////
+std::map<int, ItemFullAttrib> g_xItemFullAttribMap;
+std::map<int, MonsFullAttrib> g_xMonsFullAttribMap;
+std::map<int, ItemExtraAttribList*> g_xItemExtraSuitAttribMap;
 DataRecordList g_xItemRecordList;
 DataRecordList g_xMonsterRecordList;
 
@@ -22,6 +29,101 @@ bool CreateGameDbBuffer()
 	return bRet;
 }
 
+bool CreateGameDbBufferLua(lua_State *L) {
+	bool res = LuaDataLoader::LoadItemAttrib(L, pszDefaultItemFullAttribTableName, g_xItemFullAttribMap);
+	if (!res) {
+		LOG(ERROR) << "Error on loading item attrib from lua";
+		return res;
+	}
+	for (auto &pa : g_xItemFullAttribMap) {
+		ObjectValid::EncryptAttrib(&pa.second.baseAttrib);
+	}
+	// Initialize item map to find id for drop items
+	std::map<string, int> itemNameMap;
+	char szName[20];
+	for (auto &pa : g_xItemFullAttribMap) {
+		ObjectValid::GetItemName(&pa.second.baseAttrib, szName);
+		if (0 == strcmp(szName, "½ð±Ò")) {
+			continue;
+		}
+		int nId = GETITEMATB(&pa.second.baseAttrib, ID);
+		string s = szName;
+		itemNameMap[std::move(s)] = nId;
+	}
+	for (int i = 0; i < 5; i++) {
+		sprintf(szName, "½ð±Ò%d", i + 1);
+		string s = szName;
+		itemNameMap[std::move(s)] = 112 + i;
+	}
+
+	res = LuaDataLoader::LoadMonsAttrib(L, pszDefaultMonsFullAttribTableName, g_xMonsFullAttribMap);
+	if (!res) {
+		LOG(ERROR) << "Error on loading monster attrib from lua";
+		return false;
+	}
+	for (auto &pa : g_xMonsFullAttribMap) {
+		ObjectValid::EncryptAttrib(&pa.second.baseAttrib);
+	}
+	// Find drop item id
+	for (auto &pa : g_xMonsFullAttribMap) {
+		MonsFullAttrib &fa = pa.second;
+		for (auto &di : fa.xDropItems) {
+			auto it = itemNameMap.find(di.strItemName);
+			if (it == itemNameMap.end()) {
+				g_xConsole.CPrint("Can't find item %s in item name map", di.strItemName.c_str());
+				return false;
+			}
+			di.nItemId = it->second;
+			di.strItemName.clear();
+		}
+	}
+	// Initialize item extra suit attrib
+	if (!LuaDataLoader::LoadSuitAttrib(L, pszDefaultSuitAttribTableName, g_xItemExtraSuitAttribMap)) {
+		LOG(ERROR) << "Error on loading extra suit attrib from lua";
+		return false;
+	}
+	for (auto &pa : g_xItemExtraSuitAttribMap) {
+#ifdef NDEBUG
+		memset(pa.second->szSuitChName, 0, sizeof(pa.second->szSuitChName));
+#endif
+	}
+	return true;
+}
+
+bool compareLuaItem() {
+	for (auto &item : g_xItemRecordList) {
+		auto it = g_xItemFullAttribMap.find(item.first);
+		if (it == g_xItemFullAttribMap.end()) {
+			g_xConsole.CPrint("Item %d not found", item.first);
+			return false;
+		}
+		if (!(item.second == it->second.baseAttrib)) {
+			g_xConsole.CPrint("Item %d not equal", item.first);
+			ItemAttrib l = item.second;
+			ObjectValid::DecryptAttrib(&l);
+			ItemAttrib r = it->second.baseAttrib;
+			ObjectValid::DecryptAttrib(&r);
+			return false;
+		}
+	}
+	for (auto &mons : g_xMonsterRecordList) {
+		auto it = g_xMonsFullAttribMap.find(mons.first);
+		if (it == g_xMonsFullAttribMap.end()) {
+			g_xConsole.CPrint("Mons %d not found", mons.first);
+			return false;
+		}
+		if (!(mons.second == it->second.baseAttrib)) {
+			g_xConsole.CPrint("Mons %d not equal", mons.first);
+			ItemAttrib l = mons.second;
+			ObjectValid::DecryptAttrib(&l);
+			ItemAttrib r = it->second.baseAttrib;
+			ObjectValid::DecryptAttrib(&r);
+			return false;
+		}
+	}
+	return true;
+}
+
 void ReleaseGameDbBuffer()
 {
 	if(!g_xItemRecordList.empty())
@@ -34,6 +136,36 @@ void ReleaseGameDbBuffer()
 	}
 }
 
+void ReleaseGameDbBufferLua() {
+	g_xItemFullAttribMap.clear();
+}
+
+bool GetRecordsInMonsDropTable(int id, MonsDropItemInfoVec **pVec) {
+	auto it = g_xMonsFullAttribMap.find(id);
+	if (it == g_xMonsFullAttribMap.end()) {
+		// Not found
+		return true;
+	}
+	*pVec = &it->second.xDropItems;
+	return true;
+}
+
+int GetItemGradeInFullAttrib(int id) {
+	auto it = g_xItemFullAttribMap.find(id);
+	if (it != g_xItemFullAttribMap.end()) {
+		return it->second.nGrade;
+	}
+	return 0;
+}
+
+ItemExtraAttribList* GetItemExtraSuitAttribList(int nSuitID) {
+	auto it = g_xItemExtraSuitAttribMap.find(nSuitID);
+	if (it == g_xItemExtraSuitAttribMap.end()) {
+		return nullptr;
+	}
+	return it->second;
+}
+
 bool GetRecordInItemTable(int _id, ItemAttrib* _pOut)
 {
 	if(NULL == _pOut)
@@ -41,11 +173,21 @@ bool GetRecordInItemTable(int _id, ItemAttrib* _pOut)
 		return false;
 	}
 
+	if (!g_xItemFullAttribMap.empty()) {
+		auto it = g_xItemFullAttribMap.find(_id);
+		if (it == g_xItemFullAttribMap.end()) {
+			return false;
+		}
+		memcpy(_pOut, &it->second.baseAttrib, sizeof(ItemAttrib));
+		ObjectValid::DecryptAttrib(_pOut);
+		return true;
+	}
+
 	ItemAttrib item;
 	item.id = 0;
 	ObjectValid::SetItemID(&item, _id);
 
-	DataRecordList::const_iterator fnditer = g_xItemRecordList.find(item.id);
+	DataRecordList::const_iterator fnditer = g_xItemRecordList.find(_id);
 	if(fnditer != g_xItemRecordList.end())
 	{
 		const ItemAttrib* pSrc = &(fnditer->second);
@@ -64,11 +206,21 @@ bool GetRecordInMonsterTable(int _id, ItemAttrib* _pOut)
 		return false;
 	}
 
+	if (!g_xMonsFullAttribMap.empty()) {
+		auto it = g_xMonsFullAttribMap.find(_id);
+		if (it == g_xMonsFullAttribMap.end()) {
+			return false;
+		}
+		memcpy(_pOut, &it->second.baseAttrib, sizeof(ItemAttrib));
+		ObjectValid::DecryptAttrib(_pOut);
+		return true;
+	}
+
 	ItemAttrib item;
 	item.id = 0;
 	ObjectValid::SetItemID(&item, _id);
 
-	DataRecordList::const_iterator fnditer = g_xMonsterRecordList.find(item.id);
+	DataRecordList::const_iterator fnditer = g_xMonsterRecordList.find(_id);
 	if(fnditer != g_xMonsterRecordList.end())
 	{
 		const ItemAttrib* pSrc = &(fnditer->second);
@@ -133,7 +285,7 @@ int __cdecl DBItemAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, 
 
 	//	We encrypt it to avoid being cheated by players
 	ObjectValid::EncryptAttrib(pItem);
-	g_xItemRecordList.insert(std::make_pair(pItem->id, item));
+	g_xItemRecordList.insert(std::make_pair(nId, item));
 
 	return 0;
 }
@@ -190,7 +342,7 @@ int __cdecl DBMonsAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, 
 	pItem->price = atoi(_pValue[34]);
 
 	ObjectValid::EncryptAttrib(pItem);
-	g_xMonsterRecordList.insert(std::make_pair(pItem->id, item));
+	g_xMonsterRecordList.insert(std::make_pair(nId, item));
 
 	return 0;
 }

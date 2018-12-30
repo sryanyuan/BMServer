@@ -147,10 +147,21 @@ void GameSceneManager::DestroyInstance()
 //////////////////////////////////////////////////////////////////////////
 bool GameSceneManager::CreateAllScene()
 {
+	// Initialize map config
 	lua_State* pWorldState = GameWorld::GetInstance().GetLuaEngine()->GetVM();
 	if (!m_xMapConfigManager.Init(pWorldState))
 	{
 		LOG(ERROR) << "初始化地图信息失败";
+		return false;
+	}
+	// Initialize item attrib config
+	if (!CreateGameDbBufferLua(pWorldState)) {
+		LOG(ERROR) << "Initialize item or monster full attrib error";
+		return false;
+	}
+	// TODO: remove
+	if (!compareLuaItem()) {
+		LOG(ERROR) << "Compare item attrib error";
 		return false;
 	}
 
