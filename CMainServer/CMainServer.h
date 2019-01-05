@@ -63,6 +63,8 @@ typedef std::list<NetThreadEvent> NetThreadEventList;
 
 class HeroObject;
 
+class LoginExtendInfoParser;
+
 class CMainServer
 {
 public:
@@ -149,6 +151,15 @@ private:
 	bool CheckUserValid(GameObject* _pObj);
 	bool ConnectToLoginSvr();
 
+	bool CreateLoginHero(HeroObject* _pHero,
+		HeroHeader& _refHeroHeader,
+		std::vector<char>& _refLoginData,
+		LoginExtendInfoParser& _refLoginExt,
+		std::string _refErrMsg);
+	bool LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVersion);
+	bool OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req);
+
+	// Deprecated
 	bool OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req);
 	bool LoadHumData110(HeroObject* _pHero, ByteBuffer& _xBuf);
 	bool LoadHumData111(HeroObject* _pHero, ByteBuffer& _xBuf);

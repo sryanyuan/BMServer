@@ -116,7 +116,7 @@ BOOL CServerDlg::OnInitDialog()
 	m_bInitNetwork = m_pxMainServer->InitNetWork() ? TRUE : FALSE;
 	if(m_bInitNetwork)
 	{
-		AddInfomation("初始化服务器成功");
+		AddInformation("初始化服务器成功");
 		if(m_pxMainServer->InitDatabase())
 		{
 			m_bVersionOK = TRUE;
@@ -124,13 +124,13 @@ BOOL CServerDlg::OnInitDialog()
 		}
 		else
 		{
-			AddInfomation("初始化服务器失败");
+			AddInformation("初始化服务器失败");
 			LOG(ERROR) << "初始化服务器失败";
 		}
 	}
 	else
 	{
-		AddInfomation("初始化服务器失败");
+		AddInformation("初始化服务器失败");
 		LOG(FATAL) << "初始化服务器失败";
 	}
 
@@ -242,13 +242,13 @@ void CServerDlg::OnBnStartClicked()
 	// TODO: 在此添加控件通知处理程序代码
 	if(!m_bInitNetwork)
 	{
-		AddInfomation("无法启动服务器");
+		AddInformation("无法启动服务器");
 		return;
 	}
 
 	if(!m_bVersionOK)
 	{
-		AddInfomation("无法启动服务器");
+		AddInformation("无法启动服务器");
 		return;
 	}
 
@@ -266,7 +266,7 @@ void CServerDlg::OnBnStartClicked()
 
 	if(!PathFileExists(szCfgFile))
 	{
-		AddInfomation("无法读取服务器配置信息 (%s)", szCfgFile);
+		AddInformation("无法读取服务器配置信息 (%s)", szCfgFile);
 		LOG(INFO) << "无法读取服务器配置信息:" << szCfgFile;
 		return;
 	}
@@ -289,7 +289,7 @@ void CServerDlg::OnBnStartClicked()
 
 	if(m_pxMainServer->StartServer(szValue, wPort))
 	{
-		AddInfomation("服务器启动成功，开始监听");
+		AddInformation("服务器启动成功，开始监听");
 		GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
 		char szIpPort[100];
@@ -301,7 +301,7 @@ void CServerDlg::OnBnStartClicked()
 	}
 	else
 	{
-		AddInfomation("服务器启动失败");
+		AddInformation("服务器启动失败");
 		LOG(ERROR) << "服务器启动失败 IP[" << szValue << "] PORT[" << wPort << "]";
 	}
 }
@@ -385,7 +385,7 @@ void CServerDlg::AutoRun()
 
 			if(m_pxMainServer->StartServer(szIP, wPort))
 			{
-				AddInfomation("服务器启动成功，开始监听");
+				AddInformation("服务器启动成功，开始监听");
 				GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
 				GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
 				char szIpPort[100];
@@ -399,7 +399,7 @@ void CServerDlg::AutoRun()
 			}
 			else
 			{
-				AddInfomation("服务器启动失败");
+				AddInformation("服务器启动失败");
 				LOG(ERROR) << "服务器启动失败 IP[" << szIP << "] PORT[" << wPort << "]";
 			}
 		}
@@ -779,12 +779,12 @@ void CServerDlg::OnRegisterGsResult(const char *_pData, size_t _uLen)
 	{
 		if(0 != m_nGameRoomServerID)
 		{
-			AddInfomation("与游戏大厅服务器失去连接...");
+			AddInformation("与游戏大厅服务器失去连接...");
 			m_nGameRoomServerID = 0;
 		}
 		else
 		{
-			AddInfomation("注册至大厅服务器失败...");
+			AddInformation("注册至大厅服务器失败...");
 		}
 		GetDlgItem(IDC_BUTTON6)->EnableWindow(TRUE);
 		return;
@@ -804,7 +804,7 @@ void CServerDlg::OnRegisterGsResult(const char *_pData, size_t _uLen)
 		{
 			if(0 == m_nGameRoomServerID)
 			{
-				AddInfomation("成功注册至游戏大厅");
+				AddInformation("成功注册至游戏大厅");
 			}
 			m_nGameRoomServerID = atoi(pszServerID);
 			GetDlgItem(IDC_BUTTON6)->EnableWindow(FALSE);

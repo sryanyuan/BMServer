@@ -10,7 +10,7 @@ struct ServerState
 	unsigned char bMode;
 };
 
-void AddInfomation(const char* fmt, ...);
+void AddInformation(const char* fmt, ...);
 void UpdateDialogInfo(const ServerState* _pState);
 const char* GetRootPath();
 void GetRootPath(char* _pszBuf, unsigned int _sz);

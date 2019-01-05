@@ -155,7 +155,7 @@ bool GameSceneManager::CreateAllScene()
 		return false;
 	}
 	// Initialize item attrib config
-	if (!CreateGameDbBufferLua(pWorldState)) {
+	if (!CreateGameDbBufferLua(pWorldState, true)) {
 		LOG(ERROR) << "Initialize item or monster full attrib error";
 		return false;
 	}

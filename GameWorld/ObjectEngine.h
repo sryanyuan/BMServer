@@ -714,19 +714,7 @@ public:
 
 	inline bool IsLastAttackCritical()					{return m_bLastAttackCritical;}
 
-	inline int GetHeroWanLi()
-	{
-		if(GetObject_Level() > MAX_LEVEL ||
-			m_stData.bJob > 2)
-		{
-			return 0;
-		}
-		else
-		{
-			//return g_nWanLiTable[GetObject_Level() - 1][m_stData.bJob];
-			return GetGlobalWanLi(GetObject_Level(), m_stData.bJob);
-		}
-	}
+	int GetHeroWanLi();
 
 	static bool IsEquipItem(DWORD _dwType);
 	static bool IsAttackItem(DWORD _dwType);

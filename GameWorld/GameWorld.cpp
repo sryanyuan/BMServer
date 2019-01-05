@@ -573,7 +573,7 @@ int GameWorld::Init()
 	//	load settings
 	//m_bGenElitMons = (SettingLoader::GetInstance()->GetIntValue("GENELITEMONS") != 0);
 #ifdef _DEBUG
-	strcat(szPath, "\\Help\\");
+	strcat(szPath, "\\Script\\");
 	m_xScript.SetModulePath(szPath);
 	m_xScript.SetLuaLoadPath(szPath);
 #else

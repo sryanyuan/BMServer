@@ -5,7 +5,7 @@
 #include <afxwin.h>
 #include <Shlwapi.h>
 
-void AddInfomation(const char* fmt, ...)
+void AddInformation(const char* fmt, ...)
 {
 	extern HWND g_hServerDlg;
 

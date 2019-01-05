@@ -170,7 +170,7 @@ bool GameScene::Initialize(DWORD _dwMapResID, DWORD _dwMapID)
 
 	//	Load the script file
 #ifdef _DEBUG
-	sprintf(szMapFile, "%s\\Help\\",
+	sprintf(szMapFile, "%s\\Script\\",
 		szRootPath);
 	m_xScript.SetModulePath(szMapFile);
 	m_xScript.SetLuaLoadPath(szMapFile);
@@ -299,7 +299,7 @@ bool GameScene::Initialize(DWORD _dwMapID)
 
 	//	Load the script file
 #ifdef _DEBUG
-	sprintf(szMapFile, "%s\\Help\\",
+	sprintf(szMapFile, "%s\\Script\\",
 		szRootPath);
 	m_xScript.SetModulePath(szMapFile);
 	m_xScript.SetLuaLoadPath(szMapFile);

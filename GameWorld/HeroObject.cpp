@@ -493,6 +493,7 @@ unsigned int HeroObject::PushMessage(ByteBuffer* _xBuf)
 	catch (std::exception* e)
 	{
 		LOG(ERROR) << "Fatal error has occured on writing data to receive buffer, Player:" << GetName();
+		LOG(ERROR) << "Exception:" << e->what();
 		CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
 	}
 	if(uWrite == 0)
@@ -4457,7 +4458,7 @@ bool HeroObject::UseChestKey(ItemAttrib* _pItem)
 				}
 				else
 				{
-					bUsed = lua_toboolean(L, -1);
+					bUsed = lua_toboolean(L, -1) != 0;
 					lua_pop(L, 1);
 				}
 			}
@@ -10839,14 +10840,14 @@ void HeroObject::GainExp(int _expr)
 		SetObject_Expr(nExpr - GetObject_MaxExpr());
 //PROTECT_START
 		//SetObject_MaxExpr(g_nExprTable[GetObject_Level() - 1]);
-		SetObject_MaxExpr(GetGlobalExpr(GetObject_Level()));
+		SetObject_MaxExpr(GetHeroBaseAttribExpr(GetObject_Level()));
 //PROTECT_END
 		//int nNextValue = g_nHPTable[GetObject_Level() - 1][m_stData.bJob];
-		int nNextValue = GetGlobalHP(GetObject_Level(), m_stData.bJob);
+		int nNextValue = GetHeroBaseAttribHP(GetObject_Level(), m_stData.bJob);
 		SetObject_HP(nNextValue);
 		SetObject_MaxHP(nNextValue);
 		//nNextValue = g_nMPTable[GetObject_Level() - 1][m_stData.bJob];
-		nNextValue = GetGlobalMP(GetObject_Level(), m_stData.bJob);
+		nNextValue = GetHeroBaseAttribMP(GetObject_Level(), m_stData.bJob);
 		SetObject_MP(nNextValue);
 		SetObject_MaxMP(nNextValue);
 		m_pValid->SetHP(GetObject_MaxHP());
@@ -10917,7 +10918,7 @@ void HeroObject::CheckDoorEvent()
 				}
 				else
 				{
-					bCanEnter = lua_toboolean(GetLocateScene()->GetLuaState(), -1);
+					bCanEnter = lua_toboolean(GetLocateScene()->GetLuaState(), -1) != 0;
 					lua_pop(GetLocateScene()->GetLuaState(), 1);
 				}
 
@@ -14441,6 +14442,18 @@ bool HeroObject::IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY)
 void HeroObject::ForceDisconnectHero()
 {
 	CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
+}
+
+int HeroObject::GetHeroWanLi() {
+	if (GetObject_Level() > MAX_LEVEL ||
+		m_stData.bJob > 2)
+	{
+		return 0;
+	}
+	else
+	{
+		return GetHeroBaseAttribWanLi(GetObject_Level(), m_stData.bJob);
+	}
 }
 
 void HeroObject::Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv)

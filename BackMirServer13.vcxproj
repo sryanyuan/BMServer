@@ -173,6 +173,7 @@
     <ClCompile Include="BackMirServer.cpp" />
     <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="CMainServer\CMainServer.cpp" />
+    <ClCompile Include="CMainServer\CMainServer_Deprecated.cpp" />
     <ClCompile Include="CMainServer\CUser.cpp" />
     <ClCompile Include="ConfigDlg.cpp" />
     <ClCompile Include="CpuQueryDlg.cpp" />
@@ -322,7 +323,9 @@
     <ClInclude Include="BackMirServer.h" />
     <ClInclude Include="ChildView.h" />
     <ClInclude Include="CMainServer\CMainServer.h" />
+    <ClInclude Include="CMainServer\CMainServerMacros.h" />
     <ClInclude Include="CMainServer\CUser.h" />
+    <ClInclude Include="common\glog.h" />
     <ClInclude Include="common\memleak.h" />
     <ClInclude Include="common\shared.h" />
     <ClInclude Include="common\view.h" />

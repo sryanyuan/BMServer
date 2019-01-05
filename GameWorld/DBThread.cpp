@@ -58,7 +58,7 @@ unsigned int DBThread::Run()
 	//	set script load path
 	char szBuf[MAX_PATH];
 #ifdef _DEBUG
-	sprintf(szBuf, "%s\\Help\\",
+	sprintf(szBuf, "%s\\Script\\",
 		GetRootPath());
 	m_xScript.SetModulePath(szBuf, LOADMODE_PATH);
 	m_xScript.SetLuaLoadPath(szBuf);
@@ -2582,7 +2582,7 @@ int DBCALLBACK DBThread::DBDropItemExCallback_Lua(void* _pParam,int _nCount, cha
 				}
 				else
 				{
-					bool bRet = lua_toboolean(L, -1);
+					bool bRet = lua_toboolean(L, -1) != 0;
 					lua_pop(L, 1);
 
 					if(bRet == false)

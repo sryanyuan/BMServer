@@ -5,8 +5,7 @@
 #include "netbase.h"
 #endif
 #include "../CMainServer/CMainServer.h"
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 #include "../Helper.h"
 #include <Shlwapi.h>
 #include <direct.h>
@@ -37,8 +36,8 @@
 #include "../GameWorld/GlobalAllocRecord.h"
 #include "../GameWorld/TeammateControl.h"
 #include "../../CommonModule/version.h"
+#include "CMainServerMacros.h"
 
-#define MAX_SAVEDATA_SIZE 20480
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
 
 //////////////////////////////////////////////////////////////////////////
@@ -192,7 +191,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 		return false;
 	}
 
-	AddInfomation("服务端版本: %s", BACKMIR_CURVERSION);
+	AddInformation("服务端版本: %s", BACKMIR_CURVERSION);
 
 	// Initialize game world
 	if (0 != GameWorld::GetInstance().Init())
@@ -209,7 +208,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 	}
 	else
 	{
-		AddInfomation("游戏地图场景成功加载");
+		AddInformation("游戏地图场景成功加载");
 	}
 
 	//	Run the Game world
@@ -219,7 +218,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 	}
 	else
 	{
-		AddInfomation("游戏世界成功启动");
+		AddInformation("游戏世界成功启动");
 	}
 
 	//	Run the crc thread
@@ -271,7 +270,7 @@ bool CMainServer::ConnectToLoginSvr()
 			char szIP[50];
 			strcpy(szIP, xLsAddr.c_str());
 
-			AddInfomation("开始尝试连接登录服务器：%s:%d", szIP, nPort);
+			AddInformation("开始尝试连接登录服务器：%s:%d", szIP, nPort);
 			return m_pxServer->ConnectToServerWithServerSide(szIP, nPort, &CMainServer::_OnLsConnSuccess, &CMainServer::_OnLsConnFailed, NULL) ? true : false;
 		}
 		else
@@ -289,7 +288,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = true;
 	CMainServer::GetInstance()->m_dwLsConnIndex = _dwIndex;
-	AddInfomation("连接登陆服务器成功");
+	AddInformation("连接登陆服务器成功");
 
 	const char* pszLsAddr = GetRunArg("outerip");
 	const char* pszServerId = GetRunArg("serverid");
@@ -340,7 +339,7 @@ void STDCALL CMainServer::_OnLsConnFailed(DWORD _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 	CMainServer::GetInstance()->m_dwLsConnIndex = 0;
-	AddInfomation("连接登陆服务器失败");
+	AddInformation("连接登陆服务器失败");
 	g_xConsole.CPrint("Login server address:%s, can't connect to.", CMainServer::GetInstance()->m_xLoginAddr.c_str());
 }
 
@@ -369,7 +368,7 @@ void CMainServer::StopServer()
 		}
 	}
 	LOG(INFO) << "服务器已停止";
-	AddInfomation("服务器已停止");
+	AddInformation("服务器已停止");
 	m_bMode = MODE_STOP;
 	UpdateServerState();
 	m_pxServer = NULL;
@@ -456,32 +455,32 @@ bool CMainServer::InitDatabase()
 
 	if(DBThread::GetInstance()->LoadItemsPrice())
 	{
-		AddInfomation("读取装备价格成功");
+		AddInformation("读取装备价格成功");
 	}
 	else
 	{
-		AddInfomation("读取装备价格失败");
+		AddInformation("读取装备价格失败");
 		bRet = false;
 	}
 	if(DBThread::GetInstance()->LoadMagicAttrib())
 	{
-		AddInfomation("读取魔法信息成功");
+		AddInformation("读取魔法信息成功");
 	}
 	else
 	{
-		AddInfomation("读取魔法信息失败");
+		AddInformation("读取魔法信息失败");
 		bRet = false;
 	}
 
 	if(!CheckVersion())
 	{
-		AddInfomation("游戏已损坏");
+		AddInformation("游戏已损坏");
 		bRet = false;
 	}
 
 	if(!CreateGameDbBuffer())
 	{
-		AddInfomation("无法创建缓存");
+		AddInformation("无法创建缓存");
 		bRet = false;
 	}
 
@@ -543,7 +542,7 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	SetConnCode(_dwIndex, dwConnCode);
 
 	m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
-	AddInfomation("玩家[%s]:[%d]连接", szIP, wPort);
+	AddInformation("玩家[%s]:[%d]连接", szIP, wPort);
 	LOG(INFO) << "玩家[" << szIP << "]:" << wPort << "连接, INDEX:[" << _dwIndex << "], conn code[" << dwConnCode << "]";
 
 	// Add to distinct ip set
@@ -599,7 +598,7 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 				//AddInfomation("玩家[%s]断开", g_pxHeros[_dwIndex]->GetUserData()->stAttrib.name);
 				//m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
 				//AddInfomation("玩家[%s]:[%d]断开", szIP, wPort);
-				AddInfomation("玩家[%d]断开", _dwIndex);
+				AddInformation("玩家[%d]断开", _dwIndex);
 
 				LOG(INFO) << "player[" << _dwIndex << "]disconnect";
 
@@ -1135,7 +1134,7 @@ void CMainServer::ProcessNetThreadEvent()
 				{
 					HeroObject* pHero = g_pxHeros[dwIndex];
 					pHero->SetSmallQuit(true);
-					AddInfomation("玩家[%d]小退", dwIndex);
+					AddInformation("玩家[%d]小退", dwIndex);
 
 					LOG(INFO) << "player[" << dwIndex << "] small quit";
 
@@ -1302,1616 +1301,101 @@ void CMainServer::_OnDisconnectServer(DWORD _dwIndex)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 }
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData110(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
 
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-	return true;*/
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData111(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-	return false;
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-
-			if(wID > 17)
-			{
-				++wID;
-			}
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-	return true;*/
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData112(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-#ifdef NDEBUG
-	return false;
-#endif
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-	return true;*/
-}
-
-bool CMainServer::LoadHumData113(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-#ifdef NDEBUG
-	return false;
-#endif
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			item.atkPois = 1;
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			item.atkPois = 1;
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			item.atkPois = 1;
-			_pHero->AddStoreItem(&item);
-		}
-	}
-	return true;*/
-}
-
-bool CMainServer::LoadHumData114(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-
-#ifdef NDEBUG
-	return false;
-#endif
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			item.atkPois = 1;
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			item.atkPois = 1;
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	bool bCanAdd = false;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			bCanAdd = false;
-			if(bLevel >= 1)
-			{
-				if(wID > PREMG_DC_BEGIN &&
-					wID < PREMG_DC_END)
-				{
-					//	nothing
-					bCanAdd = true;
-				}
-				else if(wID > PREMG_MC_BEGIN &&
-					wID < PREMG_MC_END)
-				{
-					wID += (MEFF_MC_BEGIN - PREMG_MC_BEGIN);
-					bCanAdd = true;
-				}
-				else if(wID > PREMG_SC_BEGIN &&
-					wID < PREMG_SC_END)
-				{
-					wID += (MEFF_SC_BEGIN - PREMG_SC_BEGIN);
-					bCanAdd = true;
-				}
-
-				if(bCanAdd)
-				{
-					if(_pHero->AddUserMagic(wID))
-					{
-						--bLevel;
-						for(int j = 0; j < bLevel; ++j)
-						{
-							_pHero->UpgradeUserMagic(wID);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			item.atkPois = 1;
-			_pHero->AddStoreItem(&item);
-		}
-	}
-	return true;*/
-}
-
-bool CMainServer::LoadHumData115(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-	//return true;*/
-}
-
-bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-#ifdef _DEBUG
+bool CMainServer::CreateLoginHero(HeroObject* _pHero, 
+	HeroHeader& _refHeroHeader, 
+	vector<char>& _refLoginData, 
+	LoginExtendInfoParser& _refLoginExt,
+	std::string _refErrMsg) {
+	HeroObject *pObj = _pHero;
 	UserData* pUserData = _pHero->GetUserData();
 
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
+	// Set header fields to hum data
+	pUserData->bJob = _refHeroHeader.bJob;
+	pUserData->stAttrib.sex = _refHeroHeader.bSex;
+	strcpy(pUserData->stAttrib.name, _refHeroHeader.szName);
+
+	if (_refLoginData.empty()) {
+		// The hero is a new hero, initialize it as a born child
+		pObj->SetMapID(0);
+		pObj->GetUserData()->wCoordX = 20;
+		pObj->GetUserData()->wCoordY = 16;
+		// Initialize level
+		ItemAttrib* pAttrib = &pUserData->stAttrib;
+		pAttrib->level = 1;
+
+		pAttrib->HP = GetHeroBaseAttribHP(pAttrib->level, pObj->GetUserData()->bJob);
+		pAttrib->maxHP = pAttrib->HP;
+		pAttrib->MP = GetHeroBaseAttribMP(pAttrib->level, pObj->GetUserData()->bJob);
+		pAttrib->maxMP = pAttrib->MP;
+		pAttrib->EXPR = 0;
+		pAttrib->maxEXPR = GetHeroBaseAttribExpr(pAttrib->level);
+
+		return true;
 	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
+
+	// Initialize hero with saved data
+	const char* pData = &_refLoginData[0];
+	DWORD dwDataLen = _refLoginData.size();
+
+	static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
+	// Add to global static pointer list
+	GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
+	uLongf buflen = MAX_SAVEDATA_SIZE;
+	uLongf srclen = dwDataLen;
+	int nRet = uncompress((Bytef*)s_pBuf, &buflen, (const Bytef*)pData, srclen);
+	if (Z_OK != nRet) {
+		sprintf(s_pBuf, "玩家[%s]存档数据错误", _refHeroHeader.szName);
+		_refErrMsg = s_pBuf;
 		return false;
 	}
 
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
+	if (g_xMainBuffer.GetLength() > buflen)
 	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
+		LOG(ERROR) << "Buffer overflow.Too large hum data size:" << buflen;
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
+	g_xMainBuffer.Reset();
+	g_xMainBuffer.Write(s_pBuf, buflen);
 
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+	USHORT uVersion = 0;
+	g_xMainBuffer >> uVersion;
 
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
+	// Check save version
+	if (uVersion < BACKMIR_VERSION208 || uVersion > BACKMIR_VERSION210) {
+		sprintf(s_pBuf, "玩家[%s]不支持的存档版本%d", _refHeroHeader.szName, uVersion);
+		_refErrMsg = s_pBuf;
 		return false;
 	}
 
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
+	const char s_pszArchive[] = "Archive version:";
+	const char s_pszInvalid[] = "Invalid archive";
+	const char s_pszUserLogin[] = "User login:";
+	const char s_pszUnsupportVersion[] = "Unsupport version:";
+	char szText[MAX_PATH];
 
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
+	sprintf(szText, "%s[%d]", s_pszArchive, uVersion);
+	AddInformation(szText);
+	pObj->SetVersion(uVersion);
 
-	//return true;
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#else
-	return false;
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-#ifdef _DEBUG
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
+	// Apply hum save data
+	if (!LoadHumData(_pHero, g_xMainBuffer, uVersion)) {
+		sprintf(s_pBuf, "玩家[%s]读取存档数据错误", _refHeroHeader.szName);
+		_refErrMsg = s_pBuf;
 		return false;
 	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(_pHero->AddUserMagic(wID))
-				{
-					--bLevel;
-					for(int j = 0; j < bLevel; ++j)
-					{
-						_pHero->UpgradeUserMagic(wID);
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	A dword reserve
-	DWORD dwReserve = 0;
-	_xBuf >> dwReserve;
-
-#ifdef _DEBUG
 	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-
-#else
-	return false;
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData200(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	return false;
-	/*UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-	}
-	else
-	{
-		//
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/ *delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;* /
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel])
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-					else
-					{
-						return false;
-					}
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	DWORD dwReserve = 0;
-	_xBuf >> dwReserve;
-	_xBuf >> dwReserve;
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif*/
 }
 
-bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
+bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVersion) {
 	UserData* pUserData = _pHero->GetUserData();
 
-	if(_xBuf.GetLength() >= 17)
+	// >= 208
+	if (_xBuf.GetLength() >= 17)
 	{
 		_xBuf >> pUserData->stAttrib.level;
 		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
 		WORD wLastCity = 0;
 		_xBuf >> wLastCity;
@@ -2922,70 +1406,57 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		pUserData->wCoordY = HIWORD(dwPos);
 		_xBuf >> dwPos;
 		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
+		pUserData->stAttrib.maxHP = GetHeroBaseAttribHP(pUserData->stAttrib.level, pUserData->bJob);
+		if (pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
 		{
 			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
 		}
 		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
+		pUserData->stAttrib.maxMP = GetHeroBaseAttribMP(pUserData->stAttrib.level, pUserData->bJob);
+		if (pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
 		{
 			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
 		}
 		_xBuf >> dwPos;
 		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
+		pUserData->stAttrib.maxEXPR = GetHeroBaseAttribExpr(pUserData->stAttrib.level);
 	}
 	else
 	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
 		return false;
 	}
 
 
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
+	if (_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
 	{
 		_xBuf >> *_pHero->GetQuest();
 	}
 
 	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
+	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
 		_pHero->SetMoney(dwMoney);
 	}
 	else
 	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
 		return false;
 	}
 
 	BYTE bBag = 0;
 	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
+	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
 	}
 	else
 	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
 		return false;
 	}
 	ItemAttrib item;
-	if(bBag > 0)
+	if (bBag > 0)
 	{
-		for(int i = 0; i < bBag; ++i)
+		for (int i = 0; i < bBag; ++i)
 		{
 			_xBuf >> item;
 			//item.atkPois = 1;
@@ -2993,9 +1464,9 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 
 			_pHero->OnItemDataLoaded(&item);
 
-			if(item.id == 97)
+			if (item.id == 97)
 			{
-				if(item.reqValue == 0)
+				if (item.reqValue == 0)
 				{
 					item.reqType = 1;
 					item.reqValue = 38;
@@ -3004,21 +1475,18 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 			_pHero->AddBagItem(&item);
 		}
 	}
-	if(_xBuf.GetLength() >= 1)
+	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBody;
 	}
 	else
 	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
 		return false;
 	}
-	if(bBody > 0)
+	if (bBody > 0)
 	{
 		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
+		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
 			_xBuf >> item;
@@ -3027,9 +1495,9 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 
 			_pHero->OnItemDataLoaded(&item);
 
-			if(item.id == 97)
+			if (item.id == 97)
 			{
-				if(item.reqValue == 0)
+				if (item.reqValue == 0)
 				{
 					item.reqType = 1;
 					item.reqValue = 38;
@@ -3041,46 +1509,43 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 
 	//	Magic
 	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
+	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
 	}
 	else
 	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
 		return false;
 	}
 
 	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
+	if (bMagic > 0)
 	{
 		BYTE bLevel = 0;
 		WORD wID = 0;
 
-		for(int i = 0; i < bMagic; ++i)
+		for (int i = 0; i < bMagic; ++i)
 		{
 			_xBuf >> wID;
 			_xBuf >> bLevel;
-			if(bLevel > 3)
+			if (bLevel > 7)
 			{
 				return false;
 			}
-			if(bLevel >= 1)
+			if (bLevel >= 1)
 			{
-				if(wID < MEFF_USERTOTAL)
+				if (wID < MEFF_USERTOTAL)
 				{
 #ifdef _DEBUG
 #else
 					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
+					if (pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
 #endif
 					{
-						if(_pHero->AddUserMagic(wID))
+						if (_pHero->AddUserMagic(wID))
 						{
 							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
+							for (int j = 0; j < bLevel; ++j)
 							{
 								_pHero->UpgradeUserMagic(wID);
 							}
@@ -3100,7 +1565,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 
 	//	storage
 	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
+	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
 	}
@@ -3109,20 +1574,20 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	if(bStorage > 0)
+	if (bStorage > 0)
 	{
 		ItemAttrib item;
 
-		for(int i = 0; i < bStorage; ++i)
+		for (int i = 0; i < bStorage; ++i)
 		{
 			_xBuf >> item;
 			//item.atkPois = 1;
 			SET_FLAG(item.atkPois, POIS_MASK_BIND);
 			_pHero->OnItemDataLoaded(&item);
 
-			if(item.id == 97)
+			if (item.id == 97)
 			{
-				if(item.reqValue == 0)
+				if (item.reqValue == 0)
 				{
 					item.reqType = 1;
 					item.reqValue = 38;
@@ -3133,7 +1598,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
+	if (_xBuf.GetLength() >= 8)
 	{
 		DWORD dwReserve = 0;
 		_xBuf >> dwReserve;
@@ -3144,2047 +1609,53 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
+	// >= 210
+	if (_uVersion < BACKMIR_VERSION210) {
+		return true;
 	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-
-bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 3)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 7)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() == 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
-#ifdef _DEBUG
-	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////
-bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
-{
-	UserData* pUserData = _pHero->GetUserData();
-
-	if(_xBuf.GetLength() >= 17)
-	{
-		_xBuf >> pUserData->stAttrib.level;
-		_xBuf >> pUserData->bJob;
-		//g_xMainBuffer >> pUserData->stAttrib.name;
-		//g_xMainBuffer >> pUserData->stAttrib.sex;
-		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
-		_xBuf >> wLastCity;
-		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
-		_xBuf >> dwPos;
-		pUserData->wCoordX = LOWORD(dwPos);
-		pUserData->wCoordY = HIWORD(dwPos);
-		_xBuf >> dwPos;
-		pUserData->stAttrib.HP = LOWORD(dwPos);
-		//pUserData->stAttrib.maxHP = g_nHPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxHP = GetGlobalHP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.HP > pUserData->stAttrib.maxHP)
-		{
-			pUserData->stAttrib.HP = pUserData->stAttrib.maxHP;
-		}
-		pUserData->stAttrib.MP = HIWORD(dwPos);
-		//pUserData->stAttrib.maxMP = g_nMPTable[pUserData->stAttrib.level - 1][pUserData->bJob];
-		pUserData->stAttrib.maxMP = GetGlobalMP(pUserData->stAttrib.level, pUserData->bJob);
-		if(pUserData->stAttrib.MP > pUserData->stAttrib.maxMP)
-		{
-			pUserData->stAttrib.MP = pUserData->stAttrib.maxMP;
-		}
-		_xBuf >> dwPos;
-		pUserData->stAttrib.EXPR = dwPos;
-		//pUserData->stAttrib.maxEXPR = g_nExprTable[pUserData->stAttrib.level - 1];
-		pUserData->stAttrib.maxEXPR = GetGlobalExpr(pUserData->stAttrib.level);
-	}
-	else
-	{
-		//
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-
-	if(_xBuf.GetLength() >= 2 * MAX_QUEST_NUMBER)
-	{
-		_xBuf >> *_pHero->GetQuest();
-	}
-
-	DWORD dwMoney = 0;
-	if(_xBuf.GetLength() > 4)
-	{
-		_xBuf >> dwMoney;
-		_pHero->SetMoney(dwMoney);
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	BYTE bBag = 0;
-	BYTE bBody = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBag;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	ItemAttrib item;
-	if(bBag > 0)
-	{
-		for(int i = 0; i < bBag; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddBagItem(&item);
-		}
-	}
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bBody;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-	if(bBody > 0)
-	{
-		BYTE bPos = 0;
-		for(int i = 0; i < bBody; ++i)
-		{
-			_xBuf >> bPos;
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			memcpy(_pHero->GetEquip((PLAYER_ITEM_TYPE)bPos), &item, sizeof(ItemAttrib));
-		}
-	}
-
-	//	Magic
-	BYTE bMagic = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bMagic;
-	}
-	else
-	{
-		/*delete pObj;
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-		return;*/
-		return false;
-	}
-
-	const MagicInfo* pMagicInfo = NULL;
-	if(bMagic > 0)
-	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
-
-		for(int i = 0; i < bMagic; ++i)
-		{
-			_xBuf >> wID;
-			_xBuf >> bLevel;
-			if(bLevel > 7)
-			{
-				return false;
-			}
-			if(bLevel >= 1)
-			{
-				if(wID < MEFF_USERTOTAL)
-				{
-#ifdef _DEBUG
-#else
-					pMagicInfo = &g_xMagicInfoTable[wID];
-					if(pUserData->stAttrib.level >= pMagicInfo->wLevel[bLevel - 1])
-#endif
-					{
-						if(_pHero->AddUserMagic(wID))
-						{
-							--bLevel;
-							for(int j = 0; j < bLevel; ++j)
-							{
-								_pHero->UpgradeUserMagic(wID);
-							}
-						}
-					}
-#ifdef _DEBUG
-#else
-					else
-					{
-						return false;
-					}
-#endif
-				}
-			}
-		}
-	}
-
-	//	storage
-	BYTE bStorage = 0;
-	if(_xBuf.GetLength() >= 1)
-	{
-		_xBuf >> bStorage;
-	}
-	else
-	{
-		return false;
-	}
-
-	if(bStorage > 0)
-	{
-		ItemAttrib item;
-
-		for(int i = 0; i < bStorage; ++i)
-		{
-			_xBuf >> item;
-			//item.atkPois = 1;
-			SET_FLAG(item.atkPois, POIS_MASK_BIND);
-			_pHero->OnItemDataLoaded(&item);
-
-			if(item.id == 97)
-			{
-				if(item.reqValue == 0)
-				{
-					item.reqType = 1;
-					item.reqValue = 38;
-				}
-			}
-			_pHero->AddStoreItem(&item);
-		}
-	}
-
-	//	two dword reserve
-	if(_xBuf.GetLength() >= 8)
-	{
-		DWORD dwReserve = 0;
-		_xBuf >> dwReserve;
-		_xBuf >> dwReserve;
-	}
-	else
-	{
-		return false;
-	}
-
 	//	save extend fields
-	if(!_pHero->ReadSaveExtendField(_xBuf))
+	if (!_pHero->ReadSaveExtendField(_xBuf))
 	{
 		return false;
 	}
 
-#ifdef _DEBUG
 	return true;
-#else
-	return DBThread::GetInstance()->VerifyHeroItem(_pHero);
-#endif
 }
-/************************************************************************/
-/* 提前处理的数据包
-/************************************************************************/
-bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req)
-{
+
+bool CMainServer::OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req) {
 	RECORD_FUNCNAME_SERVER;
 #ifdef _DEBUG
-	if(NULL != _pExtendInfo)
+	if (NULL != _pExtendInfo)
 	{
 		LOG(INFO) << "额外登录信息:" << _pExtendInfo;
 	}
 #endif
-//AddInfomation("玩家[%s]登入游戏",
-	//req.stAttrib.name);
+
+	// Check connection index
+	if (_dwIndex > MAX_CONNECTIONS) {
+		LOG(ERROR) << "Reach max connection limit " << MAX_CONNECTIONS << ", Conn id is " << _dwIndex;
+		return false;
+	}
 
 	//	登入游戏 获得ID
-	//PkgUserLoginAck ack;
-	//ack.bOk = true;
-	//ack.nId = GameWorld::GetInstance().GenerateObjectID();
 	LoginExtendInfoParser xLoginInfoParser(NULL);
-	if(NULL != _pExtendInfo)
+	if (NULL != _pExtendInfo)
 	{
 		xLoginInfoParser.SetContent(_pExtendInfo);
-		if(!xLoginInfoParser.Parse())
+		if (!xLoginInfoParser.Parse())
 		{
 			LOG(ERROR) << "无法解析附加登录信息" << _pExtendInfo;
 		}
 	}
 
 	//	进行一次合法性检测
-	if(strlen(req.stHeader.szName) > 19)
+	if (strlen(req.stHeader.szName) > 19)
 	{
 		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
 		return false;;
 	}
-	
-	if(req.stHeader.bJob > 2 ||
+
+	if (req.stHeader.bJob > 2 ||
 		req.stHeader.bSex > 2)
 	{
 		LOG(WARNING) << "玩家[" << req.stHeader.szName << "]数据非法，强行踢出";
@@ -5196,365 +1667,79 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 	info.dwConnID = 0;
 	strcpy(info.szName, req.stHeader.szName);
 	info.bExists = true;
+	GameWorld::GetInstance().SyncIsHeroExists(&info);
 
-	if (GameWorld::GetInstance().GetThreadRunMode()) {
-		HANDLE hLoginQueryEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-		MSG msgQuery;
-		msgQuery.message = WM_PLAYERLOGIN;
-		msgQuery.wParam = (WPARAM)hLoginQueryEvent;
-		msgQuery.lParam = (LPARAM)&info;
-		GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
-
-		//	wait the event
-		DWORD dwWaitRet = WaitForSingleObject(hLoginQueryEvent, 1000);
-		if(WAIT_FAILED == dwWaitRet)
-		{
-			LOG(ERROR) << "wait for Event LoginQuery failed. Error:" << GetLastError();
-			//return;
-		}
-		else if(WAIT_TIMEOUT == dwWaitRet)
-		{
-			LOG(ERROR) << "wait for Event LoginQuery timeout.";
-			//return;
-		}
-		else if(WAIT_OBJECT_0 == dwWaitRet)
-		{
-			//	ok
-			if(!info.bExists)
-			{
-				//	可以进行登录
-				LOG(INFO) << "Player[" << req.stHeader.szName << "] login ok! index[" << _dwIndex << "] conn code[" << GetConnCode(_dwIndex) << "]";
-			}
-			else
-			{
-				//	踢出之前的玩家
-				LOG(ERROR) << "Player[" << req.stHeader.szName << "] login failed! same uid relogin, index[" << _dwIndex << "]";
-				ForceCloseConnection(info.dwConnID);
-				//return;
-			}
-		}
-
-		CloseHandle(hLoginQueryEvent);
-		hLoginQueryEvent = NULL;
-	} else {
-		GameWorld::GetInstance().SyncIsHeroExists(&info);
-
-		if(!info.bExists)
-		{
-			//	可以进行登录
-			LOG(INFO) << "Player[" << req.stHeader.szName << "] login ok! index[" << _dwIndex << "] conn code[" << GetConnCode(_dwIndex) << "]";
-		}
-		else
-		{
-			//	踢出之前的玩家
-			LOG(ERROR) << "Player[" << req.stHeader.szName << "] login failed! same uid relogin, index[" << _dwIndex << "]";
-			ForceCloseConnection(info.dwConnID);
-			//return;
-		}
-	}
-
-	if(info.bExists)
+	if (!info.bExists)
 	{
+		//	可以进行登录
+		LOG(INFO) << "Player[" << req.stHeader.szName << "] login ok! index[" << _dwIndex << "] conn code[" << GetConnCode(_dwIndex) << "]";
+	}
+	else
+	{
+		//	踢出之前的玩家
+		LOG(ERROR) << "Player[" << req.stHeader.szName << "] login failed! same uid relogin, index[" << _dwIndex << "]";
+		ForceCloseConnection(info.dwConnID);
+		// NOTE: Previous player is kicked, but current player is kicked too
 		return false;
 	}
 
 	//	继续进行一次判断，看此用户是否已经登录完毕了
-	if(g_pxHeros[_dwIndex] != NULL)
+	if (g_pxHeros[_dwIndex] != NULL)
 	{
 		HeroObject* pExistHero = g_pxHeros[_dwIndex];
 		LOG(ERROR) << "Player[" << req.stHeader.szName << "] already logined.";
 		return false;
 	}
 
-	if(req.xData.size() == 0)
+	// Create a new hero object and check valid
+	HeroObject *pObj = new HeroObject(_dwIndex);
+	// In login game server mode, apply the login server context
+	if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
 	{
-		//	New hero
+		pObj->SetLSIndex(_dwLSIndex);
+		pObj->SetUID(_dwUID);
+		pObj->SetDonateMoney(xLoginInfoParser.GetDonateMoney());
+		pObj->SetDonateLeft(xLoginInfoParser.GetDonateLeft());
 
-		//	进行登录操作
-		HeroObject* pObj = new HeroObject(_dwIndex);
-		pObj->SetMapID(0);
-		pObj->GetUserData()->wCoordX = 20;
-		pObj->GetUserData()->wCoordY = 16;
-		pObj->GetUserData()->bJob = req.stHeader.bJob;
-		ItemAttrib* pAttrib = &pObj->GetUserData()->stAttrib;
-		pAttrib->level = 1;
-		strcpy(pAttrib->name, req.stHeader.szName);
-		//pAttrib->HP = g_nHPTable[pAttrib->level - 1][pObj->GetUserData()->bJob];
-		pAttrib->HP = GetGlobalHP(pAttrib->level, pObj->GetUserData()->bJob);
-		pAttrib->maxHP = pAttrib->HP;
-		//pAttrib->MP = g_nMPTable[pAttrib->level - 1][pObj->GetUserData()->bJob];
-		pAttrib->MP = GetGlobalMP(pAttrib->level, pObj->GetUserData()->bJob);
-		pAttrib->maxMP = pAttrib->MP;
-		pAttrib->EXPR = 0;
-		//pAttrib->maxEXPR = g_nExprTable[pAttrib->level - 1];
-		pAttrib->maxEXPR = GetGlobalExpr(pAttrib->level);
-		pAttrib->sex = req.stHeader.bSex;
-
-		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
+		GiftItemIDVector& refGiftItems = pObj->GetGiftItemIDs();
+		if (xLoginInfoParser.GetGiftCount() != 0)
 		{
-			pObj->SetLSIndex(_dwLSIndex);
-			pObj->SetUID(_dwUID);
-			pObj->SetDonateMoney(xLoginInfoParser.GetDonateMoney());
-			pObj->SetDonateLeft(xLoginInfoParser.GetDonateLeft());
+			refGiftItems.resize(xLoginInfoParser.GetGiftCount());
 
-			GiftItemIDVector& refGiftItems = pObj->GetGiftItemIDs();
-			if(xLoginInfoParser.GetGiftCount() != 0)
+			for (int i = 0; i < xLoginInfoParser.GetGiftCount(); ++i)
 			{
-				refGiftItems.resize(xLoginInfoParser.GetGiftCount());
-
-				for(int i = 0; i < xLoginInfoParser.GetGiftCount(); ++i)
-				{
-					refGiftItems[i] = xLoginInfoParser.GetGiftID(i);
-				}
-			}
-		}
-
-		if (GameWorld::GetInstance().GetThreadRunMode()) {
-			DelayedProcess dp;
-			dp.uOp = DP_USERLOGIN;
-			dp.uParam0 = (unsigned int)pObj;
-			dp.uParam1 = 0;
-			GameWorld::GetInstance().AddDelayedProcess(&dp);
-
-			//	record the player in the global table
-			if(_dwIndex <= MAX_CONNECTIONS)
-			{
-				g_pxHeros[_dwIndex] = pObj;
-			}
-
-			//	Set mapped key
-			++m_dwUserNumber;
-			UpdateServerState();
-
-			AddInfomation("玩家[%s]登入游戏",
-				req.stHeader.szName);
-		} else {
-			if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, true)) {
-				//	delete the hero
-				SAFE_DELETE(pObj);
-				g_pxHeros[_dwIndex] = NULL;
-			} else {
-				//	record the player in the global table
-				if(_dwIndex <= MAX_CONNECTIONS)
-				{
-					g_pxHeros[_dwIndex] = pObj;
-				}
-
-				//	Set mapped key
-				++m_dwUserNumber;
-				UpdateServerState();
-
-				AddInfomation("玩家[%s]登入游戏",
-					req.stHeader.szName);
+				refGiftItems[i] = xLoginInfoParser.GetGiftID(i);
 			}
 		}
 	}
-	else
-	{
-		const char* pData = &req.xData[0];
-		DWORD dwDataLen = req.xData.size();
-
-		static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
-		GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
-		uLongf buflen = MAX_SAVEDATA_SIZE;
-		uLongf srclen = dwDataLen;
-		int nRet = uncompress((Bytef*)s_pBuf, &buflen, (const Bytef*)pData, srclen);
-		if(nRet == Z_OK)
-		{
-			if(g_xMainBuffer.GetLength() > buflen)
-			{
-				LOG(ERROR) << "Buffer overflow.Too large hum data size:" << buflen;
-				return false;
-			}
-
-			g_xMainBuffer.Reset();
-			g_xMainBuffer.Write(s_pBuf, buflen);
-			//delete[] pBuf;
-
-			//	Version
-			HeroObject* pObj = new HeroObject(_dwIndex);
-			UserData* pUserData = pObj->GetUserData();
-			pUserData->bJob = req.stHeader.bJob;
-			pUserData->stAttrib.sex = req.stHeader.bSex;
-			strcpy(pUserData->stAttrib.name, req.stHeader.szName);
-
-			USHORT uVersion = 0;
-			g_xMainBuffer >> uVersion;
-
-			const char s_pszArchive[] = "Archive version:";
-			const char s_pszInvalid[] = "Invalid archive";
-			const char s_pszUserLogin[] = "User login:";
-			const char s_pszUnsupportVersion[] = "Unsupport version:";
-			char szText[MAX_PATH];
-
-			sprintf(szText, "%s[%d]", s_pszArchive, uVersion);
-			//AddInfomation("存档版本[%d]", uVersion);
-			AddInfomation(szText);
-			pObj->SetVersion(uVersion);
-
-			if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-			{
-				pObj->SetLSIndex(_dwLSIndex);
-				pObj->SetUID(_dwUID);
-				pObj->SetDonateMoney(xLoginInfoParser.GetDonateMoney());
-				pObj->SetDonateLeft(xLoginInfoParser.GetDonateLeft());
-
-				GiftItemIDVector& refGiftItems = pObj->GetGiftItemIDs();
-				if(xLoginInfoParser.GetGiftCount() != 0)
-				{
-					refGiftItems.resize(xLoginInfoParser.GetGiftCount());
-
-					for(int i = 0; i < xLoginInfoParser.GetGiftCount(); ++i)
-					{
-						refGiftItems[i] = xLoginInfoParser.GetGiftID(i);
-					}
-				}
-			}
-
-			if(uVersion == BACKMIR_VERSION209 ||
-				uVersion == BACKMIR_VERSION208)
-			{
-				if(LoadHumData208(pObj, g_xMainBuffer))
-				{
-					//	Now Ok
-					if (GameWorld::GetInstance().GetThreadRunMode()) {
-						DelayedProcess dp;
-						dp.uOp = DP_USERLOGIN;
-						dp.uParam0 = (unsigned int)pObj;
-						dp.uParam1 = 1;
-						GameWorld::GetInstance().AddDelayedProcess(&dp);
-
-						//	record the player in the global table
-						if(_dwIndex <= MAX_CONNECTIONS)
-						{
-							g_pxHeros[_dwIndex] = pObj;
-						}
-
-						//	Set mapped key
-						++m_dwUserNumber;
-						UpdateServerState();
-
-						/*AddInfomation("玩家[%s]登入游戏",
-						req.stHeader.szName);*/
-						sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-						AddInfomation(szText);
-					} else {
-						if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, false)) {
-							SAFE_DELETE(pObj);
-							g_pxHeros[_dwIndex] = NULL;
-						} else {
-							//	record the player in the global table
-							if(_dwIndex <= MAX_CONNECTIONS)
-							{
-								g_pxHeros[_dwIndex] = pObj;
-							}
-
-							//	Set mapped key
-							++m_dwUserNumber;
-							UpdateServerState();
-
-							/*AddInfomation("玩家[%s]登入游戏",
-							req.stHeader.szName);*/
-							sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-							AddInfomation(szText);
-						}
-					}
-				}
-				else
-				{
-					//AddInfomation("不支持的存档[%d]或非法的存档", uVersion);
-					sprintf(szText, "%s[%d]", s_pszInvalid, uVersion);
-					//AddInfomation("不支持的存档[%d]或非法的存档", uVersion);
-					AddInfomation(szText);
-
-					delete pObj;
-#ifdef _DEBUG
-					LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-#endif
-					return false;
-				}
-			}
-			else if(uVersion == BACKMIR_VERSION210)
-			{
-				if(LoadHumData210(pObj, g_xMainBuffer))
-				{
-					//	Now Ok
-					if (GameWorld::GetInstance().GetThreadRunMode()) {
-						DelayedProcess dp;
-						dp.uOp = DP_USERLOGIN;
-						dp.uParam0 = (unsigned int)pObj;
-						dp.uParam1 = 1;
-						GameWorld::GetInstance().AddDelayedProcess(&dp);
-
-						//	record the player in the global table
-						if(_dwIndex <= MAX_CONNECTIONS)
-						{
-							g_pxHeros[_dwIndex] = pObj;
-						}
-
-						//	Set mapped key
-						++m_dwUserNumber;
-						UpdateServerState();
-
-						/*AddInfomation("玩家[%s]登入游戏",
-						req.stHeader.szName);*/
-						sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-						AddInfomation(szText);
-					} else {
-						if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, false)) {
-							SAFE_DELETE(pObj);
-							g_pxHeros[_dwIndex] = NULL;
-						} else {
-							//	record the player in the global table
-							if(_dwIndex <= MAX_CONNECTIONS)
-							{
-								g_pxHeros[_dwIndex] = pObj;
-							}
-
-							//	Set mapped key
-							++m_dwUserNumber;
-							UpdateServerState();
-
-							/*AddInfomation("玩家[%s]登入游戏",
-							req.stHeader.szName);*/
-							sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);
-							AddInfomation(szText);
-						}
-					}
-				}
-				else
-				{
-					//AddInfomation("不支持的存档[%d]或非法的存档", uVersion);
-					sprintf(szText, "%s[%d]", s_pszInvalid, uVersion);
-					//AddInfomation("不支持的存档[%d]或非法的存档", uVersion);
-					AddInfomation(szText);
-
-					delete pObj;
-#ifdef _DEBUG
-					LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-#endif
-					return false;
-				}
-			}
-			else
-			{
-#ifdef _DEBUG
-				LOG(WARNING) << "不支持的存档版本[" << uVersion << "]";
-#else
-				LOG(WARNING) << uVersion;
-#endif
-				SAFE_DELETE(pObj);
-			}
+	// Create hero with quest data
+	std::string xErrMsg;
+	if (!CreateLoginHero(pObj, req.stHeader, req.xData, xLoginInfoParser, xErrMsg)) {
+		SAFE_DELETE(pObj);
+		LOG(ERROR) << "Create login hero[" << req.stHeader.szName << "] failed";
+		if (!xErrMsg.empty()) {
+			AddInformation(xErrMsg.c_str());
 		}
-		else
-		{
-#ifdef _DEBUG
-			LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";
-#endif
-			return false;
-		}
+		return false;
 	}
+	// Add it to game world
+	if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, req.xData.empty())) {
+		// Add failed
+		SAFE_DELETE(pObj);
+		g_pxHeros[_dwIndex] = NULL;
+		LOG(ERROR) << "Add hero[" << req.stHeader.szName << "] to game world failed";
+		return false;
+	}
+
+	// Record the player in the global table
+	g_pxHeros[_dwIndex] = pObj;
+
+	// Set mapped key
+	++m_dwUserNumber;
+	UpdateServerState();
+
+	AddInformation("玩家[%s]登入游戏",
+		req.stHeader.szName);
 	return true;
 }
 

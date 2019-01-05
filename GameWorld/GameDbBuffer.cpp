@@ -8,6 +8,7 @@
 std::map<int, ItemFullAttrib> g_xItemFullAttribMap;
 std::map<int, MonsFullAttrib> g_xMonsFullAttribMap;
 std::map<int, ItemExtraAttribList*> g_xItemExtraSuitAttribMap;
+std::vector<HeroBaseInfo> g_xHeroBaseInfo;
 DataRecordList g_xItemRecordList;
 DataRecordList g_xMonsterRecordList;
 
@@ -29,7 +30,7 @@ bool CreateGameDbBuffer()
 	return bRet;
 }
 
-bool CreateGameDbBufferLua(lua_State *L) {
+bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo) {
 	bool res = LuaDataLoader::LoadItemAttrib(L, pszDefaultItemFullAttribTableName, g_xItemFullAttribMap);
 	if (!res) {
 		LOG(ERROR) << "Error on loading item attrib from lua";
@@ -87,7 +88,78 @@ bool CreateGameDbBufferLua(lua_State *L) {
 		memset(pa.second->szSuitChName, 0, sizeof(pa.second->szSuitChName));
 #endif
 	}
+	// Initialize hero base attrib
+	if (bUsingLuaHeroBaseInfo) {
+		g_xHeroBaseInfo.resize(MAX_LEVEL);
+		if (!LuaDataLoader::LoadHeroBaseAttrib(L, pszDefaultHeroBaseAttirbTableName, g_xHeroBaseInfo)) {
+			LOG(ERROR) << "Error on loading hero base attrib from lua";
+			return false;
+		}
+		if (!compareLuaHeroBaseInfo()) {
+			LOG(ERROR) << "Compare lua hero base info with share data failed";
+			return false;
+		}
+	}
+	
 	return true;
+}
+
+bool compareLuaHeroBaseInfo() {
+	for (int i = 1; i <= MAX_LEVEL; i++) {
+		HeroBaseInfo heroBaseInfo;
+		if (!GetRecordInHeroBaseAttribTable(i, &heroBaseInfo)) {
+			return false;
+		}
+
+		for (int job = 0; job < 3; job++) {
+			if (GetGlobalHP(i, job) != heroBaseInfo.GetHP(job)) {
+				return false;
+			}
+			if (GetGlobalMP(i, job) != heroBaseInfo.GetMP(job)) {
+				return false;
+			}
+			if (GetGlobalWanLi(i, job) != heroBaseInfo.GetWanli(job)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+int GetHeroBaseAttribExpr(int nLevel) {
+	HeroBaseInfo baseInfo;
+	if (!GetRecordInHeroBaseAttribTable(nLevel, &baseInfo)) {
+		LOG(ERROR) << "Failed to get hero base expr";
+		return 0;
+	}
+	return baseInfo.GetExpr();
+}
+
+int GetHeroBaseAttribHP(int nLevel, int nJob) {
+	HeroBaseInfo baseInfo;
+	if (!GetRecordInHeroBaseAttribTable(nLevel, &baseInfo)) {
+		LOG(ERROR) << "Failed to get hero base hp";
+		return 0;
+	}
+	return baseInfo.GetHP(nJob);
+}
+
+int GetHeroBaseAttribMP(int nLevel, int nJob) {
+	HeroBaseInfo baseInfo;
+	if (!GetRecordInHeroBaseAttribTable(nLevel, &baseInfo)) {
+		LOG(ERROR) << "Failed to get hero base mp";
+		return 0;
+	}
+	return baseInfo.GetMP(nJob);
+}
+
+int GetHeroBaseAttribWanLi(int nLevel, int nJob) {
+	HeroBaseInfo baseInfo;
+	if (!GetRecordInHeroBaseAttribTable(nLevel, &baseInfo)) {
+		LOG(ERROR) << "Failed to get hero base wanli";
+		return 0;
+	}
+	return baseInfo.GetWanli(nJob);
 }
 
 bool compareLuaItem() {
@@ -230,6 +302,30 @@ bool GetRecordInMonsterTable(int _id, ItemAttrib* _pOut)
 	}
 
 	return false;
+}
+
+bool GetRecordInHeroBaseAttribTable(int nLevel, HeroBaseInfo *_pAttrib) {
+	if (nullptr == _pAttrib) {
+		return false;
+	}
+	if (nLevel > MAX_LEVEL || nLevel <= 0) {
+		return false;
+	}
+
+	if (g_xHeroBaseInfo.empty()) {
+		// Using the share data
+		_pAttrib->nExpr = GetHeroBaseAttribExpr(nLevel);
+		for (int i = 0; i < 3; i++) {
+			_pAttrib->nHP[i] = GetGlobalHP(nLevel, i);
+			_pAttrib->nMP[i] = GetGlobalMP(nLevel, i);
+			_pAttrib->nWanli[i] = GetGlobalWanLi(nLevel, i);
+		}
+		
+		return true;
+	}
+	
+	memcpy(_pAttrib, &g_xHeroBaseInfo[nLevel - 1], sizeof(HeroBaseInfo));
+	return true;
 }
 
 int __cdecl DBItemAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, char** _pName)

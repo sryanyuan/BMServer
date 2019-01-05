@@ -8,19 +8,27 @@
 struct lua_State;
 typedef std::map<int, ItemAttrib> DataRecordList;
 struct ItemExtraAttribList;
+struct HeroBaseInfo;
 //////////////////////////////////////////////////////////////////////////
 bool CreateGameDbBuffer();
 void ReleaseGameDbBuffer();
 
-bool CreateGameDbBufferLua(lua_State *L);
+bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo);
 void ReleaseGameDbBufferLua();
 bool compareLuaItem();
+bool compareLuaHeroBaseInfo();
 
 bool GetRecordInItemTable(int _id, ItemAttrib* _pOut);
 
 bool GetRecordInMonsterTable(int id, ItemAttrib *pItem);
 
 bool GetRecordsInMonsDropTable(int id, MonsDropItemInfoVec **pVec);
+
+bool GetRecordInHeroBaseAttribTable(int nLevel, HeroBaseInfo *_pAttrib);
+int GetHeroBaseAttribExpr(int nLevel);
+int GetHeroBaseAttribHP(int nLevel, int nJob);
+int GetHeroBaseAttribMP(int nLevel, int nJob);
+int GetHeroBaseAttribWanLi(int nLevel, int nJob);
 
 int GetItemGradeInFullAttrib(int id);
 
