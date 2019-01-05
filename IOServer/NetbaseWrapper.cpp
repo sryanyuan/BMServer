@@ -50,6 +50,10 @@ void __stdcall NetbaseWrapper::ResumeMainThread()
 
 }
 
+void __stdcall NetbaseWrapper::WaitTerm() {
+	m_trd.join();
+}
+
 void __stdcall NetbaseWrapper::SetUserInfo(DWORD dwConnectionIndex,void* user)
 {
 

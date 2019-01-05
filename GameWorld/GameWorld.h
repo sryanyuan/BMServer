@@ -43,7 +43,6 @@
 #define THREAD_CALL __stdcall
 //////////////////////////////////////////////////////////////////////////
 typedef std::map<int, GameObject*> ObjectMap;
-typedef std::map<unsigned int, unsigned int> Connection2ID;
 //////////////////////////////////////////////////////////////////////////
 #define MAX_COMMAND		80960
 
@@ -53,11 +52,14 @@ typedef std::map<unsigned int, unsigned int> Connection2ID;
 
 #define MAX_CONNECTIONS	500
 
-#define STOP_EXETOOLONG		3
-#define STOP_HEROSPDERR		1
-#define STOP_HEROATTRIBERR	2
-#define STOP_HPZERONOTDEAD	4
-#define STOP_MONSNOTDEAD	5
+enum {
+	STOP_DUMMY,
+	STOP_HEROSPDERR,
+	STOP_HEROATTRIBERR,
+	STOP_EXETOOLONG,
+	STOP_HPZERONOTDEAD,
+	STOP_MONSNOTDEAD,
+};
 //////////////////////////////////////////////////////////////////////////
 extern HeroObject* g_pxHeros[MAX_CONNECTIONS + 1];
 extern std::vector<MagicInfo> g_xMagicInfoTable;
@@ -340,9 +342,6 @@ private:
 
 	//	delayed command buffer
 	ByteBuffer m_xProcessD;
-
-	//	translate connection index to object id
-	//Connection2ID m_xTranslateTable;
 
 	//	Database thread
 	DBThread* m_xDatabase;

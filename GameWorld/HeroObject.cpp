@@ -11,6 +11,7 @@
 #include <algorithm>
 #include "ObjectStatus.h"
 #include "ExceptionHandler.h"
+#include "../IOServer/SServerEngine.h"
 #include "../CMainServer/CMainServer.h"
 #include "../../CommonModule/SettingLoader.h"
 #include "../../CommonModule/StatusDefine.h"
@@ -144,6 +145,8 @@ HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 
 	m_bPushLSLogoutEvent = true;
 	m_bLSLoginPushed = false;
+
+	m_bKicked = false;
 }
 
 HeroObject::~HeroObject()
@@ -213,11 +216,6 @@ void HeroObject::DoWork(unsigned int _dwTick)
 			FlyToPrison();
 		}
 
-		if(GetObject_HP() > GetObject_MaxHP())
-		{
-			PostMessage(g_hServerDlg, WM_CLOSECONNECTION, GetUserIndex(), 0);
-		}
-
 		//	Check standing on the door
 		//if(GetUserData()->eGameState == OS_STAND)
 		{
@@ -232,9 +230,10 @@ void HeroObject::DoWork(unsigned int _dwTick)
 					{
 						bKick = false;
 					}
-					if(bKick)
+					if(bKick && !GetKicked())
 					{
-						PostMessage(g_hServerDlg, WM_CLOSECONNECTION, GetUserIndex(), 0);
+						CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+						SetKicked();
 					}
 				}
 			}
@@ -314,7 +313,10 @@ void HeroObject::DoAction(unsigned int _dwTick)
 				char szName[20];
 				ObjectValid::GetItemName(&GetUserData()->stAttrib, szName);
 				LOG(INFO) << "Connection cut [" << GetID() << "] " << szName;
-				PostMessage(g_hServerDlg, WM_CLOSECONNECTION, GetUserIndex(), 0);
+				if (!GetKicked()) {
+					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+					SetKicked();
+				}
 
 				//	Don't show the msg again
 				SetLastRecvDataTime(GetTickCount());
@@ -494,7 +496,10 @@ unsigned int HeroObject::PushMessage(ByteBuffer* _xBuf)
 	{
 		LOG(ERROR) << "Fatal error has occured on writing data to receive buffer, Player:" << GetName();
 		LOG(ERROR) << "Exception:" << e->what();
-		CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
+		if (!GetKicked()) {
+			CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
+			SetKicked();
+		}
 	}
 	if(uWrite == 0)
 	{
@@ -1654,7 +1659,6 @@ bool HeroObject::AcceptLogin(bool _bNew)
 	if(nRet == Z_OK)
 	{
 		//	OK
-		PostMessage(g_hServerDlg, WM_INSERTMAPKEY, (WPARAM)GetUserIndex(), (LPARAM)GetID());
 
 		ack.xMsg.resize(cmpsize);
 		/*for(int i = 0; i < cmpsize; ++i)

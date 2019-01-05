@@ -1,3 +1,4 @@
+#include "../IOServer/SServerEngine.h"
 #include "../CMainServer/CMainServer.h"
 #include "GameWorld.h"
 #include "GameSceneManager.h"
@@ -17,7 +18,9 @@
 #include "../../CommonModule/NotifySystem.h"
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/StoveManager.h"
+#include "../common/cmsg.h"
 #include "../runarg.h"
+#include <thread>
 //////////////////////////////////////////////////////////////////////////
 //	For glog
 #define GLOG_NO_ABBREVIATED_SEVERITIES
@@ -384,10 +387,8 @@ unsigned int GameWorld::WorldRun()
 	DoWork_Objects(dwCurrentWorkTime);
 	//	handle delayed process
 	DoWork_DelayedProcess(dwTimeInterval);
-	//	into sleep
-	//SleepEx(1, TRUE);
 
-	//	Test
+	// Anti debug
 	if(dwCurrentWorkTime - dwLastWorkTime > 5000)
 	{
 		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
@@ -3911,8 +3912,7 @@ int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
 		//	无法进入
 		pOldHero->SendSystemMessage("您的账号被别人登录");
 		pOldHero->DisablePushLSLogoutEvent();
-		//PostMessage(g_hServerDlg, WM_CLOSECONNECTION, pOldHero->GetUserIndex(), 0);
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(pOldHero->GetUserIndex());
+		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(pOldHero->GetUserIndex());
 	}
 	else
 	{
@@ -3965,12 +3965,12 @@ int GameWorld::SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf) {
 	{
 		// Buffer un-serialize error, disconnect user and report error
 		LOG(ERROR) << "Hero " << _pHero->GetName() << " unserialize packet failed:" << excp.what();
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_pHero->GetUserIndex());
+		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_pHero->GetUserIndex());
 	}
 	catch (...)
 	{
 		LOG(ERROR) << "Hero " << _pHero->GetName() << " dispatch packet fatal error";
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_pHero->GetUserIndex());
+		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_pHero->GetUserIndex());
 	}
 	
 	return 0;

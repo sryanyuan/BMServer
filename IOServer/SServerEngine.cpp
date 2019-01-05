@@ -86,12 +86,12 @@ SServerEngine::SServerEngine()
 
 SServerEngine::~SServerEngine()
 {
+	DeleteCriticalSection(&m_xSendMutex);
+	DeleteCriticalSection(&m_xTimerMutex);
 	if (NULL != m_pUserConnArray) {
 		delete[] m_pUserConnArray;
 		m_pUserConnArray = NULL;
 	}
-	DeleteCriticalSection(&m_xSendMutex);
-	DeleteCriticalSection(&m_xTimerMutex);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -138,11 +138,13 @@ int SServerEngine::Start(const char* _pszAddr, unsigned short _uPort)
 	m_uPort = _uPort;
 	m_xAddr = _pszAddr;
 
-	//	create worker thread
-	int nRet = _beginthreadex(NULL, 0, &SServerEngine::__threadEntry, this, 0, NULL);
-	if (0 == nRet) {
-		return kSServerResult_CreateThreadFailed;
-	}
+	// Create worker thread
+	m_trd = std::thread(&SServerEngine::__threadEntry, this);
+	
+	//int nRet = _beginthreadex(NULL, 0, &SServerEngine::__threadEntry, this, 0, NULL);
+	//if (0 == nRet) {
+	//	return kSServerResult_CreateThreadFailed;
+	//}
 
 	return kSServerResult_Ok;
 }
@@ -154,20 +156,25 @@ int SServerEngine::Stop()
 		return 1;
 	}
 
-	int nTid = (int)GetCurrentThreadId();
+	/*int nTid = (int)GetCurrentThreadId();
 #ifdef _DEBUG
 	if (nTid != m_nWorkingTid)
 	{
 		assert("Tid conflict");
 	}
 #endif
-
+	*/
 	if (NULL != m_pEventBase)
 	{
-		return event_base_loopbreak(m_pEventBase);
+		int nRet = event_base_loopbreak(m_pEventBase);
+		return nRet;
 	}
 
 	return 2;
+}
+
+void SServerEngine::Join() {
+	m_trd.join();
 }
 
 int SServerEngine::Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg)

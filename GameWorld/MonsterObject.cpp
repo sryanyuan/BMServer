@@ -1,3 +1,4 @@
+#include "../IOServer/SServerEngine.h"
 #include "../CMainServer/CMainServer.h"
 #include "MonsterObject.h"
 #include "GameSceneManager.h"
@@ -110,9 +111,10 @@ void MonsterObject::DoWork(unsigned int _dwTick)
 					{
 						bKick = false;
 					}
-					if(bKick)
+					if(bKick && !pMaster->GetKicked())
 					{
-						PostMessage(g_hServerDlg, WM_CLOSECONNECTION, pMaster->GetUserIndex(), 0);
+						CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(pMaster->GetUserIndex());
+						pMaster->SetKicked();
 					}
 				}
 			}

@@ -6,7 +6,10 @@
 #include <list>
 #include <afxwin.h>
 #include <string>
+#include <mutex>
+#include "Interface/ServerShell.h"
 #include "resource.h"
+#include "common/cmsg.h"
 // CServerDlg 对话框
 class CMainServer;
 class HeroObject;
@@ -16,8 +19,11 @@ extern HWND g_hServerDlg;
 #define TIMER_DELETEPLAYERS		1
 #define TIMER_REGISTERGS		2
 #define TIMER_UPDATERUNNINGTIME 3
+#define TIMER_MSGBOARD			4
 //////////////////////////////////////////////////////////////////////////
-class CServerDlg : public CDialog
+using MsgBoardTextList = std::list < std::string > ;
+
+class CServerDlg : public CDialog, public ServerShell
 {
 	DECLARE_DYNAMIC(CServerDlg)
 
@@ -33,6 +39,19 @@ public:
 	virtual void OnOK();
 	virtual void OnCancel();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+
+	// Override message board
+	virtual void AddInformation(const char* _szText) {
+		m_xMsgBoardMu.lock();
+		m_xMsgBoardTextList.emplace_back(_szText);
+		m_xMsgBoardMu.unlock();
+	}
+	virtual void UpdateDistinctIPCount(int _nCnt) {
+		PostMessage(WM_DISTINCTIP, _nCnt, 0);
+	}
+	virtual void UpdateObjectCount(int _nHero, int _nMons) {
+		PostMessage(WM_PLAYERCOUNT, _nHero, _nMons);
+	}
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
@@ -58,6 +77,9 @@ private:
 	void AutoRun();
 	void RegisterGameRoom();
 
+	void AddTextToMessageBoardFmt(const char* fmt, ...);
+	void AddTextToMessageBoard(const char* fmt);
+
 protected:
 	CMainServer* m_pxMainServer;
 
@@ -75,6 +97,9 @@ private:
 	std::string m_xRegisterGameRoomPassword;
 	std::string m_xRegisterGameRoomIp;
 	std::string m_xRegisterGameRoomPort;
+
+	MsgBoardTextList m_xMsgBoardTextList;
+	std::mutex m_xMsgBoardMu;
 
 public:
 	void OnRegisterGsResult(const char *_pData, size_t _uLen);

@@ -7,7 +7,6 @@
 #include "../../CommonModule/ObjectData.h"
 #include "../../CommonModule/MagicEffectID.h"
 #include "../../CommonModule/ShareData.h"
-#include "../CMainServer/CUser.h"
 #include <stdlib.h>
 #include <string>
 #define GLOG_NO_ABBREVIATED_SEVERITIES
@@ -199,7 +198,7 @@ struct ReceiveDamageInfo
 };
 //////////////////////////////////////////////////////////////////////////
 
-class GameObject  : public LockObject/*, public CUser*/
+class GameObject  : public LockObject
 {
 	friend class GameWorld;
 
@@ -505,7 +504,7 @@ typedef std::map<int, DWORD> DrugUseTimeMap;
 #define MAX_STORE_NUMBER	36
 #define MAX_BIGSTORE_NUMBER	80
 
-class HeroObject : public GameObject/*, public CUser*/
+class HeroObject : public GameObject
 {
 public:
 	//	constructor and destructor
@@ -651,6 +650,14 @@ public:
 	inline void SetPkType(HeroPkType _eT)			{m_ePkType = _eT;}
 	bool CanPk();
 	bool CanPkPlayer(HeroObject* _pHero);
+
+	// Is kicked, to avoid kick more than once
+	void SetKicked() {
+		m_bKicked = true;
+	}
+	bool GetKicked() {
+		return m_bKicked;
+	}
 
 public:
 	ItemAttrib* GetItemByIndex(DWORD _dwIndex);
@@ -1242,8 +1249,8 @@ protected:
 	// If not pushed login event when insert player, push it
 	bool m_bLSLoginPushed;
 
-//public:
-	//int m_nConnectionIndex;
+	// Kicked or not
+	bool m_bKicked;
 };
 
 typedef std::list<HeroObject*> HeroObjectList;

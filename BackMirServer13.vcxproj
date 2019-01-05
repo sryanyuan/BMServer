@@ -174,7 +174,6 @@
     <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="CMainServer\CMainServer.cpp" />
     <ClCompile Include="CMainServer\CMainServer_Deprecated.cpp" />
-    <ClCompile Include="CMainServer\CUser.cpp" />
     <ClCompile Include="ConfigDlg.cpp" />
     <ClCompile Include="CpuQueryDlg.cpp" />
     <ClCompile Include="GameWorld\ConnCode.cpp" />
@@ -324,7 +323,7 @@
     <ClInclude Include="ChildView.h" />
     <ClInclude Include="CMainServer\CMainServer.h" />
     <ClInclude Include="CMainServer\CMainServerMacros.h" />
-    <ClInclude Include="CMainServer\CUser.h" />
+    <ClInclude Include="common\cmsg.h" />
     <ClInclude Include="common\glog.h" />
     <ClInclude Include="common\memleak.h" />
     <ClInclude Include="common\shared.h" />
@@ -359,6 +358,7 @@
     <ClInclude Include="GameWorld\WeightCalc.h" />
     <ClInclude Include="GameWorld\WorldEventDispatcher.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="Interface\ServerShell.h" />
     <ClInclude Include="IOServer\Def.h" />
     <ClInclude Include="IOServer\IndexManager.h" />
     <ClInclude Include="IOServer\Logger.h" />

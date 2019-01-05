@@ -1,3 +1,4 @@
+#include "../IOServer/SServerEngine.h"
 #include "../CMainServer/CMainServer.h"
 #include "ObjectEngine.h"
 #include "GameWorld.h"
@@ -1967,7 +1968,10 @@ void HeroObject::DoPacket(const PkgPlayerClickNPCReq& req)
 				ObjectValid::GetItemName(&pNPC->GetUserData()->stAttrib, szName);
 				LOG(ERROR) << szName << " fatal error operation!!!ClickNPCReq";
 				LOG(ERROR) << "Content:" << g_xThreadBuffer.ToHexString();
-				CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(GetUserIndex());
+				if (!GetKicked()) {
+					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+					SetKicked();
+				}
 			}
 		} else {
 			pNPC->DispatchPacket(g_xThreadBuffer);
@@ -5193,7 +5197,10 @@ void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 	catch (std::exception e)
 	{
 		LOG(ERROR) << "Invalid ext save." << GetName();
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(GetUserIndex());
+		if (!GetKicked()) {
+			CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+			SetKicked();
+		}
 	}
 }
 

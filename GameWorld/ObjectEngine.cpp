@@ -1,7 +1,5 @@
-#if _MSC_VER == 1800
-#include "../IOServer/netbase.h"
-#else
-#include "netbase.h"
+#ifdef _WIN32
+#include <WinSock2.h>
 #endif
 #include "ObjectEngine.h"
 #define GLOG_NO_ABBREVIATED_SEVERITIES
@@ -52,93 +50,17 @@ void ConsolePrint(const char* _pszText)
 
 unsigned int SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)
 {
-	CNetbase* pNet = CMainServer::GetInstance()->GetEngine();
-	if(NULL == pNet)
-	{
-		return 0;
-	}
-
-	if(_pBuf->GetLength() == 0)
-	{
-		return 0;
-	}
-
-	DWORD dwPacketLength = _pBuf->GetLength();
-	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
-	*(DWORD*)pBuf = dwPacketLength;
-
-	if(TRUE == pNet->SendToUser(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4, 0))
-	{
-#ifdef _VIEW_PACKET
-		LOG(INFO) << _pBuf->ToHexString() << "sended";
-#endif
-		return dwPacketLength;
-	}
-	return 0;
+	return CMainServer::SendBuffer(_nIdx, _pBuf);
 }
 
 unsigned int SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf)
 {
-	CNetbase* pNet = CMainServer::GetInstance()->GetEngine();
-	if(NULL == pNet)
-	{
-		return 0;
-	}
-
-	if(_pBuf->GetLength() == 0)
-	{
-		return 0;
-	}
-
-	DWORD dwPacketLength = _pBuf->GetLength();
-	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
-	*(DWORD*)pBuf = dwPacketLength;
-
-	if(TRUE == pNet->SendToServer(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4, 0))
-	{
-#ifdef _VIEW_PACKET
-		LOG(INFO) << _pBuf->ToHexString() << "sended";
-#endif
-		return dwPacketLength;
-	}
-	return 0;
+	return CMainServer::SendBufferToServer(_nIdx, _pBuf);
 }
 
 unsigned int SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg)
 {
-	CNetbase* pNet = CMainServer::GetInstance()->GetEngine();
-	if(NULL == pNet)
-	{
-		return 0;
-	}
-
-	static char s_bytesBuffer[0xff];
-	//	write code
-	memcpy(s_bytesBuffer, &_nCode, sizeof(int));
-
-	int nSize = _refMsg.ByteSize();
-	if (0 == nSize)
-	{
-		return 0;
-	}
-	if (nSize > sizeof(s_bytesBuffer))
-	{
-		g_xConsole.CPrint("Byte buffer overflow : %d, size %d", _nCode, nSize);
-		return 0;
-	}
-
-	if (!_refMsg.SerializeToArray(s_bytesBuffer + sizeof(int), sizeof(s_bytesBuffer) - sizeof(int)))
-	{
-		g_xConsole.CPrint("Serialize protobuf failed");
-		return 0;
-	}
-
-	if (TRUE == pNet->SendToServer(_nIdx, (char*)s_bytesBuffer, 4 + nSize, 0))
-	{
-		return 4 + nSize;
-	}
-
-	return 0;
+	return CMainServer::SendProtoToServer(_nIdx, _nCode, _refMsg);
 }
 
 void MirLog(const char* _pLog)
@@ -147,8 +69,7 @@ void MirLog(const char* _pLog)
 }
 //////////////////////////////////////////////////////////////////////////
 
-GameObject::GameObject(/*DWORD _dwID*/) : /*CUser(_dwID)
-	, */m_xMsgQueue(OBJECT_MSGQUEUE_SIZE)
+GameObject::GameObject(/*DWORD _dwID*/) : m_xMsgQueue(OBJECT_MSGQUEUE_SIZE)
 {
 	m_dwTotalExeTime = 0;
 	m_dwLastExeTime = 0;
@@ -354,7 +275,10 @@ bool GameObject::DoMsgQueue(unsigned int _dwTick)
 		{
 			HeroObject* pHero = static_cast<HeroObject*>(this);
 			LOG(ERROR) << "Player[" << pHero->GetName() << " abnormal.Invalid packet, disconnect.";
-			CMainServer::GetInstance()->ForceCloseConnection(pHero->GetUserIndex());
+			if (!pHero->GetKicked()) {
+				CMainServer::GetInstance()->ForceCloseConnection(pHero->GetUserIndex());
+				pHero->SetKicked();
+			}
 		}
 	}
 	catch(...)

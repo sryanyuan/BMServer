@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "BackMirServer.h"
 #include "SettingDlg.h"
-//#include "afxdialogex.h"
+#include "IOServer/SServerEngine.h"
 #include "./GameWorld/GameWorld.h"
 #include "./CMainServer/CMainServer.h"
 #include "./GameWorld/GameSceneManager.h"
@@ -114,9 +114,6 @@ void CSettingDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//	刷新
-	/*DelayedProcess dp;
-	dp.uOp = DP_GETUSERINFO;
-	GameWorld::GetInstance().AddDelayedProcess(&dp);*/
 	m_xOnlineUserInfoList.clear();
 	m_xListCtrl.DeleteAllItems();
 
@@ -136,7 +133,13 @@ void CSettingDlg::OnBnClickedButton1()
 			ZeroMemory(&info, sizeof(info));
 
 			info.dwCnnIndex = i;
-			CMainServer::GetInstance()->GetEngine()->GetUserAddress(i, szIP, &info.uPort);
+			SServerConn *pConn = CMainServer::GetInstance()->GetIOServer()->GetUserConn(i);
+			if (nullptr == pConn) {
+				continue;
+			}
+			if (!pConn->GetAddress(szIP, &info.uPort)) {
+				continue;
+			}
 			info.xIP = szIP;
 			ObjectValid::GetItemName(&(g_pxHeros[i]->GetUserData()->stAttrib), szIP);
 			info.xName = szIP;
@@ -242,7 +245,7 @@ void CSettingDlg::OnBnClickedButton2()
 			//	Kick out
 			if(dwCnnIndex != 0xFFFFFFFF)
 			{
-				CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(dwCnnIndex);
+				CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(dwCnnIndex);
 			}
 		}
 	}
@@ -291,7 +294,7 @@ void CSettingDlg::OnBnClickedButton4()
 		++begIter)
 	{
 		DWORD dwCnnIndex = begIter->dwCnnIndex;
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(dwCnnIndex);
+		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(dwCnnIndex);
 
 		Sleep(1);
 	}

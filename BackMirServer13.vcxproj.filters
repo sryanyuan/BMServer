@@ -52,6 +52,9 @@
     <Filter Include="IOServer">
       <UniqueIdentifier>{c013a373-329d-4e44-a0e1-de279ddfd072}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{10b46e9f-999e-4c86-a1ab-188055e23398}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackMirServer.cpp">
@@ -91,9 +94,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CMainServer\CMainServer.cpp">
-      <Filter>CMainServer</Filter>
-    </ClCompile>
-    <ClCompile Include="CMainServer\CUser.cpp">
       <Filter>CMainServer</Filter>
     </ClCompile>
     <ClCompile Include="..\CommonModule\BMHttpManager.cpp">
@@ -509,9 +509,6 @@
     <ClInclude Include="CMainServer\CMainServer.h">
       <Filter>CMainServer</Filter>
     </ClInclude>
-    <ClInclude Include="CMainServer\CUser.h">
-      <Filter>CMainServer</Filter>
-    </ClInclude>
     <ClInclude Include="Net\Packet.h">
       <Filter>Net</Filter>
     </ClInclude>
@@ -790,6 +787,12 @@
     </ClInclude>
     <ClInclude Include="CMainServer\CMainServerMacros.h">
       <Filter>CMainServer</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\ServerShell.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="common\cmsg.h">
+      <Filter>GameCommon</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

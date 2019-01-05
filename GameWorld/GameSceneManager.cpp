@@ -17,6 +17,7 @@
 #include "../../CommonModule/ExecuteTimer.h"
 #include "GameInstanceScene.h"
 #include "MonsterTemplateObject.h"
+#include "../Interface/ServerShell.h"
 #include "../../CommonModule/ProtoType.h"
 #include "../../CommonModule/loginsvr.pb.h"
 //////////////////////////////////////////////////////////////////////////
@@ -597,7 +598,10 @@ void GameSceneManager::Update(DWORD _dwTick)
 		int nCounter = CountPlayer();
 		int nMonsterCounter = CountMonster();
 
-		PostMessage(g_hServerDlg, WM_PLAYERCOUNT, nCounter, nMonsterCounter);
+		ServerShell *pServerShell = CMainServer::GetInstance()->GetServerShell();
+		if (nullptr != pServerShell) {
+			pServerShell->UpdateObjectCount(nCounter, nMonsterCounter);
+		}
 	}
 
 	assert(_CrtCheckMemory());

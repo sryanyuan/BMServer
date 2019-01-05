@@ -8,6 +8,7 @@
 #include "Helper.h"
 #include "GameWorld/GameWorld.h"
 #include "runarg.h"
+#include "common/cmsg.h"
 
 // CConfigDlg ¶Ô»°¿ò
 

@@ -1,15 +1,11 @@
-#include <afx.h>
-#if _MSC_VER == 1800
-#include "../IOServer/netbase.h"
-#else
-#include "netbase.h"
+//#include <afx.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#include <Shlwapi.h>
 #endif
+#include "../IOServer/SServerEngine.h"
 #include "../CMainServer/CMainServer.h"
 #include "../common/glog.h"
-#include "../Helper.h"
-#include <Shlwapi.h>
-#include <direct.h>
-#include "../Net/Packet.h"
 #include "../GameWorld/GameWorld.h"
 #include "../GameWorld/GameSceneManager.h"
 #include "../GameWorld/GameDbBuffer.h"
@@ -19,24 +15,23 @@
 #include "../../CommonModule/CommandLineHelper.h"
 #include "../../CommonModule/LoginExtendInfoParser.h"
 #include "../GameWorld/MonsterObject.h"
-#include <zlib.h>
-#include <time.h>
-#include "../ServerDlg.h"
 #include "../GameWorld/ConnCode.h"
 #include "../../CommonModule/DataEncryptor.h"
-#include "../CpuQueryDlg.h"
 #include "../../CommonModule/loginsvr.pb.h"
 #include "../../CommonModule/ProtoType.h"
 #include "../runarg.h"
-#if _MSC_VER == 1800
-#include "../IOServer/NetbaseWrapper.h"
-#else
-#include <NetbaseWrapper.h>
-#endif
 #include "../GameWorld/GlobalAllocRecord.h"
 #include "../GameWorld/TeammateControl.h"
 #include "../../CommonModule/version.h"
 #include "CMainServerMacros.h"
+#include "../Interface/ServerShell.h"
+#include "../common/cmsg.h"
+#include "../Helper.h"
+
+#include <direct.h>
+#include <zlib.h>
+#include <time.h>
+#include <io.h>
 
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
 
@@ -50,7 +45,6 @@ const char* g_szMode[2] =
 //////////////////////////////////////////////////////////////////////////
 CMainServer::CMainServer()
 {
-	m_pxServer = NULL;
 	m_bMode = MODE_STOP;
 	m_dwUserNumber = 0;
 	InitLogFile();
@@ -62,25 +56,17 @@ CMainServer::CMainServer()
 	m_dwLsConnIndex = 0;
 	m_bAppException = false;
 	m_dwListenPort = 0;
-	m_bUseHTTech = false;
 	InitializeCriticalSection(&m_csNetThreadEventList);
-	m_nNetEngineVersion = 0;
+	m_pServerShell = nullptr;
+	m_pIOServer = nullptr;
 }
 
 CMainServer::~CMainServer()
 {
-	if(m_pxServer)
+	if(m_pIOServer != nullptr)
 	{
-		//if (0 == m_nNetEngineVersion)
-		{
-			DestroyNetbaseWrapper(m_pxServer);
-		}
-		/*else
-		{
-			DestoryNetEngineObject(m_pxServer);
-		}*/
-		
-		m_pxServer = NULL;
+		delete m_pIOServer;
+		m_pIOServer = NULL;
 	}
 	GameWorld::DestroyInstance();
 	GameSceneManager::DestroyInstance();
@@ -93,9 +79,39 @@ CMainServer::~CMainServer()
 
 //////////////////////////////////////////////////////////////////////////
 
-CNetbase* CMainServer::GetEngine()
+SServerEngine* CMainServer::GetIOServer()
 {
-	return m_pxServer;
+	return m_pIOServer;
+}
+
+ServerShell* CMainServer::GetServerShell() {
+	return m_pServerShell;
+}
+
+void CMainServer::SetServerShell(ServerShell *_pServerShell) {
+	m_pServerShell = _pServerShell;
+}
+
+void CMainServer::AddInformationToMessageBoard(const char* fmt, ...) {
+	if (nullptr == m_pServerShell) {
+		return;
+	}
+
+	char buffer[MAX_PATH];
+
+	va_list args;
+	va_start(args, fmt);
+	_vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+	SYSTEMTIME lpTime;
+	GetLocalTime(&lpTime);
+
+	char logTime[MAX_PATH];
+	sprintf(logTime, "[%d-%d-%d %02d:%02d:%02d] ", lpTime.wYear, lpTime.wMonth, lpTime.wDay, lpTime.wHour, lpTime.wMinute, lpTime.wSecond);
+
+	strcat(logTime, buffer);
+
+	m_pServerShell->AddInformation(logTime);
 }
 
 /************************************************************************/
@@ -119,37 +135,8 @@ bool CMainServer::InitNetWork()
 	GameWorld::GetInstancePtr()->SetGenElitMons((SettingLoader::GetInstance()->GetIntValue("GENELITEMONS") != 0));
 	GameWorld::GetInstancePtr()->SetEnableOfflineSell((SettingLoader::GetInstance()->GetIntValue("OFFLINESELL") != 0));
 	GameWorld::GetInstancePtr()->SetEnableWorldNotify((SettingLoader::GetInstance()->GetIntValue("WORLDNOTIFY") != 0));
-	int nUsingOldEngine = SettingLoader::GetInstance()->GetIntValue("USINGOLDENGINE");
-	m_nNetEngineVersion = nUsingOldEngine;
 
-	DESC_NETWORK desc;
-	ZeroMemory(&desc, sizeof(desc));
-
-	desc.OnRecvFromUserTCP = _OnRecvFromUserTCP;
-	desc.OnDisconnectUser = _OnDisconnectUser;
-	desc.OnAcceptUser = _OnAcceptUser;
-
-	desc.dwMainMsgQueMaxBufferSize = 1 * ONE_MB;
-	desc.dwMaxUserNum = MAX_USER_NUMBER;
-	desc.dwServerBufferSizePerConnection = 500 * ONE_KB;
-	desc.dwUserBufferSizePerConnection = 64 * ONE_KB;
-	
-	desc.OnRecvFromServerTCP				= &CMainServer::_OnRecvFromServerTCP;
-	desc.OnAcceptServer						= &CMainServer::_OnAcceptServer;
-	desc.OnDisconnectServer					= &CMainServer::_OnDisconnectServer;
-	desc.dwMaxServerNum						= 5;
-
-	desc.dwServerMaxTransferSize			= 32 * 1024;
-	desc.dwUserMaxTransferSize				= 32 * 1024;		//	数据包max size
-	desc.dwConnectNumAtSameTime				= 10;
-	desc.dwFlag								= 0;
-
-	CUSTOM_EVENT ev[8];
-	ZeroMemory(ev, sizeof(ev));
-	ev[desc.dwCustomDefineEventNum].dwPeriodicTime = 10;
-	ev[desc.dwCustomDefineEventNum++].pEventFunc = &CMainServer::_OnGameLoop;
-	desc.pEvent = ev;
-
+	// Create IOServer
 	{
 		WSADATA data = {0};
 		if (0 != WSAStartup(MAKEWORD(2, 2), &data))
@@ -157,10 +144,21 @@ bool CMainServer::InitNetWork()
 			LOG(FATAL) << "WSASTARTUP ERROR";
 			return false;
 		}
-		m_pxServer = CreateNetbaseWrapper();
+		m_pIOServer = new SServerEngine;
 	}
 
-	if(!m_pxServer->CreateNetwork(&desc, 50, 0))
+	// Initialize IOServer
+	SServerInitDesc serverInitDesc;
+	memset(&serverInitDesc, 0, sizeof(serverInitDesc));
+	serverInitDesc.pFuncOnAcceptUser = (FUNC_ONACCEPT)_OnAcceptUser;
+	serverInitDesc.pFuncOnDisconnctedUser = (FUNC_ONDISCONNECTED)_OnDisconnectUser;
+	serverInitDesc.pFuncOnRecvUser = (FUNC_ONRECV)_OnRecvFromUserTCP;
+	serverInitDesc.pFuncOnAcceptServer = (FUNC_ONACCEPT)_OnAcceptServer;
+	serverInitDesc.pFuncOnDisconnctedServer = (FUNC_ONDISCONNECTED)_OnDisconnectServer;
+	serverInitDesc.pFuncOnRecvServer = (FUNC_ONRECV)_OnRecvFromServerTCP;
+	serverInitDesc.uMaxConnUser = MAX_USER_NUMBER;
+
+	if (kSServerResult_Ok != m_pIOServer->Init(&serverInitDesc))
 	{
 		//	LOG??
 		LOG(FATAL) << "网络引擎创建失败";
@@ -171,6 +169,9 @@ bool CMainServer::InitNetWork()
 		LOG(INFO) << "网络引擎创建成功";
 	}
 
+	// Add timer job
+	m_pIOServer->AddTimerJob(0, 10, FUNC_ONTIMER(&CMainServer::_OnGameLoop));
+
 	return true;
 }
 
@@ -179,19 +180,19 @@ bool CMainServer::InitNetWork()
 /************************************************************************/
 bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 {
-	if(!m_pxServer)
+	if(nullptr == m_pIOServer)
 	{
 		return false;
 	}
 
-	if(!m_pxServer->StartServerWithUserSide(_szIP, _wPort))
+	if (kSServerResult_Ok != m_pIOServer->Start(_szIP, _wPort))
 	{
 		//	LOG??
 		LOG(ERROR) << "地址[" << _szIP << "]:[" << _wPort << "]启动服务器失败";
 		return false;
 	}
 
-	AddInformation("服务端版本: %s", BACKMIR_CURVERSION);
+	AddInformationToMessageBoard("服务端版本: %s", BACKMIR_CURVERSION);
 
 	// Initialize game world
 	if (0 != GameWorld::GetInstance().Init())
@@ -208,7 +209,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 	}
 	else
 	{
-		AddInformation("游戏地图场景成功加载");
+		AddInformationToMessageBoard("游戏地图场景成功加载");
 	}
 
 	//	Run the Game world
@@ -218,7 +219,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 	}
 	else
 	{
-		AddInformation("游戏世界成功启动");
+		AddInformationToMessageBoard("游戏世界成功启动");
 	}
 
 	//	Run the crc thread
@@ -270,8 +271,11 @@ bool CMainServer::ConnectToLoginSvr()
 			char szIP[50];
 			strcpy(szIP, xLsAddr.c_str());
 
-			AddInformation("开始尝试连接登录服务器：%s:%d", szIP, nPort);
-			return m_pxServer->ConnectToServerWithServerSide(szIP, nPort, &CMainServer::_OnLsConnSuccess, &CMainServer::_OnLsConnFailed, NULL) ? true : false;
+			AddInformationToMessageBoard("开始尝试连接登录服务器：%s:%d", szIP, nPort);
+			return m_pIOServer->SyncConnect(szIP, nPort, 
+				FUNC_ONCONNECTSUCCESS(&CMainServer::_OnLsConnSuccess), 
+				FUNC_ONCONNECTFAILED(&CMainServer::_OnLsConnFailed), 
+				NULL) == kSServerResult_Ok ? true : false;
 		}
 		else
 		{
@@ -288,7 +292,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = true;
 	CMainServer::GetInstance()->m_dwLsConnIndex = _dwIndex;
-	AddInformation("连接登陆服务器成功");
+	CMainServer::GetInstance()->AddInformationToMessageBoard("连接登陆服务器成功");
 
 	const char* pszLsAddr = GetRunArg("outerip");
 	const char* pszServerId = GetRunArg("serverid");
@@ -304,17 +308,6 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	}
 
 	// VerifyV1 
-	/*
-	//	服务器注册
-	ByteBuffer xBuf;
-	xBuf.Reset();
-	xBuf << (int)0;
-	xBuf << (int)PKG_LOGIN_SERVERVERIFY_REQ;
-	xBuf << (short)1;
-	xBuf << (int)0;
-	xBuf << (char)strlen(pszLsAddr);
-	xBuf.Write(pszLsAddr, strlen(pszLsAddr));
-	SendBufferToServer(_dwIndex, &xBuf);*/
 	ByteBuffer xBuf;
 	xBuf.Reset();
 	xBuf << int(0)
@@ -339,7 +332,7 @@ void STDCALL CMainServer::_OnLsConnFailed(DWORD _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 	CMainServer::GetInstance()->m_dwLsConnIndex = 0;
-	AddInformation("连接登陆服务器失败");
+	CMainServer::GetInstance()->AddInformationToMessageBoard("连接登陆服务器失败");
 	g_xConsole.CPrint("Login server address:%s, can't connect to.", CMainServer::GetInstance()->m_xLoginAddr.c_str());
 }
 
@@ -348,58 +341,34 @@ void STDCALL CMainServer::_OnLsConnFailed(DWORD _dwIndex, void* _pParam)
 /************************************************************************/
 void CMainServer::StopServer()
 {
-	// 	for(PlayerMap::const_iterator iter = m_xPlayers.begin();
-	// 		iter != m_xPlayers.end();
-	// 		++iter)
-	// 	{
-	// 		iter->second->OnDisconnect();
-	// 	}
-	// 	m_xPlayers.clear();
-
-	if(m_pxServer)
+	if (nullptr != m_pIOServer)
 	{
-		/*if(!m_bUseHTTech)
-		{
-			DestoryNetEngineObject(m_pxServer);
-		}
-		else*/
-		{
-			delete m_pxServer;
-		}
+		delete m_pIOServer;
+		m_pIOServer = nullptr;
 	}
 	LOG(INFO) << "服务器已停止";
-	AddInformation("服务器已停止");
+	AddInformationToMessageBoard("服务器已停止");
 	m_bMode = MODE_STOP;
 	UpdateServerState();
-	m_pxServer = NULL;
 }
 
 void CMainServer::WaitForStopEngine()
 {
 	// 等待网络引擎停止 给网络线程中的GameWorld发送消息
-	if (0 == GetNetEngineVersion() &&
-		!GameWorld::GetInstance().GetThreadRunMode())
-	{
-		NetbaseWrapper* pWrapper = (NetbaseWrapper*)GetEngine();
-		SServerEngine* pEngine = (SServerEngine*)pWrapper;
+	SServerEngine* pIOServer = GetIOServer();
 
-		GameWorld* pWorld = GameWorld::GetInstancePtr();
+	GameWorld* pWorld = GameWorld::GetInstancePtr();
 
-		MSG msg = {0};
-		msg.message = WM_STOPNETENGINE;
-		msg.wParam = 0;
-		msg.lParam = 0;
-		pWorld->PostRunMessage(&msg);
+	MSG msg = { 0 };
+	msg.message = WM_STOPNETENGINE;
+	msg.wParam = 0;
+	msg.lParam = 0;
+	pWorld->PostRunMessage(&msg);
+	pIOServer->Join();
+	//pWorld->Join();
+	LOG(INFO) << "Net process stop";
 
-		while(pEngine->GetServerStatus() == kSServerStatus_Running)
-		{
-			Sleep(1);
-		}
-		//pWorld->Join();
-		LOG(INFO) << "Net process stop";
-	}
-
-	// Where we can destory all gamescene and gameworld
+	// Where we can destroy all game scene and game world
 	GameSceneManager::GetInstance()->ReleaseAllScene();
 	//GameSceneManager::DestroyInstance();
 	//GameWorld::DestroyInstance();
@@ -416,7 +385,7 @@ void CMainServer::WaitForStopEngine()
 	google::protobuf::ShutdownProtobufLibrary();
 	GlobalAllocRecord::GetInstance()->DeleteAll();
 	GlobalAllocRecord::DestroyInstance();
-	// Stop wathcing thread
+	// Stop watching thread
 	m_pWatcherThread->Stop();
 	m_pWatcherThread->Join();
 	SAFE_DELETE(m_pWatcherThread);
@@ -424,14 +393,7 @@ void CMainServer::WaitForStopEngine()
 
 void CMainServer::StopEngine()
 {
-	/*if (0 != m_nNetEngineVersion)
-	{
-		return;
-	}*/
-
-	NetbaseWrapper* pWrapper = (NetbaseWrapper*)m_pxServer;
-	SServerEngine* pEngine = (SServerEngine*)pWrapper;
-	pEngine->Stop();
+	m_pIOServer->Stop();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -455,32 +417,32 @@ bool CMainServer::InitDatabase()
 
 	if(DBThread::GetInstance()->LoadItemsPrice())
 	{
-		AddInformation("读取装备价格成功");
+		AddInformationToMessageBoard("读取装备价格成功");
 	}
 	else
 	{
-		AddInformation("读取装备价格失败");
+		AddInformationToMessageBoard("读取装备价格失败");
 		bRet = false;
 	}
 	if(DBThread::GetInstance()->LoadMagicAttrib())
 	{
-		AddInformation("读取魔法信息成功");
+		AddInformationToMessageBoard("读取魔法信息成功");
 	}
 	else
 	{
-		AddInformation("读取魔法信息失败");
+		AddInformationToMessageBoard("读取魔法信息失败");
 		bRet = false;
 	}
 
 	if(!CheckVersion())
 	{
-		AddInformation("游戏已损坏");
+		AddInformationToMessageBoard("游戏已损坏");
 		bRet = false;
 	}
 
 	if(!CreateGameDbBuffer())
 	{
-		AddInformation("无法创建缓存");
+		AddInformationToMessageBoard("无法创建缓存");
 		bRet = false;
 	}
 
@@ -508,22 +470,6 @@ bool CMainServer::InitDatabase()
 		return 0;
 	}*/
 }
-/************************************************************************/
-/* 发送数据包
-/************************************************************************/
-void CMainServer::SendPacket(DWORD _dwIndex, PacketBase* _pPacket)
-{
-	m_pxServer->SendToUser(_dwIndex, (char*)_pPacket + 4, _pPacket->dwSize - 4, 0);
-}
-
-/************************************************************************/
-/* 添加ConnectionIndex与UserID的映射
-/************************************************************************/
-void CMainServer::InsertUserConnectionMapKey(WPARAM _wParam, LPARAM _lParam)
-{
-	RECORD_FUNCNAME_SERVER;
-	//	Set mapped key
-}
 
 /************************************************************************/
 /* 连接事件处理
@@ -541,8 +487,11 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	DWORD dwConnCode = GetNewConnCode();
 	SetConnCode(_dwIndex, dwConnCode);
 
-	m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
-	AddInformation("玩家[%s]:[%d]连接", szIP, wPort);
+	SServerConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
+	if (nullptr != pConn) {
+		pConn->GetAddress(szIP, &wPort);
+	}
+	AddInformationToMessageBoard("玩家[%s]:[%d]连接", szIP, wPort);
 	LOG(INFO) << "玩家[" << szIP << "]:" << wPort << "连接, INDEX:[" << _dwIndex << "], conn code[" << dwConnCode << "]";
 
 	// Add to distinct ip set
@@ -553,7 +502,9 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	else {
 		it->second++;
 	}
-	PostMessage(g_hServerDlg, WM_DISTINCTIP, m_xIPs.size(), 0);
+	if (nullptr != m_pServerShell) {
+		m_pServerShell->UpdateDistinctIPCount(m_xIPs.size());
+	}
 
 	UpdateServerState();
 
@@ -574,7 +525,9 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 
 	char szIP[20];
 	WORD wPort = 0;
-	if (m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort)) {
+	SServerConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
+	if (nullptr != pConn) {
+		pConn->GetAddress(szIP, &wPort);
 		std::map<std::string, int>::iterator it = m_xIPs.find(szIP);
 		if (it != m_xIPs.end()) {
 			it->second--;
@@ -582,14 +535,15 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 				m_xIPs.erase(it);
 			}
 		}
-		PostMessage(g_hServerDlg, WM_DISTINCTIP, m_xIPs.size(), 0);
+		// Update distinct ip count to server shell
+		if (nullptr != m_pServerShell) {
+			m_pServerShell->UpdateDistinctIPCount(m_xIPs.size());
+		}
 	}
 
 	//	连接序号归位0
 	SetConnCode(_dwIndex, 0);
 
-	//PlayerMap::iterator iter = m_xPlayers.find(_dwIndex);
-	//if(iter != m_xPlayers.end())
 	{
 		if(_dwIndex <= MAX_CONNECTIONS)
 		{
@@ -598,7 +552,7 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 				//AddInfomation("玩家[%s]断开", g_pxHeros[_dwIndex]->GetUserData()->stAttrib.name);
 				//m_pxServer->GetUserAddress(_dwIndex, szIP, &wPort);
 				//AddInfomation("玩家[%s]:[%d]断开", szIP, wPort);
-				AddInformation("玩家[%d]断开", _dwIndex);
+				AddInformationToMessageBoard("玩家[%d]断开", _dwIndex);
 
 				LOG(INFO) << "player[" << _dwIndex << "]disconnect";
 
@@ -616,8 +570,6 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 			}
 		}
 
-		//iter->second->OnDisconnect();
-		//m_xPlayers.erase(iter);
 		--m_dwUserNumber;
 		UpdateServerState();
 
@@ -817,7 +769,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 				catch(std::exception& e)
 				{
 					LOG(ERROR) << "!!!Packet unserialize failed while processing hero <" << pHero->GetName() << "> UID(" << pHero->GetUID() << ") packet <" << pHeader->uOp << "> , exception:" << e.what();
-					CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_dwIndex);
+					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_dwIndex);
 				}
 			}
 		}
@@ -994,7 +946,7 @@ void CMainServer::OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf)
 
 void CMainServer::ForceCloseConnection(DWORD _dwIndex)
 {
-	PostMessage(g_hServerDlg, WM_CLOSECONNECTION, (WPARAM)_dwIndex, 0);
+	m_pIOServer->CloseUserConnection(_dwIndex);
 }
 
 /************************************************************************/
@@ -1013,20 +965,23 @@ bool CMainServer::InitLogFile()
 	char szDetectFile[MAX_PATH];
 	strcpy(szDetectFile, szFilePath);
 	strcat(szDetectFile, "*.*");
-	BOOL bFind = FALSE;
-	CFileFind xFinder;
-	bFind = xFinder.FindFile(szDetectFile);
-	while(bFind)
-	{
-		bFind = xFinder.FindNextFile();
-		if(!xFinder.IsDots() &&
-			! xFinder.IsDirectory())
+
+	intptr_t handle;
+	_finddata_t findData;
+	handle = _findfirst(szDetectFile, &findData);
+	if (-1 != handle) {
+		do 
 		{
-			std::string xStr = xFinder.GetFilePath();
-			xFiles.push_back(xStr);
-		}
+			if ((findData.attrib & _A_SUBDIR) == 0) {
+				// Not a sub dir
+				char szFullPath[MAX_PATH];
+				sprintf(szFullPath, "%s%s", szFilePath, findData.name);
+				xFiles.emplace_back(szFullPath);
+			}
+		} while (_findnext(handle, &findData) == 0);
+		_findclose(handle);
+		handle = 0;
 	}
-	xFinder.Close();
 
 	if(xFiles.size() > 10)
 	{
@@ -1034,7 +989,7 @@ bool CMainServer::InitLogFile()
 			iter != xFiles.end();
 			++iter)
 		{
-			DeleteFile((*iter).c_str());
+			remove((*iter).c_str());
 		}
 	}
 	xFiles.clear();
@@ -1134,7 +1089,7 @@ void CMainServer::ProcessNetThreadEvent()
 				{
 					HeroObject* pHero = g_pxHeros[dwIndex];
 					pHero->SetSmallQuit(true);
-					AddInformation("玩家[%d]小退", dwIndex);
+					AddInformationToMessageBoard("玩家[%d]小退", dwIndex);
 
 					LOG(INFO) << "player[" << dwIndex << "] small quit";
 
@@ -1258,7 +1213,7 @@ void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
 	}
 	else
 	{
-		CMainServer::GetInstance()->GetEngine()->CompulsiveDisconnectUser(_dwIndex);
+		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_dwIndex);
 	}
 }
 
@@ -1376,7 +1331,7 @@ bool CMainServer::CreateLoginHero(HeroObject* _pHero,
 	char szText[MAX_PATH];
 
 	sprintf(szText, "%s[%d]", s_pszArchive, uVersion);
-	AddInformation(szText);
+	AddInformationToMessageBoard(szText);
 	pObj->SetVersion(uVersion);
 
 	// Apply hum save data
@@ -1718,7 +1673,7 @@ bool CMainServer::OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _
 		SAFE_DELETE(pObj);
 		LOG(ERROR) << "Create login hero[" << req.stHeader.szName << "] failed";
 		if (!xErrMsg.empty()) {
-			AddInformation(xErrMsg.c_str());
+			AddInformationToMessageBoard(xErrMsg.c_str());
 		}
 		return false;
 	}
@@ -1738,7 +1693,7 @@ bool CMainServer::OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _
 	++m_dwUserNumber;
 	UpdateServerState();
 
-	AddInformation("玩家[%s]登入游戏",
+	AddInformationToMessageBoard("玩家[%s]登入游戏",
 		req.stHeader.szName);
 	return true;
 }
@@ -2188,4 +2143,95 @@ bool CMainServer::InitCRCThread()
 		PROTECT_END_VM
 
 	return bRet;
+}
+
+unsigned int CMainServer::SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)
+{
+	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	if (NULL == pNet)
+	{
+		return 0;
+	}
+
+	if (_pBuf->GetLength() == 0)
+	{
+		return 0;
+	}
+
+	DWORD dwPacketLength = _pBuf->GetLength();
+	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
+	*(DWORD*)pBuf = dwPacketLength;
+
+	if (TRUE == pNet->SyncSendPacketToUser(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4))
+	{
+#ifdef _VIEW_PACKET
+		LOG(INFO) << _pBuf->ToHexString() << "sended";
+#endif
+		return dwPacketLength;
+	}
+	return 0;
+}
+
+unsigned int CMainServer::SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf)
+{
+	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	if (NULL == pNet)
+	{
+		return 0;
+	}
+
+	if (_pBuf->GetLength() == 0)
+	{
+		return 0;
+	}
+
+	DWORD dwPacketLength = _pBuf->GetLength();
+	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
+	*(DWORD*)pBuf = dwPacketLength;
+
+	if (TRUE == pNet->SyncSendPacketToServer(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4))
+	{
+#ifdef _VIEW_PACKET
+		LOG(INFO) << _pBuf->ToHexString() << "sended";
+#endif
+		return dwPacketLength;
+	}
+	return 0;
+}
+
+unsigned int CMainServer::SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg)
+{
+	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	if (NULL == pNet)
+	{
+		return 0;
+	}
+
+	static char s_bytesBuffer[0xff];
+	//	write code
+	memcpy(s_bytesBuffer, &_nCode, sizeof(int));
+
+	int nSize = _refMsg.ByteSize();
+	if (0 == nSize)
+	{
+		return 0;
+	}
+	if (nSize > sizeof(s_bytesBuffer))
+	{
+		g_xConsole.CPrint("Byte buffer overflow : %d, size %d", _nCode, nSize);
+		return 0;
+	}
+
+	if (!_refMsg.SerializeToArray(s_bytesBuffer + sizeof(int), sizeof(s_bytesBuffer) - sizeof(int)))
+	{
+		g_xConsole.CPrint("Serialize protobuf failed");
+		return 0;
+	}
+
+	if (TRUE == pNet->SyncSendPacketToServer(_nIdx, (char*)s_bytesBuffer, 4 + nSize))
+	{
+		return 4 + nSize;
+	}
+
+	return 0;
 }

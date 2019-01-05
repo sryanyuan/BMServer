@@ -1,19 +1,13 @@
 #ifndef CMAINSERVER_H_
 #define CMAINSERVER_H_
-#if _MSC_VER == 1800
-#include <set>
-#include "../IOServer/netbase.h"
-#else
-#include "netbase.h"
-#endif
-#include "../CMainServer/CUser.h"
+
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
 #include "../GameWorld/WatcherThread.h"
 #include "../common/shared.h"
 #include <string>
+#include <set>
 
-class CNetBase;
 struct ServerState;
 struct PacketBase;
 struct PacketHeader;
@@ -21,31 +15,10 @@ class GameObject;
 //////////////////////////////////////////////////////////////////////////
 typedef std::map<DWORD, DWORD> Index2UserIDMap;
 //////////////////////////////////////////////////////////////////////////
-#define MODE_STOP		0
-#define MODE_RUNNING	1
-
-#define NEW_USER_LOGIN(VERSION, HERO)\
-	if(LoadHumData##VERSION(HERO, g_xMainBuffer))\
-{\
-	DelayedProcess dp;\
-	dp.uOp = DP_USERLOGIN;\
-	dp.uParam0 = (unsigned int)pObj;\
-	dp.uParam1 = 1;\
-	GameWorld::GetInstance().AddDelayedProcess(&dp);\
-	++m_dwUserNumber;\
-	UpdateServerState();\
-	sprintf(szText, "%s[%s]", s_pszUserLogin, req.stHeader.szName);\
-	AddInfomation(szText);\
-}\
-	else\
-	{\
-		sprintf(szText, "%s[%d]", s_pszInvalid, uVersion);\
-		AddInfomation(szText);\
-		SAFE_DELETE(HERO);\
-		LOG(WARNING) << "玩家[" << _dwIndex << "]数据非法，强行踢出";\
-		return false;\
-	}\
-}
+enum {
+	MODE_STOP = 0,
+	MODE_RUNNING = 1,
+};
 
 enum NetThreadEventType
 {
@@ -61,9 +34,15 @@ struct NetThreadEvent
 typedef std::list<NetThreadEvent> NetThreadEventList;
 //////////////////////////////////////////////////////////////////////////
 
+class SServerEngine;
 class HeroObject;
-
+class ServerShell;
 class LoginExtendInfoParser;
+namespace google {
+	namespace protobuf {
+		class Message;
+	}
+}
 
 class CMainServer
 {
@@ -80,6 +59,8 @@ public:
 	}
 
 public:
+	void SetServerShell(ServerShell *_pServerShell);
+	ServerShell* GetServerShell();
 	bool InitNetWork();
 	bool StartServer(char* _szIP, WORD _wPort);
 	void StopServer();
@@ -88,9 +69,7 @@ public:
 	bool InitDatabase();
 	bool InitCRCThread();
 
-	void SendPacket(DWORD _dwIndex, PacketBase* _pPacket);
-	CNetbase* GetEngine();
-	void InsertUserConnectionMapKey(WPARAM _wParam, LPARAM _lParam);
+	SServerEngine* GetIOServer();
 
 	inline GAME_MODE GetServerMode()						{return m_eMode;}
 	inline void SetServerMode(GAME_MODE _eMode)				{m_eMode = _eMode;}
@@ -115,12 +94,15 @@ public:
 	void SendNetThreadEvent(const NetThreadEvent& _refEvt);
 	void ProcessNetThreadEvent();
 
-	inline int GetNetEngineVersion()						{return m_nNetEngineVersion;}
-
 public:
 	inline void SetRunningMode(BYTE _bMode)					{m_bMode = _bMode;}
 	inline BYTE GetRunningMode()							{return m_bMode;}
 	inline DWORD GetMainThreadID()							{return m_dwThreadID;} 
+
+public:
+	static unsigned int SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf);
+	static unsigned int SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf);
+	static unsigned int SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg);
 
 public:
 	void OnAcceptUser(DWORD _dwIndex);
@@ -159,6 +141,8 @@ private:
 	bool LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVersion);
 	bool OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req);
 
+	void AddInformationToMessageBoard(const char* fmt, ...);
+
 	// Deprecated
 	bool OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req);
 	bool LoadHumData110(HeroObject* _pHero, ByteBuffer& _xBuf);
@@ -182,8 +166,7 @@ private:
 	bool LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf);
 
 protected:
-	CNetbase* m_pxServer;
-	PlayerMap m_xPlayers;
+	SServerEngine *m_pIOServer;
 
 	//	服务器运行模式
 	BYTE m_bMode;
@@ -205,9 +188,6 @@ protected:
 	WORD m_dwListenPort;
 	std::string m_xListenIP;
 
-	//	CPU是否开启了HT
-	bool m_bUseHTTech;
-
 	// Distinct ip set
 	std::map<std::string, int> m_xIPs;
 
@@ -215,7 +195,7 @@ protected:
 	NetThreadEventList m_xNetThreadEventList;
 	CRITICAL_SECTION m_csNetThreadEventList;
 
-	int m_nNetEngineVersion;
+	ServerShell *m_pServerShell;
 
 public:
 	HWND m_hDlgHwnd;

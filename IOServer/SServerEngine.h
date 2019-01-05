@@ -5,11 +5,13 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/listener.h>
+#include <thread>
 #include <process.h>
 #include <string>
 #include <list>
 #include <WinSock2.h>
 #include <stdio.h>
+#include <atomic>
 #include "IndexManager.h"
 #include "SServerConn.h"
 #include "Def.h"
@@ -125,6 +127,7 @@ public:
 	int Init(const SServerInitDesc* _pDesc);
 	int Start(const char* _pszAddr, unsigned short _uPort);
 	int Stop();
+	void Join();
 	int Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg);
 	int AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerIntervalMS, FUNC_ONTIMER _fnOnTimer);
 	int RemoveTimerJob(unsigned int _nJobId);
@@ -142,7 +145,7 @@ public:
 	int SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg);
 
 public:
-	inline SServerStatus GetServerStatus()						{return m_eStatus;}
+	inline SServerStatus GetServerStatus()						{return m_eStatus.load();}
 	inline unsigned int GetMaxConnUser()						{return m_uMaxConnUser;}
 	inline void SetMaxConnUser(unsigned int _uConn)				{m_uMaxConnUser = _uConn;}
 	inline size_t GetMaxPacketLength()							{return m_uMaxPacketLength;}
@@ -232,8 +235,11 @@ protected:
 	SServerTimerJobList m_xTimerJobs;
 
 	// status
-	SServerStatus m_eStatus;
+	std::atomic<SServerStatus> m_eStatus;
 	int m_nWorkingTid;
+
+	// thread
+	std::thread m_trd;
 };
 //////////////////////////////////////////////////////////////////////////
 #endif

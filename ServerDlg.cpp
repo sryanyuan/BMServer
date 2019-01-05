@@ -1,10 +1,10 @@
 // ServerDlg.cpp : 实现文件
 //
-
 #include "stdafx.h"
 #include "BackMirServer.h"
 #include "ServerDlg.h"
 #include "RegisterGameRoomDlg.h"
+#include "IOServer/SServerEngine.h"
 #include "CMainServer/CMainServer.h"
 #include "Helper.h"
 #define GLOG_NO_ABBREVIATED_SEVERITIES
@@ -78,6 +78,7 @@ CServerDlg::CServerDlg(CWnd* pParent /*=NULL*/)
 	//	Generate the root path
 	GetRootPath();
 	m_pxMainServer = CMainServer::GetInstance();
+	m_pxMainServer->SetServerShell(this);
 	g_hServerDlg = GetSafeHwnd();
 	m_hListBkBrush = ::CreateSolidBrush(RGB(0, 0, 0));
 	m_bInitNetwork = FALSE;
@@ -116,7 +117,7 @@ BOOL CServerDlg::OnInitDialog()
 	m_bInitNetwork = m_pxMainServer->InitNetWork() ? TRUE : FALSE;
 	if(m_bInitNetwork)
 	{
-		AddInformation("初始化服务器成功");
+		AddTextToMessageBoardFmt("初始化服务器成功");
 		if(m_pxMainServer->InitDatabase())
 		{
 			m_bVersionOK = TRUE;
@@ -124,13 +125,13 @@ BOOL CServerDlg::OnInitDialog()
 		}
 		else
 		{
-			AddInformation("初始化服务器失败");
+			AddTextToMessageBoardFmt("初始化服务器失败");
 			LOG(ERROR) << "初始化服务器失败";
 		}
 	}
 	else
 	{
-		AddInformation("初始化服务器失败");
+		AddTextToMessageBoardFmt("初始化服务器失败");
 		LOG(FATAL) << "初始化服务器失败";
 	}
 
@@ -138,6 +139,8 @@ BOOL CServerDlg::OnInitDialog()
 	SetUnhandledExceptionFilter(&BM_UnhandledExceptionFilter);
 	//	定时删除等待删除的玩家
 	SetTimer(TIMER_DELETEPLAYERS, 5000, NULL);
+	// Initialize message board timer check
+	SetTimer(TIMER_MSGBOARD, 50, NULL);
 
 	//	生成CRC信息
 	if(!m_pxMainServer->InitCRCThread())
@@ -242,31 +245,21 @@ void CServerDlg::OnBnStartClicked()
 	// TODO: 在此添加控件通知处理程序代码
 	if(!m_bInitNetwork)
 	{
-		AddInformation("无法启动服务器");
+		AddTextToMessageBoardFmt("无法启动服务器");
 		return;
 	}
 
 	if(!m_bVersionOK)
 	{
-		AddInformation("无法启动服务器");
+		AddTextToMessageBoardFmt("无法启动服务器");
 		return;
 	}
 
-	/*char szCfgFile[MAX_PATH];
-	if (NULL == GetRunArg("cfgfile") ||
-		strlen(GetRunArg("cfgfile")) == 0)
-	{
-		sprintf(szCfgFile, "%s\\conf\\cfg.ini", GetRootPath());
-	}
-	else
-	{
-		sprintf(szCfgFile, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
-	}*/
 	const char* szCfgFile = RunArgGetConfigFile();
 
 	if(!PathFileExists(szCfgFile))
 	{
-		AddInformation("无法读取服务器配置信息 (%s)", szCfgFile);
+		AddTextToMessageBoardFmt("无法读取服务器配置信息 (%s)", szCfgFile);
 		LOG(INFO) << "无法读取服务器配置信息:" << szCfgFile;
 		return;
 	}
@@ -289,7 +282,7 @@ void CServerDlg::OnBnStartClicked()
 
 	if(m_pxMainServer->StartServer(szValue, wPort))
 	{
-		AddInformation("服务器启动成功，开始监听");
+		AddTextToMessageBoardFmt("服务器启动成功，开始监听");
 		GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
 		char szIpPort[100];
@@ -301,7 +294,7 @@ void CServerDlg::OnBnStartClicked()
 	}
 	else
 	{
-		AddInformation("服务器启动失败");
+		AddTextToMessageBoardFmt("服务器启动失败");
 		LOG(ERROR) << "服务器启动失败 IP[" << szValue << "] PORT[" << wPort << "]";
 	}
 }
@@ -383,9 +376,9 @@ void CServerDlg::AutoRun()
 
 			LOG(INFO) << "IP:" << szIP << ", Port:" << wPort;
 
-			if(m_pxMainServer->StartServer(szIP, wPort))
+			if (m_pxMainServer->StartServer(szIP, wPort))
 			{
-				AddInformation("服务器启动成功，开始监听");
+				AddTextToMessageBoardFmt("服务器启动成功，开始监听");
 				GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
 				GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
 				char szIpPort[100];
@@ -399,7 +392,7 @@ void CServerDlg::AutoRun()
 			}
 			else
 			{
-				AddInformation("服务器启动失败");
+				AddTextToMessageBoardFmt("服务器启动失败");
 				LOG(ERROR) << "服务器启动失败 IP[" << szIP << "] PORT[" << wPort << "]";
 			}
 		}
@@ -542,6 +535,52 @@ void CServerDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 		pLabel->SetWindowText(szMsg);
 	}
+	else if (nIDEvent == TIMER_MSGBOARD) {
+		m_xMsgBoardMu.lock();
+		// Apply message board texts
+		for (auto &text : m_xMsgBoardTextList) {
+			AddTextToMessageBoard(text.c_str());
+		}
+
+		m_xMsgBoardTextList.clear();
+		m_xMsgBoardMu.unlock();
+	}
+}
+
+void CServerDlg::AddTextToMessageBoard(const char* fmt) {
+	CListBox* pxList = static_cast<CListBox*>(GetDlgItem(IDC_LIST1));
+	CHECK(pxList != NULL);
+
+	int nIndex = pxList->GetCount();
+	if (nIndex == LB_ERR)
+	{
+		return;
+	}
+
+	if (nIndex > 50)
+	{
+		pxList->ResetContent();
+	}
+
+	pxList->InsertString(-1, fmt);
+	pxList->SetTopIndex(pxList->GetCount() - 1);
+}
+
+void CServerDlg::AddTextToMessageBoardFmt(const char* fmt, ...) {
+	char buffer[MAX_PATH];
+
+	va_list args;
+	va_start(args, fmt);
+	_vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+	SYSTEMTIME lpTime;
+	GetLocalTime(&lpTime);
+
+	char logTime[MAX_PATH];
+	sprintf(logTime, "[%d-%d-%d %02d:%02d:%02d] ", lpTime.wYear, lpTime.wMonth, lpTime.wDay, lpTime.wHour, lpTime.wMinute, lpTime.wSecond);
+	strcat(logTime, buffer);
+
+	AddTextToMessageBoard(logTime);
 }
 
 void CServerDlg::OnBnClickedButton3()
@@ -552,14 +591,13 @@ void CServerDlg::OnBnClickedButton3()
 
 LRESULT CServerDlg::OnUserMessage(WPARAM _wParam, LPARAM _lParam)
 {
-	//m_pxMainServer->InsertUserConnectionMapKey(_wParam, _lParam);
 	return 1;
 }
 
 LRESULT CServerDlg::OnCloseConnection(WPARAM _wParam, LPARAM _lParam)
 {
 	LOG(INFO) << "Force close connection[" << _wParam << "]";
-	m_pxMainServer->GetEngine()->CompulsiveDisconnectUser(_wParam);
+	m_pxMainServer->GetIOServer()->CloseUserConnection(_wParam);
 	return 1;
 }
 
@@ -604,11 +642,11 @@ void CServerDlg::OnClose()
 			}
 
 			//	等待服务器停止
-			pWorld->Terminate(0);
+			/*pWorld->Terminate(0);
 			while(pWorld->GetWorldState() != WS_STOP)
 			{
 				Sleep(1);
-			}
+			}*/
 
 			// 等待网络引擎停止
 			CMainServer::GetInstance()->WaitForStopEngine();
@@ -779,12 +817,12 @@ void CServerDlg::OnRegisterGsResult(const char *_pData, size_t _uLen)
 	{
 		if(0 != m_nGameRoomServerID)
 		{
-			AddInformation("与游戏大厅服务器失去连接...");
+			AddTextToMessageBoardFmt("与游戏大厅服务器失去连接...");
 			m_nGameRoomServerID = 0;
 		}
 		else
 		{
-			AddInformation("注册至大厅服务器失败...");
+			AddTextToMessageBoardFmt("注册至大厅服务器失败...");
 		}
 		GetDlgItem(IDC_BUTTON6)->EnableWindow(TRUE);
 		return;
@@ -804,7 +842,7 @@ void CServerDlg::OnRegisterGsResult(const char *_pData, size_t _uLen)
 		{
 			if(0 == m_nGameRoomServerID)
 			{
-				AddInformation("成功注册至游戏大厅");
+				AddTextToMessageBoardFmt("成功注册至游戏大厅");
 			}
 			m_nGameRoomServerID = atoi(pszServerID);
 			GetDlgItem(IDC_BUTTON6)->EnableWindow(FALSE);

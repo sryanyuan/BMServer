@@ -4,6 +4,7 @@
 #include "GameSceneManager.h"
 #include "MonsterObject.h"
 #include "ObjectEngine.h"
+#include "../common/cmsg.h"
 #include "../../CommonModule/CRCVerifyThread/AntiRE.h"
 //////////////////////////////////////////////////////////////////////////
 int WatcherThread::s_nVerifySize[WatcherThread::VF_TOTAL] =

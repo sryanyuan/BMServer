@@ -15,6 +15,7 @@ public:
 	virtual BOOL			__stdcall			CreateNetwork(DESC_NETWORK* desc,DWORD dwUserAcceptInterval,DWORD dwServerAcceptInterval);
 	virtual  void 			__stdcall			BreakMainThread();
 	virtual  void			__stdcall			ResumeMainThread();
+	virtual  void			__stdcall			WaitTerm();
 
 	virtual  void			__stdcall			SetUserInfo(DWORD dwConnectionIndex,void* user);
 	virtual  void*			__stdcall			GetUserInfo(DWORD dwConnectionIndex);
