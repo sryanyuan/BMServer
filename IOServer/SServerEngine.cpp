@@ -61,8 +61,6 @@ SServerEngine::SServerEngine()
 	memset(&m_stThreadId, 0, sizeof(m_stThreadId));
 	memset(m_arraySocketPair, 0, sizeof(m_arraySocketPair));
 	m_pUserConnArray = NULL;
-	InitializeCriticalSection(&m_xSendMutex);
-	InitializeCriticalSection(&m_xTimerMutex);
 	m_xEventBuffer.AllocBuffer(DEF_DEFAULT_ENGINE_WRITEBUFFERSIZE);
 
 	m_pFuncOnAcceptUser = NULL;
@@ -86,8 +84,6 @@ SServerEngine::SServerEngine()
 
 SServerEngine::~SServerEngine()
 {
-	DeleteCriticalSection(&m_xSendMutex);
-	DeleteCriticalSection(&m_xTimerMutex);
 	if (NULL != m_pUserConnArray) {
 		delete[] m_pUserConnArray;
 		m_pUserConnArray = NULL;
@@ -330,9 +326,11 @@ int SServerEngine::CloseUserConnection(unsigned int _uConnIndex)
 	action.uAction = kSServerAction_CloseUserConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
-	SServerAutoLocker locker(&m_xSendMutex);
-
-	m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+	{
+		std::unique_lock<std::mutex> locker(m_xSendMutex);
+		m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+	}
+	
 	awake();
 
 	return 0;
@@ -380,12 +378,12 @@ void SServerEngine::SetServerConn(unsigned int _uConnIndex, SServerConn* conn)
 
 void SServerEngine::LockSendBuffer()
 {
-	EnterCriticalSection(&m_xSendMutex);
+	m_xSendMutex.lock();
 }
 
 void SServerEngine::UnlockSendBuffer()
 {
-	LeaveCriticalSection(&m_xSendMutex);
+	m_xSendMutex.unlock();
 }
 
 int SServerEngine::CloseServerConnection(unsigned int _uConnIndex)
@@ -394,9 +392,11 @@ int SServerEngine::CloseServerConnection(unsigned int _uConnIndex)
 	action.uAction = kSServerAction_CloseServerConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
-	SServerAutoLocker locker(&m_xSendMutex);
+	{
+		std::unique_lock<std::mutex> locker(m_xSendMutex);
+		m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+	}
 
-	m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
 	awake();
 
 	return 0;
@@ -509,7 +509,7 @@ void SServerEngine::processConnEvent()
 {
 	SServerAction action = {0};
 
-	SServerAutoLocker locker(&m_xSendMutex);
+	std::unique_lock<std::mutex> locker(m_xSendMutex);
 
 	while(0 != m_xEventBuffer.GetReadableSize())
 	{
@@ -658,13 +658,13 @@ void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
 
 int SServerEngine::AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerIntervalMS, FUNC_ONTIMER _fnOnTimer)
 {
-	SServerAutoLocker locker(&m_xTimerMutex);
-
 	SServerTimerJob* pJob = new SServerTimerJob;
 	memset(pJob, 0, sizeof(SServerTimerJob));
 	pJob->nJobId = _nJobId;
 	pJob->nTriggerIntervalMS = _nTriggerIntervalMS;
 	pJob->fnOnTimer = _fnOnTimer;
+
+	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 	m_xTimerJobs.push_back(pJob);
 
 	return 0;
@@ -672,7 +672,7 @@ int SServerEngine::AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerInter
 
 int SServerEngine::RemoveTimerJob(unsigned int _nJobId)
 {
-	SServerAutoLocker locker(&m_xTimerMutex);
+	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 
 	SServerTimerJobList::iterator iterB = m_xTimerJobs.begin();
 	for(iterB;
@@ -694,7 +694,7 @@ int SServerEngine::RemoveTimerJob(unsigned int _nJobId)
 
 int SServerEngine::ClearTimerJob()
 {
-	SServerAutoLocker locker(&m_xTimerMutex);
+	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 
 	SServerTimerJobList::iterator iterB = m_xTimerJobs.begin();
 	for(iterB;
@@ -713,7 +713,7 @@ int SServerEngine::ClearTimerJob()
 
 void SServerEngine::processTimerJob()
 {
-	SServerAutoLocker locker(&m_xTimerMutex);
+	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 	unsigned int nNowTick = GetTickCount();
 
 	SServerTimerJobList::const_iterator iterB = m_xTimerJobs.begin();

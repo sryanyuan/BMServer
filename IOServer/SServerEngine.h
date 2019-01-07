@@ -9,9 +9,12 @@
 #include <process.h>
 #include <string>
 #include <list>
+#ifdef _WIN32
 #include <WinSock2.h>
+#endif
 #include <stdio.h>
 #include <atomic>
+#include <mutex>
 #include "IndexManager.h"
 #include "SServerConn.h"
 #include "Def.h"
@@ -214,7 +217,7 @@ protected:
 	evutil_socket_t m_arraySocketPair[2];
 	bufferevent* m_pBvEvent;
 
-	CRITICAL_SECTION m_xSendMutex;
+	std::mutex m_xSendMutex;
 	SServerBuffer m_xEventBuffer;
 
 	//	callbacks
@@ -231,7 +234,7 @@ protected:
 
 	//	timer list
 	event* m_pTimerEvent;
-	CRITICAL_SECTION m_xTimerMutex;
+	std::mutex m_xTimerMutex;
 	SServerTimerJobList m_xTimerJobs;
 
 	// status
