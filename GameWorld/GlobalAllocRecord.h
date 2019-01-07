@@ -2,7 +2,7 @@
 #define _INC_GLOBALALLOCRECORD_
 
 #include <set>
-#include <Windows.h>
+#include <mutex>
 
 typedef std::set<void*> AllocPtrList;
 
@@ -21,26 +21,24 @@ public:
 
 protected:
 	GlobalAllocRecord(){
-		InitializeCriticalSection(&m_cs);	
+		
 	}
 	~GlobalAllocRecord(){
-		DeleteCriticalSection(&m_cs);
+		
 	}
 
 public:
 	void Record(void* _pPtr) {
-		EnterCriticalSection(&m_cs);
+		std::unique_lock<std::mutex> locker(m_cs);
 		m_xPtrs.insert(_pPtr);
-		LeaveCriticalSection(&m_cs);
 	}
 	void RecordArray(void* _pPtr) {
-		EnterCriticalSection(&m_cs);
+		std::unique_lock<std::mutex> locker(m_cs);
 		m_xArrayPtrs.insert(_pPtr);
-		LeaveCriticalSection(&m_cs);
 	}
 
 	void DeleteAll() {
-		EnterCriticalSection(&m_cs);
+		std::unique_lock<std::mutex> locker(m_cs);
 
 		AllocPtrList::iterator it = m_xPtrs.begin();
 		for (it; it != m_xPtrs.end(); ++it) {
@@ -53,7 +51,6 @@ public:
 			delete[] *it;
 		}
 		m_xArrayPtrs.clear();
-		LeaveCriticalSection(&m_cs);
 	}
 
 protected:
@@ -62,7 +59,7 @@ protected:
 private:
 	AllocPtrList m_xPtrs;
 	AllocPtrList m_xArrayPtrs;
-	CRITICAL_SECTION m_cs;
+	std::mutex m_cs;
 };
 
 #endif

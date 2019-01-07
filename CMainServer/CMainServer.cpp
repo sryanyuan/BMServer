@@ -1,9 +1,8 @@
-//#include <afx.h>
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <Shlwapi.h>
 #endif
-#include "../IOServer/SServerEngine.h"
+#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "../common/glog.h"
 #include "../GameWorld/GameWorld.h"
@@ -33,6 +32,8 @@
 #include <time.h>
 #include <io.h>
 
+using namespace ioserver;
+
 ByteBuffer g_xMainBuffer(MAX_SAVEDATA_SIZE);
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,7 +57,6 @@ CMainServer::CMainServer()
 	m_dwLsConnIndex = 0;
 	m_bAppException = false;
 	m_dwListenPort = 0;
-	InitializeCriticalSection(&m_csNetThreadEventList);
 	m_pServerShell = nullptr;
 	m_pIOServer = nullptr;
 }
@@ -71,7 +71,6 @@ CMainServer::~CMainServer()
 	GameWorld::DestroyInstance();
 	GameSceneManager::DestroyInstance();
 
-	DeleteCriticalSection(&m_csNetThreadEventList);
 	/*m_pWatcherThread->Stop();
 	delete m_pWatcherThread;*/
 }
@@ -79,7 +78,7 @@ CMainServer::~CMainServer()
 
 //////////////////////////////////////////////////////////////////////////
 
-SServerEngine* CMainServer::GetIOServer()
+IOServer* CMainServer::GetIOServer()
 {
 	return m_pIOServer;
 }
@@ -144,11 +143,11 @@ bool CMainServer::InitNetWork()
 			LOG(FATAL) << "WSASTARTUP ERROR";
 			return false;
 		}
-		m_pIOServer = new SServerEngine;
+		m_pIOServer = new IOServer;
 	}
 
 	// Initialize IOServer
-	SServerInitDesc serverInitDesc;
+	IOInitDesc serverInitDesc;
 	memset(&serverInitDesc, 0, sizeof(serverInitDesc));
 	serverInitDesc.pFuncOnAcceptUser = (FUNC_ONACCEPT)_OnAcceptUser;
 	serverInitDesc.pFuncOnDisconnctedUser = (FUNC_ONDISCONNECTED)_OnDisconnectUser;
@@ -355,7 +354,7 @@ void CMainServer::StopServer()
 void CMainServer::WaitForStopEngine()
 {
 	// 等待网络引擎停止 给网络线程中的GameWorld发送消息
-	SServerEngine* pIOServer = GetIOServer();
+	IOServer* pIOServer = GetIOServer();
 
 	GameWorld* pWorld = GameWorld::GetInstancePtr();
 
@@ -487,7 +486,7 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	DWORD dwConnCode = GetNewConnCode();
 	SetConnCode(_dwIndex, dwConnCode);
 
-	SServerConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
+	IOConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
 	if (nullptr != pConn) {
 		pConn->GetAddress(szIP, &wPort);
 	}
@@ -525,7 +524,7 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 
 	char szIP[20];
 	WORD wPort = 0;
-	SServerConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
+	IOConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
 	if (nullptr != pConn) {
 		pConn->GetAddress(szIP, &wPort);
 		std::map<std::string, int>::iterator it = m_xIPs.find(szIP);
@@ -1069,7 +1068,7 @@ void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
 
 void CMainServer::ProcessNetThreadEvent()
 {
-	BMLockGuard guard(&m_csNetThreadEventList);
+	std::unique_lock<std::mutex> locker(m_csNetThreadEventList);
 
 	NetThreadEventList::iterator it = m_xNetThreadEventList.begin();
 	for(;
@@ -1116,7 +1115,7 @@ void CMainServer::ProcessNetThreadEvent()
 
 void CMainServer::SendNetThreadEvent(const NetThreadEvent& _refEvt)
 {
-	BMLockGuard guard(&m_csNetThreadEventList);
+	std::unique_lock<std::mutex> locker(m_csNetThreadEventList);
 	m_xNetThreadEventList.push_back(_refEvt);
 }
 /************************************************************************/
@@ -2147,7 +2146,7 @@ bool CMainServer::InitCRCThread()
 
 unsigned int CMainServer::SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)
 {
-	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	IOServer* pNet = CMainServer::GetInstance()->GetIOServer();
 	if (NULL == pNet)
 	{
 		return 0;
@@ -2174,7 +2173,7 @@ unsigned int CMainServer::SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)
 
 unsigned int CMainServer::SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pBuf)
 {
-	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	IOServer* pNet = CMainServer::GetInstance()->GetIOServer();
 	if (NULL == pNet)
 	{
 		return 0;
@@ -2201,7 +2200,7 @@ unsigned int CMainServer::SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pB
 
 unsigned int CMainServer::SendProtoToServer(unsigned int _nIdx, int _nCode, google::protobuf::Message& _refMsg)
 {
-	SServerEngine* pNet = CMainServer::GetInstance()->GetIOServer();
+	IOServer* pNet = CMainServer::GetInstance()->GetIOServer();
 	if (NULL == pNet)
 	{
 		return 0;

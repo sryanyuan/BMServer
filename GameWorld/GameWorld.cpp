@@ -1,4 +1,4 @@
-#include "../IOServer/SServerEngine.h"
+#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "GameWorld.h"
 #include "GameSceneManager.h"
@@ -23,8 +23,9 @@
 #include <thread>
 //////////////////////////////////////////////////////////////////////////
 //	For glog
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
+
+using namespace ioserver;
 
 //////////////////////////////////////////////////////////////////////////
 extern HWND g_hServerDlg;
@@ -211,8 +212,6 @@ GameWorld::GameWorld()
 	EnableAutoReset();
 	m_pRankListData = NULL;
 
-	InitializeCriticalSection(&m_stCsProcess);
-
 	m_bGenElitMons = false;
 	m_bEnableOfflineSell = false;
 	m_bEnableWorldNotify = false;
@@ -229,27 +228,17 @@ GameWorld::GameWorld()
 	//	Thread run mode
 	m_bThreadRunMode = false;
 	m_bWorldInit = false;
-	InitializeCriticalSection(&m_csMsgStack);
 }
 
 GameWorld::~GameWorld()
 {
-	//
 	m_bTerminate = true;
-	/*while(1)
-	{
-		if(m_eState == WS_STOP)
-		{
-			break;
-		}
-	}*/
-	DeleteCriticalSection(&m_stCsProcess);
 
 	SAFE_DELETE_ARRAY(m_pRankListData);
 
 	GameSceneManager::DestroyInstance();
 
-	//	clear all msg stack
+	// Clear all msg stack
 	if (!m_bThreadRunMode) {
 		while (!m_xMsgStack.empty()) {
 			MSG* pMsg = m_xMsgStack.top();
@@ -258,8 +247,6 @@ GameWorld::~GameWorld()
 			SAFE_DELETE(pMsg);
 		}
 	}
-
-	DeleteCriticalSection(&m_csMsgStack);
 }
 
 GameWorld* GameWorld::GetInstancePtr()
@@ -284,7 +271,7 @@ void GameWorld::DestroyInstance()
 unsigned int GameWorld::ProcessThreadMsg()
 {
 	{
-		BMLockGuard guard(&m_csMsgStack);
+		std::unique_lock<std::mutex> locker(m_csMsgStack);
 		while (!m_xMsgStack.empty()) {
 			MSG* pMsg = m_xMsgStack.top();
 			m_xMsgStack.pop();
@@ -328,7 +315,7 @@ void GameWorld::PostRunMessage(const MSG* _pMsg)
 		MSG* pMsg = new MSG;
 		memcpy(pMsg, _pMsg, sizeof(MSG));
 
-		BMLockGuard guard(&m_csMsgStack);
+		std::unique_lock<std::mutex> locker(m_csMsgStack);
 		m_xMsgStack.push(pMsg);
 	}
 }
@@ -618,46 +605,15 @@ unsigned int GameWorld::Run()
 	//	Set the receive thread msg time
 	m_dwLastRecWatcherMsgTime = GetTickCount();
 
-	//	If running on thread mode, create a thread
-	if (m_bThreadRunMode) {
-		m_dwWorkTotalTime = 0;
-		unsigned int uThreadID = 0;
-
-		m_hThread = (HANDLE)_beginthreadex(NULL,
-			0,
-			&GameWorld::WorkThread,
-			this,
-			0,
-			&uThreadID);
-		m_dwThreadID = (DWORD)uThreadID;
-
-		if(m_hThread == 0)
-		{
-			//	create thread unsuccessfully
-			LOG(FATAL) << "Create main loop thread unsuccessfully! Error code:["
-				<< GetLastError() << "]";
-			return 0;
-		}
-		else
-		{
-			//	create thread successfully
-			LOG(INFO) << "Create main loop thread successfully! Now it is running!";
-#ifdef _BUILD_VERSION
-			LOG(INFO) << "Build version:" << _BUILD_VERSION;
-#endif
-			return 1;
-		}
-	} else {
-		//	Running in timer mode
-		m_eState = WS_WORKING;
-		m_bWorldInit = true;
+	//	Running in timer mode
+	m_eState = WS_WORKING;
+	m_bWorldInit = true;
 
 #ifdef _BUILD_VERSION
-		LOG(INFO) << "Build version:" << _BUILD_VERSION;
+	LOG(INFO) << "Build version:" << _BUILD_VERSION;
 #endif
 
-		return 1;
-	}
+	return 1;
 }
 
 void GameWorld::Join() {

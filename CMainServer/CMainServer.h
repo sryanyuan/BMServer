@@ -7,6 +7,7 @@
 #include "../common/shared.h"
 #include <string>
 #include <set>
+#include <mutex>
 
 struct ServerState;
 struct PacketBase;
@@ -34,7 +35,10 @@ struct NetThreadEvent
 typedef std::list<NetThreadEvent> NetThreadEventList;
 //////////////////////////////////////////////////////////////////////////
 
-class SServerEngine;
+namespace ioserver {
+	class IOServer;
+}
+
 class HeroObject;
 class ServerShell;
 class LoginExtendInfoParser;
@@ -69,7 +73,7 @@ public:
 	bool InitDatabase();
 	bool InitCRCThread();
 
-	SServerEngine* GetIOServer();
+	ioserver::IOServer* GetIOServer();
 
 	inline GAME_MODE GetServerMode()						{return m_eMode;}
 	inline void SetServerMode(GAME_MODE _eMode)				{m_eMode = _eMode;}
@@ -166,7 +170,7 @@ private:
 	bool LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf);
 
 protected:
-	SServerEngine *m_pIOServer;
+	ioserver::IOServer *m_pIOServer;
 
 	//	服务器运行模式
 	BYTE m_bMode;
@@ -193,7 +197,7 @@ protected:
 
 	//	NetThreadEvent processed by timer loop
 	NetThreadEventList m_xNetThreadEventList;
-	CRITICAL_SECTION m_csNetThreadEventList;
+	std::mutex m_csNetThreadEventList;
 
 	ServerShell *m_pServerShell;
 

@@ -5,6 +5,7 @@
 #include "Struct.h"
 #include <map>
 #include <Windows.h>
+#include <mutex>
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/cron/CronSchedule.h"
 #include "../common/shared.h"
@@ -185,11 +186,11 @@ public:
 	//	sync object
 	inline void LockProcess()
 	{
-		EnterCriticalSection(&m_stCsProcess);
+		m_stCsProcess.lock();
 	}
 	inline void UnlockProcess()
 	{
-		LeaveCriticalSection(&m_stCsProcess);
+		m_stCsProcess.unlock();
 	}
 
 	//	Only for main thread
@@ -394,13 +395,13 @@ private:
 
 	//	消息队列
 	MSGStack m_xMsgStack;
-	CRITICAL_SECTION m_csMsgStack;
+	std::mutex m_csMsgStack;
 
 	// 极品权重
 	WeightCalc m_xAdditionPointCalc;
 
 protected:
-	CRITICAL_SECTION m_stCsProcess;
+	std::mutex m_stCsProcess;
 
 public:
 	//	For interlock use

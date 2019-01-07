@@ -444,20 +444,17 @@
     <ClCompile Include="IOServer\IndexManager.cpp">
       <Filter>IOServer</Filter>
     </ClCompile>
-    <ClCompile Include="IOServer\main.cpp">
-      <Filter>IOServer</Filter>
-    </ClCompile>
-    <ClCompile Include="IOServer\SServerConn.cpp">
-      <Filter>IOServer</Filter>
-    </ClCompile>
-    <ClCompile Include="IOServer\SServerEngine.cpp">
-      <Filter>IOServer</Filter>
-    </ClCompile>
     <ClCompile Include="..\CommonModule\LuaDataLoader.cpp">
       <Filter>Module</Filter>
     </ClCompile>
     <ClCompile Include="CMainServer\CMainServer_Deprecated.cpp">
       <Filter>CMainServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\IOServer.cpp">
+      <Filter>IOServer</Filter>
+    </ClCompile>
+    <ClCompile Include="IOServer\IOConn.cpp">
+      <Filter>IOServer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -746,21 +743,6 @@
     <ClInclude Include="IOServer\Logger.h">
       <Filter>IOServer</Filter>
     </ClInclude>
-    <ClInclude Include="IOServer\netbase.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
-    <ClInclude Include="IOServer\SServerBuffer.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
-    <ClInclude Include="IOServer\SServerConn.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
-    <ClInclude Include="IOServer\SServerEngine.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
-    <ClInclude Include="IOServer\typedef.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
     <ClInclude Include="common\view.h">
       <Filter>GameCommon</Filter>
     </ClInclude>
@@ -787,6 +769,18 @@
     </ClInclude>
     <ClInclude Include="common\cmsg.h">
       <Filter>GameCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\IOServer.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\IOBuffer.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\IOConn.h">
+      <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="IOServer\namespace.h">
+      <Filter>IOServer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

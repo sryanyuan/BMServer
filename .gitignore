@@ -12,3 +12,4 @@ libevent_vc12.lib
 lib/
 *.bak
 *.opensdf
+ipch/

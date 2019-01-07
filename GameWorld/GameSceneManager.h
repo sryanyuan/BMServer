@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include <Windows.h>
 #include <map>
+#include <mutex>
 #include "../../CommonModule/MirMap.h"
 #include "../../CommonModule/MapConfigManager.h"
 #include "LuaServerEngine.h"
@@ -358,7 +359,7 @@ protected:
 
 	std::map<DWORD, GameObject*> m_xNPCs;
 	std::map<DWORD, GroundItem*> m_xItems;
-	CRITICAL_SECTION m_csPlayer;
+	std::mutex m_csPlayer;
 
 	LuaServerEngine m_xScript;
 	DWORD m_dwExecuteScriptInterval;

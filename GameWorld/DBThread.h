@@ -4,10 +4,11 @@
 #include <sqlite3.h>
 #include <Windows.h>
 #include "Struct.h"
-//#include "../../CommonModule/ScriptEngine.h"
 #include "LuaServerEngine.h"
 #include <list>
 #include "../../CommonModule/ObjectData.h"
+#include <thread>
+#include <mutex>
 //////////////////////////////////////////////////////////////////////////
 struct SqlElement
 {
@@ -189,11 +190,11 @@ protected:
 
 	void LockProcess()
 	{
-		EnterCriticalSection(&m_stCsProcess);
+		m_stCsProcess.lock();
 	}
 	void UnLockProcess()
 	{
-		LeaveCriticalSection(&m_stCsProcess);
+		m_stCsProcess.unlock();
 	}
 	void ProcessGameDelay();
 	inline void PushGameDelay(DBOperationParam* _pParam)		{m_xGameDelayProcess.push_back(_pParam);}
@@ -206,8 +207,7 @@ private:
 	SqlElement m_stSql[MAX_DATABASE_NUM];
 
 	//	For thread
-	unsigned int m_uThreadID;
-	HANDLE m_hThread;
+	std::thread m_hThread;
 	//	Working process buffer
 	ByteBuffer m_xProcess;
 	DWORD m_dwUpdateCounter;
@@ -218,7 +218,7 @@ private:
 	ByteBuffer m_xTransactionInsert;
 	ByteBuffer m_xTransactionQuery;
 	//	critical section
-	CRITICAL_SECTION m_stCsProcess;
+	std::mutex m_stCsProcess;
 	//	operation list
 	DBOPERATIONS m_xQueryOperations;
 	//	into gamewolrd delay process

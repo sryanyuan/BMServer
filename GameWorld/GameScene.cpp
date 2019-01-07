@@ -4,8 +4,7 @@
 #include "MonsterObject.h"
 #include <io.h>
 #include <Shlwapi.h>
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 #include "DBThread.h"
 #include "../Helper.h"
 #include "GameWorld.h"
@@ -33,7 +32,6 @@ GameScene::GameScene()
 	m_pCellData = NULL;
 	memset(&m_stMapInfo, 0, sizeof(m_stMapInfo));
 	memset(&m_stCityRect, 0, sizeof(RECT));
-	InitializeCriticalSection(&m_csPlayer);
 	m_dwExecuteScriptInterval = 0;
 	m_dwLoopTime = 0;
 	//m_dwLastUpdateObjectBlockTime = 1;
@@ -73,7 +71,6 @@ GameScene::~GameScene()
 	Release();
 	m_pCellData = NULL;
 	//m_pMapData = NULL;
-	DeleteCriticalSection(&m_csPlayer);
 
 	// New add delete
 	// Delete all door events
@@ -717,9 +714,9 @@ GameObject* GameScene::GetPlayer(DWORD _dwID)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	EnterCriticalSection(&m_csPlayer);
+	std::unique_lock<std::mutex> locker(m_csPlayer);
 	GameObject* pFind = GetPlayerWithoutLock(_dwID);
-	LeaveCriticalSection(&m_csPlayer);
+
 	return pFind;
 }
 
@@ -727,7 +724,6 @@ GameObject* GameScene::GetPlayerByName(const char* _pszName)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	//EnterCriticalSection(&m_csPlayer);
 	GameObject* pFind = NULL;
 	char szName[20] = {0};
 
@@ -745,7 +741,6 @@ GameObject* GameScene::GetPlayerByName(const char* _pszName)
 		}
 	}
 	return pFind;
-	//LeaveCriticalSection(&m_csPlayer);
 }
 
 GameObject* GameScene::GetPlayerWithoutLock(DWORD _dwID)
@@ -832,8 +827,7 @@ int GameScene::MoveSomeMonsterTo(int _nAttribID,int _nSum, int _x, int _y)
 bool GameScene::InsertPlayer(GameObject* _pObj)
 {
 	RECORD_FUNCNAME_WORLD;
-
-	EnterCriticalSection(&m_csPlayer);
+	std::unique_lock<std::mutex> locker(m_csPlayer);
 	bool bRet = false;
 
 	if(GameSceneManager::GetInstance()->IsUserNameExist(_pObj->GetUserData()->stAttrib.name))
@@ -976,7 +970,6 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 		}
 	}
 
-	LeaveCriticalSection(&m_csPlayer);
 	return bRet;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -988,7 +981,7 @@ bool GameScene::RemovePlayer(DWORD _dwID, bool _bDelete /* = true */)
 	GameObject* pObj = NULL;
 	bool bRet = false;
 
-	BMLockGuard guard(&m_csPlayer);
+	std::unique_lock<std::mutex> locker(m_csPlayer);
 
 	std::map<DWORD, GameObject*>::iterator iter = m_xPlayers.find(_dwID);
 	if(iter == m_xPlayers.end())

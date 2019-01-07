@@ -4,11 +4,10 @@
 #include "BackMirServer.h"
 #include "ServerDlg.h"
 #include "RegisterGameRoomDlg.h"
-#include "IOServer/SServerEngine.h"
+#include "IOServer/IOServer.h"
 #include "CMainServer/CMainServer.h"
 #include "Helper.h"
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "common/glog.h"
 #include <Shlwapi.h>
 #include "./GameWorld/struct.h"
 #include "./GameWorld/GameWorld.h"

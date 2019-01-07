@@ -1,6 +1,5 @@
 #include "DBThread.h"
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 #include <process.h>
 #include <Shlwapi.h>
 #include "../../CommonModule/ObjectData.h"
@@ -21,12 +20,9 @@ static USHORT s_uHeroVersion = 0;
 DBThread::DBThread() : m_xProcess(PROCESS_POOL_SIZE)
 {
 	m_bTerminate = false;
-	m_uThreadID = 0;
-	m_hThread = NULL;
 	m_dwInsertCounter =
 	m_dwInsertCounter =
 	m_dwUpdateCounter = 0;
-	InitializeCriticalSection(&m_stCsProcess);
 
 	memset(g_nItemPrice, 0, sizeof(g_nItemPrice));
 
@@ -41,7 +37,6 @@ DBThread::DBThread() : m_xProcess(PROCESS_POOL_SIZE)
 DBThread::~DBThread()
 {
 	Stop();
-	DeleteCriticalSection(&m_stCsProcess);
 }
 //////////////////////////////////////////////////////////////////////////
 /************************************************************************/
@@ -49,12 +44,6 @@ DBThread::~DBThread()
 /************************************************************************/
 unsigned int DBThread::Run()
 {
-	if(m_hThread != NULL)
-	{
-		//	the thread has run
-		return 0;
-	}
-
 	//	set script load path
 	char szBuf[MAX_PATH];
 #ifdef _DEBUG
@@ -74,34 +63,23 @@ unsigned int DBThread::Run()
 		return 0;
 	}
 
-	m_hThread = (HANDLE)_beginthreadex(NULL,
-		0,
-		&DBThread::WorkThread,
-		this,
-		0,
-		&m_uThreadID);
-
-	if(m_uThreadID == 0)
+	try
 	{
-		LOG(ERROR) << "Can not start dbthread!";
+		m_hThread = std::thread(&DBThread::WorkThread, this);
+	}
+	catch (std::system_error& e)
+	{
+		LOG(ERROR) << "Create DB thread failed";
 		return 0;
 	}
-	else
-	{
-		LOG(INFO) << "DBThread start!";
-		return 1;
-	}
+
+	LOG(INFO) << "DBThread start!";
 
 	return 1;
 }
 
 void DBThread::Join() {
-	if (0 == m_hThread) {
-		return;
-	}
-	WaitForSingleObject(m_hThread, INFINITE);
-	m_hThread = 0;
-
+	m_hThread.join();
 }
 //////////////////////////////////////////////////////////////////////////
 bool DBThread::LoadScript()
@@ -281,12 +259,9 @@ void DBThread::DoWork()
 
 	ProcessGameDelay();
 
-	LockProcess();
-
+	std::unique_lock<std::mutex> locker(m_stCsProcess);
 	//	query
 	DoQuery();
-
-	UnLockProcess();
 }
 //////////////////////////////////////////////////////////////////////////
 bool DBThread::LoadItemsPrice()
@@ -734,7 +709,7 @@ void DBThread::DisconnectDB()
 /************************************************************************/
 void DBThread::AddProcess(const DelayedDBProcess* _pProc)
 {
-	LockProcess();
+	std::unique_lock<std::mutex> locker(m_stCsProcess);
 
 	try
 	{
@@ -755,21 +730,17 @@ void DBThread::AddProcess(const DelayedDBProcess* _pProc)
 		}
 	}
 	BUFFER_EXCEPTION_CATCH_RETURN_VOID;
-
-	UnLockProcess();
 }
 
 void DBThread::AsynExecute(DBOperationParam* _pParam)
 {
-	LockProcess();
+	std::unique_lock<std::mutex> locker(m_stCsProcess);
 
 	if(_pParam->dwOperation > DO_QUERY_BEGIN &&
 		_pParam->dwOperation < DO_QUERY_END)
 	{
 		m_xQueryOperations.push_back(_pParam);
 	}
-
-	UnLockProcess();
 }
 /************************************************************************/
 /* void HandleProcess(const DelayedDBProcess* _pProc)
@@ -854,21 +825,12 @@ unsigned int __stdcall DBThread::WorkThread(void* _pData)
 			break;
 		}
 
-		//	do work
-		//try
-		{
-			pIns->DoWork();
-		}
-		//catch(...)
-		{
-			//LOG(ERROR) << "FATAL!!!";
-		}
+		// Do work
+		pIns->DoWork();
 		
 		SleepEx(1, TRUE);
 	}
 
-	_endthreadex(uRet);
-	pIns->m_hThread = 0;
 	return uRet;
 }
 

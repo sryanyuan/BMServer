@@ -1,4 +1,4 @@
-#include "../IOServer/SServerEngine.h"
+#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "ObjectEngine.h"
 #include "GameWorld.h"
@@ -19,6 +19,8 @@
 #include "../../CommonModule/PotentialAttribHelper.h"
 #include "GlobalAllocRecord.h"
 #include "../../CommonModule/version.h"
+
+using namespace ioserver;
 
 //////////////////////////////////////////////////////////////////////////
 bool SortAttribID(const ItemAttrib* _pLeft, const ItemAttrib* _pRight)

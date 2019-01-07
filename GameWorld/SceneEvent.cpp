@@ -1,8 +1,7 @@
 #include "SceneEvent.h"
 #include "GameSceneManager.h"
 #include "ObjectEngine.h"
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 //////////////////////////////////////////////////////////////////////////
 SceneEventExecutor::SceneEventExecutor()
 {

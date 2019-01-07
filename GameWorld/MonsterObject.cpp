@@ -1,4 +1,4 @@
-#include "../IOServer/SServerEngine.h"
+#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "MonsterObject.h"
 #include "GameSceneManager.h"
@@ -9,6 +9,7 @@
 #include <process.h>
 #include "../../CommonModule/SettingLoader.h"
 //////////////////////////////////////////////////////////////////////////
+using namespace ioserver;
 extern HWND g_hServerDlg;
 //////////////////////////////////////////////////////////////////////////
 static const int s_nMoveOft[] =

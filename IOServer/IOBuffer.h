@@ -1,17 +1,21 @@
 #ifndef _INC_SSERVERBUFFER_
 #define _INC_SSERVERBUFFER_
 //////////////////////////////////////////////////////////////////////////
-class SServerBuffer
+#include "namespace.h"
+
+IONS_START
+
+class IOBuffer
 {
 public:
-	SServerBuffer()
+	IOBuffer()
 	{
 		m_uBufferLen = 0;
 		m_pBuffer = NULL;
 		m_uDataLength = 0;
 		m_uReadOffset = 0;
 	}
-	~SServerBuffer()
+	~IOBuffer()
 	{
 		FreeBuffer();
 	}
@@ -135,5 +139,7 @@ private:
 	size_t m_uDataLength;
 	size_t m_uReadOffset;
 };
+
+IONS_END
 //////////////////////////////////////////////////////////////////////////
 #endif

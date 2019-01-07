@@ -1,5 +1,9 @@
 #ifndef _INC_DEF_
 #define _INC_DEF_
+
+#include "namespace.h"
+
+IONS_START
 //////////////////////////////////////////////////////////////////////////
 #define DEF_DEFAULT_MAX_CONN		100
 #define DEF_NETPROTOCOL_HEADER_LENGTH	4
@@ -18,4 +22,7 @@ typedef void (__stdcall *FUNC_ONCONNECTSUCCESS)(unsigned int, void*);
 typedef void(__stdcall *FUNC_ONCONNECTFAILED)(unsigned int, void*);
 typedef void (__stdcall *FUNC_ONTIMER)(unsigned int);
 //////////////////////////////////////////////////////////////////////////
+
+IONS_END
+
 #endif

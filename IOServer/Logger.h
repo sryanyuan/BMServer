@@ -3,7 +3,10 @@
 //////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <stdarg.h>
+#include "namespace.h"
 //////////////////////////////////////////////////////////////////////////
+IONS_START
+
 #define LOGLEVEL_DEBUG	0
 #define LOGLEVEL_INFO	1
 #define LOGLEVEL_ERROR	2
@@ -51,5 +54,7 @@ inline void logPrint(int _nLevel, const char* _pszFunction, int _nLine, const ch
 #define LOGPRINT(FORMAT, ...)	logPrint(LOGLEVEL_INFO, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
 #define LOGINFO(FORMAT, ...)	logPrint(LOGLEVEL_INFO, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
 #define LOGERROR(FORMAT, ...)	logPrint(LOGLEVEL_ERROR, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
+
+IONS_END
 //////////////////////////////////////////////////////////////////////////
 #endif

@@ -13,10 +13,13 @@
 #include <atomic>
 #include <mutex>
 #include "IndexManager.h"
-#include "SServerConn.h"
+#include "IOConn.h"
 #include "Def.h"
+#include "namespace.h"
+
+IONS_START
 //////////////////////////////////////////////////////////////////////////
-enum SServerResultType
+enum IOResultType
 {
 	kSServerResult_Ok	=	0,
 	kSServerResult_InvalidParam,
@@ -24,14 +27,14 @@ enum SServerResultType
 	kSServerResult_ListenFailed,
 };
 //////////////////////////////////////////////////////////////////////////
-struct SServerEvent
+struct IOEvent
 {
 	int nEventId;
 	void* pData;
 	size_t uLength;
 };
 
-enum SServerActionType
+enum IOActionType
 {
 	kSServerAction_CloseUserConn,
 	kSServerAction_CloseServerConn,
@@ -40,20 +43,20 @@ enum SServerActionType
 	kSServerAction_Connect
 };
 
-enum SServerStatus
+enum IOServerStatus
 {
 	kSServerStatus_Stop,
 	kSServerStatus_Running,
 };
 
-struct SServerAction
+struct IOAction
 {
 	unsigned short uAction;
 	unsigned short uIndex;
 	unsigned short uTag;
 };
 
-struct SServerActionConnectContext
+struct IOActionConnectContext
 {
 	sockaddr_in addr;
 	FUNC_ONCONNECTSUCCESS fnSuccess;
@@ -61,7 +64,7 @@ struct SServerActionConnectContext
 	void* pArg;
 };
 
-struct SServerInitDesc
+struct IOInitDesc
 { 
 	// limit the count of connection as server
 	size_t uMaxConnUser;
@@ -82,9 +85,9 @@ struct SServerInitDesc
 	FUNC_ONRECV pFuncOnRecvServer;
 
 	// default constructor
-	SServerInitDesc()
+	IOInitDesc()
 	{
-		memset(this, 0, sizeof(SServerInitDesc));
+		memset(this, 0, sizeof(IOInitDesc));
 		uMaxConnServer = DEF_DEFAULT_MAX_CONN;
 		uMaxConnUser = DEF_DEFAULT_MAX_CONN;
 		uMaxPacketLength = DEF_DEFAULT_MAX_PACKET_LENGTH;
@@ -92,25 +95,27 @@ struct SServerInitDesc
 	}
 };
 
-struct SServerTimerJob
+struct IOTimerJob
 {
 	unsigned int nJobId;
 	unsigned int nLastTriggerTime;
 	unsigned int nTriggerIntervalMS;
 	FUNC_ONTIMER fnOnTimer;
 };
-typedef std::list<SServerTimerJob*> SServerTimerJobList;
+using IOTimerJobList = std::list<IOTimerJob*>;
 //////////////////////////////////////////////////////////////////////////
-class SServerEngine
+// All function starts with Sync can invoke in event callbacks
+// In other threads, Functions without Sync prefix must be called
+class IOServer
 {
-	friend class SServerConn;
+	friend class IOConn;
 
 public:
-	SServerEngine();
-	~SServerEngine();
+	IOServer();
+	~IOServer();
 
 public:
-	int Init(const SServerInitDesc* _pDesc);
+	int Init(const IOInitDesc* _pDesc);
 	int Start(const char* _pszAddr, unsigned short _uPort);
 	int Stop();
 	void Join();
@@ -119,19 +124,19 @@ public:
 	int RemoveTimerJob(unsigned int _nJobId);
 	int ClearTimerJob();
 
-	//	thread-safe
+	// Thread-safe
 	int SendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength);
 	int SendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength);
 	int CloseUserConnection(unsigned int _uConnIndex);
 	int CloseServerConnection(unsigned int _uConnIndex);
 
-	//	synchronize send packet , within event callback
+	// Synchronize send packet , within event callback
 	int SyncSendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength);
 	int SyncSendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength);
 	int SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg);
 
 public:
-	inline SServerStatus GetServerStatus()						{return m_eStatus.load();}
+	inline IOServerStatus GetServerStatus()						{return m_eStatus.load();}
 	inline unsigned int GetMaxConnUser()						{return m_uMaxConnUser;}
 	inline void SetMaxConnUser(unsigned int _uConn)				{m_uMaxConnUser = _uConn;}
 	inline size_t GetMaxPacketLength()							{return m_uMaxPacketLength;}
@@ -139,11 +144,11 @@ public:
 	inline int GetConnectedServerCount()					{return m_nConnectedServerCount;}
 	inline int GetConnectedUserCount()						{return m_nConnectedUserCount;}
 
-	inline SServerConn* GetUserConn(unsigned int _uConnIndex);
-	inline void SetUserConn(unsigned int _uConnIndex, SServerConn* conn);
+	inline IOConn* GetUserConn(unsigned int _uConnIndex);
+	inline void SetUserConn(unsigned int _uConnIndex, IOConn* conn);
 
-	inline SServerConn* GetServerConn(unsigned int _uConnIndex);
-	inline void SetServerConn(unsigned int _uConnIndex, SServerConn* conn);
+	inline IOConn* GetServerConn(unsigned int _uConnIndex);
+	inline void SetServerConn(unsigned int _uConnIndex, IOConn* conn);
 
 	inline void LockSendBuffer();
 	inline void UnlockSendBuffer();
@@ -156,13 +161,13 @@ public:
 	void Callback_OnRecvServer(unsigned int _uIndex,  char* _pData, unsigned int _uLength);
 
 protected:
-	void onConnectionClosed(SServerConn* _pConn);
-	void onUserConnectionClosed(SServerConn* _pConn);
-	void onServerConnectionClosed(SServerConn* _pConn);
+	void onConnectionClosed(IOConn* _pConn);
+	void onUserConnectionClosed(IOConn* _pConn);
+	void onServerConnectionClosed(IOConn* _pConn);
 	void processConnEvent();
 	void awake();
 
-	void processConnectAction(SServerActionConnectContext* _pAction);
+	void processConnectAction(IOActionConnectContext* _pAction);
 	void processTimerJob();
 
 public:
@@ -194,14 +199,14 @@ protected:
 
 	IndexManager m_xUserIndexMgr;
 	IndexManager m_xServerIndexMgr;
-	SServerConn** m_pUserConnArray;
-	SServerConn** m_pServerConnArray;
+	IOConn** m_pUserConnArray;
+	IOConn** m_pServerConnArray;
 
 	evutil_socket_t m_arraySocketPair[2];
 	bufferevent* m_pBvEvent;
 
 	std::mutex m_xSendMutex;
-	SServerBuffer m_xEventBuffer;
+	IOBuffer m_xEventBuffer;
 
 	//	callbacks
 	FUNC_ONACCEPT m_pFuncOnAcceptUser;
@@ -218,14 +223,16 @@ protected:
 	//	timer list
 	event* m_pTimerEvent;
 	std::mutex m_xTimerMutex;
-	SServerTimerJobList m_xTimerJobs;
+	IOTimerJobList m_xTimerJobs;
 
 	// status
-	std::atomic<SServerStatus> m_eStatus;
+	std::atomic<IOServerStatus> m_eStatus;
 	int m_nWorkingTid;
 
 	// thread
 	std::thread m_trd;
 };
+
+IONS_END
 //////////////////////////////////////////////////////////////////////////
 #endif

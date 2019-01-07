@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "BackMirServer.h"
 #include "SettingDlg.h"
-#include "IOServer/SServerEngine.h"
+#include "IOServer/IOServer.h"
 #include "./GameWorld/GameWorld.h"
 #include "./CMainServer/CMainServer.h"
 #include "./GameWorld/GameSceneManager.h"
@@ -12,6 +12,7 @@
 #include "../CommonModule/SimpleIni.h"
 
 //////////////////////////////////////////////////////////////////////////
+using namespace ioserver;
 CDialog* g_pSettingDlg = NULL;
 
 
@@ -133,7 +134,7 @@ void CSettingDlg::OnBnClickedButton1()
 			ZeroMemory(&info, sizeof(info));
 
 			info.dwCnnIndex = i;
-			SServerConn *pConn = CMainServer::GetInstance()->GetIOServer()->GetUserConn(i);
+			IOConn *pConn = CMainServer::GetInstance()->GetIOServer()->GetUserConn(i);
 			if (nullptr == pConn) {
 				continue;
 			}

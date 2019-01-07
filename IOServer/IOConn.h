@@ -6,21 +6,25 @@
 #include <event2/bufferevent.h>
 #include <event2/listener.h>
 #include <string>
-#include "SServerBuffer.h"
+#include "IOBuffer.h"
 #include "Def.h"
-//////////////////////////////////////////////////////////////////////////
-class SServerEngine;
-//////////////////////////////////////////////////////////////////////////
-enum SServerConnStateType
-{
-	kSServerConnState_None,
-	kSServerConnState_Connecting,
-	kSServerConnState_Connected,
-	kSServerConnState_ConnectFailed,
-	kSServerConnState_Disconnected
-};
+#include "namespace.h"
 //////////////////////////////////////////////////////////////////////////
 struct sockaddr_in;
+
+IONS_START
+
+class IOServer;
+//////////////////////////////////////////////////////////////////////////
+enum IOConnStateType
+{
+	IOConnState_None,
+	IOConnState_Connecting,
+	IOConnState_Connected,
+	IOConnState_ConnectFailed,
+	IOConnState_Disconnected
+};
+//////////////////////////////////////////////////////////////////////////
 
 struct AddressInfo {
 	std::string strIP;
@@ -33,15 +37,15 @@ struct AddressInfo {
 	void SetAddress(const sockaddr_in *_pAddr);
 };
 //////////////////////////////////////////////////////////////////////////
-#define SSERVERCONN_FLAG	BEV_OPT_CLOSE_ON_FREE
+#define IOCONN_FLAG	BEV_OPT_CLOSE_ON_FREE
 //////////////////////////////////////////////////////////////////////////
-class SServerConn
+class IOConn
 {
-	friend class SServerEngine;
+	friend class IOServer;
 
 public:
-	SServerConn();
-	~SServerConn();
+	IOConn();
+	~IOConn();
 
 public:
 	void SetAddress(const sockaddr_in* _pAddr);
@@ -56,16 +60,16 @@ private:
 	void readBody();
 
 private:
-	SServerEngine* pEng;
+	IOServer* pEng;
 	bufferevent* pEv;
 	unsigned int uConnIndex;
 	evutil_socket_t fd;
 	bool bServerConn;
-	SServerConnStateType eConnState;
+	IOConnStateType eConnState;
 
 	unsigned int m_uPacketHeadLength;
 
-	SServerBuffer m_xReadBuffer;
+	IOBuffer m_xReadBuffer;
 
 	AddressInfo m_stAddress;
 
@@ -75,4 +79,6 @@ private:
 	void* m_pConnectResultArg;
 };
 //////////////////////////////////////////////////////////////////////////
+IONS_END
+
 #endif

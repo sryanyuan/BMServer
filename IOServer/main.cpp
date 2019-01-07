@@ -9,7 +9,7 @@
 #ifndef _LIB
 
 int nLibEventThreadStatus = 0;
-SServerEngine eng;
+IOServer eng;
 NetbaseWrapper svr;
 
 void printThreadId()

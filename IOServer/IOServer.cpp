@@ -1,7 +1,9 @@
-#include "SServerEngine.h"
+#include "IOServer.h"
 #include <event2\thread.h>
 #include <assert.h>
 #include "Logger.h"
+
+IONS_START
 //////////////////////////////////////////////////////////////////////////
 #ifdef WIN32
 
@@ -49,7 +51,7 @@
 
 #endif
 //////////////////////////////////////////////////////////////////////////
-SServerEngine::SServerEngine()
+IOServer::IOServer()
 {
 	m_eStatus = kSServerStatus_Stop;
 	m_nWorkingTid = 0;
@@ -82,7 +84,7 @@ SServerEngine::SServerEngine()
 	m_uMaxPacketLength = DEF_DEFAULT_MAX_PACKET_LENGTH;
 }
 
-SServerEngine::~SServerEngine()
+IOServer::~IOServer()
 {
 	if (NULL != m_pUserConnArray) {
 		delete[] m_pUserConnArray;
@@ -92,7 +94,7 @@ SServerEngine::~SServerEngine()
 
 //////////////////////////////////////////////////////////////////////////
 //
-int SServerEngine::Init(const SServerInitDesc* _pDesc)
+int IOServer::Init(const IOInitDesc* _pDesc)
 {
 	m_uMaxConnUser = _pDesc->uMaxConnUser;
 	if (0 == m_uMaxConnUser) {
@@ -102,10 +104,10 @@ int SServerEngine::Init(const SServerInitDesc* _pDesc)
 		m_uMaxConnServer = DEF_DEFAULT_MAX_CONN;
 	}
 
-	m_pUserConnArray = new SServerConn*[m_uMaxConnUser + 1];
-	memset(m_pUserConnArray, 0, sizeof(SServerConn*) * (m_uMaxConnUser + 1));
-	m_pServerConnArray = new SServerConn*[m_uMaxConnServer + 1];
-	memset(m_pServerConnArray, 0, sizeof(SServerConn*) * (m_uMaxConnServer + 1));
+	m_pUserConnArray = new IOConn*[m_uMaxConnUser + 1];
+	memset(m_pUserConnArray, 0, sizeof(IOConn*) * (m_uMaxConnUser + 1));
+	m_pServerConnArray = new IOConn*[m_uMaxConnServer + 1];
+	memset(m_pServerConnArray, 0, sizeof(IOConn*) * (m_uMaxConnServer + 1));
 
 	//	init index manager
 	m_xUserIndexMgr.Init(m_uMaxConnUser);
@@ -129,39 +131,35 @@ int SServerEngine::Init(const SServerInitDesc* _pDesc)
 	return kSServerResult_Ok;
 }
 
-int SServerEngine::Start(const char* _pszAddr, unsigned short _uPort)
+int IOServer::Start(const char* _pszAddr, unsigned short _uPort)
 {
 	m_uPort = _uPort;
 	m_xAddr = _pszAddr;
 
 	// Create worker thread
-	m_trd = std::thread(&SServerEngine::__threadEntry, this);
-	
-	//int nRet = _beginthreadex(NULL, 0, &SServerEngine::__threadEntry, this, 0, NULL);
-	//if (0 == nRet) {
-	//	return kSServerResult_CreateThreadFailed;
-	//}
+	try
+	{
+		m_trd = std::thread(&IOServer::__threadEntry, this);
+	}
+	catch (std::system_error& e)
+	{
+		LOGERROR("Create DB thread failed: %s", e.what());
+		return 0;
+	}
 
 	return kSServerResult_Ok;
 }
 
-int SServerEngine::Stop()
+int IOServer::Stop()
 {
 	if(m_eStatus != kSServerStatus_Running)
 	{
 		return 1;
 	}
 
-	/*int nTid = (int)GetCurrentThreadId();
-#ifdef _DEBUG
-	if (nTid != m_nWorkingTid)
-	{
-		assert("Tid conflict");
-	}
-#endif
-	*/
 	if (NULL != m_pEventBase)
 	{
+		// The thread will be exited at the next loop, only call Stop in event callback functions
 		int nRet = event_base_loopbreak(m_pEventBase);
 		return nRet;
 	}
@@ -169,14 +167,14 @@ int SServerEngine::Stop()
 	return 2;
 }
 
-void SServerEngine::Join() {
+void IOServer::Join() {
 	m_trd.join();
 }
 
-int SServerEngine::Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg)
+int IOServer::Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg)
 {
-	SServerAction action = {0};
-	SServerActionConnectContext ctx = {0};
+	IOAction action = {0};
+	IOActionConnectContext ctx = {0};
 	action.uAction = kSServerAction_Connect;
 	ctx.addr.sin_family = AF_INET;
 	ctx.addr.sin_port = htons(_sPort);
@@ -184,23 +182,22 @@ int SServerEngine::Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONC
 	ctx.fnSuccess =_fnSuccess;
 	ctx.fnFailed = _fnFailed;
 
-	LockSendBuffer();
-
-	m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
-	m_xEventBuffer.Write((char*)&ctx, sizeof(SServerActionConnectContext));
-
-	UnlockSendBuffer();
-
+	{
+		std::unique_lock<std::mutex> locker(m_xSendMutex);
+		m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
+		m_xEventBuffer.Write((char*)&ctx, sizeof(IOActionConnectContext));
+	}
+	
 	//	awake and process event
 	awake();
 
 	return 0;
 }
 
-int SServerEngine::SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg)
+int IOServer::SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNECTSUCCESS _fnSuccess, FUNC_ONCONNECTFAILED _fnFailed, void* _pArg)
 {
-	SServerAction action = {0};
-	SServerActionConnectContext ctx = {0};
+	IOAction action = {0};
+	IOActionConnectContext ctx = {0};
 	action.uAction = kSServerAction_Connect;
 	ctx.addr.sin_family = AF_INET;
 	ctx.addr.sin_port = htons(_sPort);
@@ -212,20 +209,20 @@ int SServerEngine::SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC
 	return 0;
 }
 
-int SServerEngine::SendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength)
+int IOServer::SendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength)
 {
-	SServerConn* pConn = GetServerConn(_uConnIndex);
+	IOConn* pConn = GetServerConn(_uConnIndex);
 	if (NULL == pConn) {
 		return -1;
 	}
 
 	LockSendBuffer();
 
-	SServerAction action = {0};
+	IOAction action = {0};
 	action.uAction = kSServerAction_SendToServer;
 	action.uIndex = (unsigned short)_uConnIndex;
 	action.uTag = (unsigned short)_uLength;
-	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
 	m_xEventBuffer.Write(_pData, _uLength);
 
 	UnlockSendBuffer();
@@ -236,20 +233,20 @@ int SServerEngine::SendPacketToServer(unsigned int _uConnIndex, char* _pData, si
 	return int(uRet);
 }
 
-int SServerEngine::SendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength)
+int IOServer::SendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength)
 {
-	SServerConn* pConn = GetUserConn(_uConnIndex);
+	IOConn* pConn = GetUserConn(_uConnIndex);
 	if (NULL == pConn) {
 		return -1;
 	}
 
 	LockSendBuffer();
 
-	SServerAction action = {0};
+	IOAction action = {0};
 	action.uAction = kSServerAction_SendToUser;
 	action.uIndex = (unsigned short)_uConnIndex;
 	action.uTag = (unsigned short)_uLength;
-	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
 	m_xEventBuffer.Write(_pData, _uLength);
 
 	UnlockSendBuffer();
@@ -260,14 +257,14 @@ int SServerEngine::SendPacketToUser(unsigned int _uConnIndex, char* _pData, size
 	return int(uRet);
 }
 
-int SServerEngine::SyncSendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength)
+int IOServer::SyncSendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t _uLength)
 {
-	SServerConn* pConn = GetServerConn(_uConnIndex);
+	IOConn* pConn = GetServerConn(_uConnIndex);
 	if (NULL == pConn) {
 		LOGERROR("Failed to get conn, index:%d", _uConnIndex);
 		return 1;
 	}
-	if (pConn->eConnState != kSServerConnState_Connected)
+	if (pConn->eConnState != IOConnState_Connected)
 	{
 		LOGERROR("Trying to send to a disconnected connection");
 		return 2;
@@ -290,14 +287,14 @@ int SServerEngine::SyncSendPacketToServer(unsigned int _uConnIndex, char* _pData
 	return 0;
 }
 
-int SServerEngine::SyncSendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength)
+int IOServer::SyncSendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _uLength)
 {
-	SServerConn* pConn = GetUserConn(_uConnIndex);
+	IOConn* pConn = GetUserConn(_uConnIndex);
 	if (NULL == pConn) {
 		LOGERROR("Failed to get conn, index:%d", _uConnIndex);
 		return 1;
 	}
-	if (pConn->eConnState != kSServerConnState_Connected)
+	if (pConn->eConnState != IOConnState_Connected)
 	{
 		LOGERROR("Trying to send to a disconnected connection");
 		return 2;
@@ -320,15 +317,15 @@ int SServerEngine::SyncSendPacketToUser(unsigned int _uConnIndex, char* _pData, 
 	return 0;
 }
 
-int SServerEngine::CloseUserConnection(unsigned int _uConnIndex)
+int IOServer::CloseUserConnection(unsigned int _uConnIndex)
 {
-	SServerAction action = {0};
+	IOAction action = {0};
 	action.uAction = kSServerAction_CloseUserConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
 	{
 		std::unique_lock<std::mutex> locker(m_xSendMutex);
-		m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+		m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
 	}
 	
 	awake();
@@ -336,7 +333,7 @@ int SServerEngine::CloseUserConnection(unsigned int _uConnIndex)
 	return 0;
 }
 
-SServerConn* SServerEngine::GetUserConn(unsigned int _uConnIndex)
+IOConn* IOServer::GetUserConn(unsigned int _uConnIndex)
 {
 	if (_uConnIndex > m_uMaxConnUser ||
 		0 == _uConnIndex) {
@@ -346,7 +343,7 @@ SServerConn* SServerEngine::GetUserConn(unsigned int _uConnIndex)
 	return m_pUserConnArray[_uConnIndex];
 }
 
-void SServerEngine::SetUserConn(unsigned int _uConnIndex, SServerConn* conn)
+void IOServer::SetUserConn(unsigned int _uConnIndex, IOConn* conn)
 {
 	if (_uConnIndex > m_uMaxConnUser ||
 		0 == _uConnIndex) {
@@ -356,7 +353,7 @@ void SServerEngine::SetUserConn(unsigned int _uConnIndex, SServerConn* conn)
 	m_pUserConnArray[_uConnIndex] = conn;
 }
 
-SServerConn* SServerEngine::GetServerConn(unsigned int _uConnIndex)
+IOConn* IOServer::GetServerConn(unsigned int _uConnIndex)
 {
 	if (_uConnIndex > m_uMaxConnServer ||
 		0 == _uConnIndex) {
@@ -366,7 +363,7 @@ SServerConn* SServerEngine::GetServerConn(unsigned int _uConnIndex)
 	return m_pServerConnArray[_uConnIndex];
 }
 
-void SServerEngine::SetServerConn(unsigned int _uConnIndex, SServerConn* conn)
+void IOServer::SetServerConn(unsigned int _uConnIndex, IOConn* conn)
 {
 	if (_uConnIndex > m_uMaxConnServer ||
 		0 == _uConnIndex) {
@@ -376,25 +373,25 @@ void SServerEngine::SetServerConn(unsigned int _uConnIndex, SServerConn* conn)
 	m_pServerConnArray[_uConnIndex] = conn;
 }
 
-void SServerEngine::LockSendBuffer()
+void IOServer::LockSendBuffer()
 {
 	m_xSendMutex.lock();
 }
 
-void SServerEngine::UnlockSendBuffer()
+void IOServer::UnlockSendBuffer()
 {
 	m_xSendMutex.unlock();
 }
 
-int SServerEngine::CloseServerConnection(unsigned int _uConnIndex)
+int IOServer::CloseServerConnection(unsigned int _uConnIndex)
 {
-	SServerAction action = {0};
+	IOAction action = {0};
 	action.uAction = kSServerAction_CloseServerConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
 	{
 		std::unique_lock<std::mutex> locker(m_xSendMutex);
-		m_xEventBuffer.Write((char*)&action, sizeof(SServerAction));
+		m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
 	}
 
 	awake();
@@ -402,7 +399,7 @@ int SServerEngine::CloseServerConnection(unsigned int _uConnIndex)
 	return 0;
 }
 
-void SServerEngine::Callback_OnAcceptUser(unsigned int _uIndex)
+void IOServer::Callback_OnAcceptUser(unsigned int _uIndex)
 {
 	if (NULL == m_pFuncOnAcceptUser) {
 		return;
@@ -410,7 +407,7 @@ void SServerEngine::Callback_OnAcceptUser(unsigned int _uIndex)
 	m_pFuncOnAcceptUser(_uIndex);
 }
 
-void SServerEngine::Callback_OnAcceptServer(unsigned int _uIndex)
+void IOServer::Callback_OnAcceptServer(unsigned int _uIndex)
 {
 	if (NULL == m_pFuncOnAcceptServer) {
 		return;
@@ -418,7 +415,7 @@ void SServerEngine::Callback_OnAcceptServer(unsigned int _uIndex)
 	m_pFuncOnAcceptServer(_uIndex);
 }
 
-void SServerEngine::Callback_OnDisconnectedUser(unsigned int _uIndex)
+void IOServer::Callback_OnDisconnectedUser(unsigned int _uIndex)
 {
 	if (NULL == m_pFuncOnDisconnectedUser) {
 		return;
@@ -426,7 +423,7 @@ void SServerEngine::Callback_OnDisconnectedUser(unsigned int _uIndex)
 	m_pFuncOnDisconnectedUser(_uIndex);
 }
 
-void SServerEngine::Callback_OnDisconnectedServer(unsigned int _uIndex)
+void IOServer::Callback_OnDisconnectedServer(unsigned int _uIndex)
 {
 	if (NULL == m_pFuncOnDisconnectedServer) {
 		return;
@@ -434,7 +431,7 @@ void SServerEngine::Callback_OnDisconnectedServer(unsigned int _uIndex)
 	m_pFuncOnDisconnectedServer(_uIndex);
 }
 
-void SServerEngine::Callback_OnRecvUser(unsigned int _uIndex, char* _pData, unsigned int _uLength)
+void IOServer::Callback_OnRecvUser(unsigned int _uIndex, char* _pData, unsigned int _uLength)
 {
 	if (NULL == m_pFuncOnRecvUser) {
 		return;
@@ -442,7 +439,7 @@ void SServerEngine::Callback_OnRecvUser(unsigned int _uIndex, char* _pData, unsi
 	m_pFuncOnRecvUser(_uIndex, _pData, _uLength);
 }
 
-void SServerEngine::Callback_OnRecvServer(unsigned int _uIndex, char* _pData, unsigned int _uLength)
+void IOServer::Callback_OnRecvServer(unsigned int _uIndex, char* _pData, unsigned int _uLength)
 {
 	if (NULL == m_pFuncOnRecvServer) {
 		return;
@@ -450,7 +447,7 @@ void SServerEngine::Callback_OnRecvServer(unsigned int _uIndex, char* _pData, un
 	m_pFuncOnRecvServer(_uIndex, _pData, _uLength);
 }
 
-void SServerEngine::onConnectionClosed(SServerConn* _pConn)
+void IOServer::onConnectionClosed(IOConn* _pConn)
 {
 	if (_pConn->bServerConn) {
 		onServerConnectionClosed(_pConn);
@@ -459,7 +456,7 @@ void SServerEngine::onConnectionClosed(SServerConn* _pConn)
 	}
 }
 
-void SServerEngine::onUserConnectionClosed(SServerConn* _pConn)
+void IOServer::onUserConnectionClosed(IOConn* _pConn)
 {
 	//	after connection is closed (recv return error)
 	LOGPRINT("User connection %d closed", _pConn->uConnIndex);
@@ -480,15 +477,15 @@ void SServerEngine::onUserConnectionClosed(SServerConn* _pConn)
 	--m_nConnectedUserCount;
 }
 
-void SServerEngine::onServerConnectionClosed(SServerConn* _pConn)
+void IOServer::onServerConnectionClosed(IOConn* _pConn)
 {
 	LOGINFO("Server connection %d closed", _pConn->uConnIndex);
 
 	//	callback
 	//	2 possibilities, 1 : connect failed and remove conn 2 : connected and remove conn
-	if (_pConn->eConnState == kSServerConnState_Connected) {
+	if (_pConn->eConnState == IOConnState_Connected) {
 		Callback_OnDisconnectedServer(_pConn->uConnIndex);
-		_pConn->eConnState = kSServerConnState_Disconnected;
+		_pConn->eConnState = IOConnState_Disconnected;
 	}
 
 	//	free index
@@ -505,27 +502,27 @@ void SServerEngine::onServerConnectionClosed(SServerConn* _pConn)
 }
 
 // process all events in libevent thread
-void SServerEngine::processConnEvent()
+void IOServer::processConnEvent()
 {
-	SServerAction action = {0};
+	IOAction action = {0};
 
 	std::unique_lock<std::mutex> locker(m_xSendMutex);
 
 	while(0 != m_xEventBuffer.GetReadableSize())
 	{
-		if (sizeof(SServerAction) != m_xEventBuffer.Read((char*)&action, sizeof(SServerAction))) {
+		if (sizeof(IOAction) != m_xEventBuffer.Read((char*)&action, sizeof(IOAction))) {
 			LOGERROR("Process conn event failed.");
 			m_xEventBuffer.Reset();
 			return;
 		}
 
 		if (kSServerAction_SendToUser == action.uAction) {
-			SServerConn* pConn = GetUserConn((unsigned int)action.uIndex);
+			IOConn* pConn = GetUserConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to get conn, index:%d", action.uIndex);
 			} else {
 				//	write head
-				if (pConn->eConnState == kSServerConnState_Connected)
+				if (pConn->eConnState == IOConnState_Connected)
 				{
 					unsigned int uNetLength = DEF_NETPROTOCOL_HEADER_LENGTH + action.uTag;
 					uNetLength = htonl(uNetLength);
@@ -535,12 +532,12 @@ void SServerEngine::processConnEvent()
 			}
 			m_xEventBuffer.Read(NULL, action.uTag);
 		} else if(kSServerAction_SendToServer == action.uAction) {
-			SServerConn* pConn = GetServerConn((unsigned int)action.uIndex);
+			IOConn* pConn = GetServerConn((unsigned int)action.uIndex);
 			if(NULL == pConn) {
 				LOGERROR("Failed to get conn, index:%d", action.uIndex);
 			} else {
 				//	write head
-				if (pConn->eConnState == kSServerConnState_Connected)
+				if (pConn->eConnState == IOConnState_Connected)
 				{
 					unsigned int uNetLength = DEF_NETPROTOCOL_HEADER_LENGTH + action.uTag;
 					uNetLength = htonl(uNetLength);
@@ -550,7 +547,7 @@ void SServerEngine::processConnEvent()
 			}
 			m_xEventBuffer.Read(NULL, action.uTag);
 		} else if (kSServerAction_CloseUserConn == action.uAction) {
-			SServerConn* pConn = GetUserConn((unsigned int)action.uIndex);
+			IOConn* pConn = GetUserConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to close conn, index:%d", action.uIndex);
 			} else {
@@ -563,7 +560,7 @@ void SServerEngine::processConnEvent()
 				}*/
 			}
 		} else if (kSServerAction_CloseServerConn == action.uAction) {
-			SServerConn* pConn = GetServerConn((unsigned int)action.uIndex);
+			IOConn* pConn = GetServerConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to close conn, index:%d", action.uIndex);
 			} else {
@@ -576,8 +573,8 @@ void SServerEngine::processConnEvent()
 				}*/
 			}
 		} else if (kSServerAction_Connect == action.uAction) {
-			SServerActionConnectContext ctx;
-			m_xEventBuffer.Read((char*)&ctx, sizeof(SServerActionConnectContext));
+			IOActionConnectContext ctx;
+			m_xEventBuffer.Read((char*)&ctx, sizeof(IOActionConnectContext));
 			processConnectAction(&ctx);
 		} else {
 			LOGERROR("Invalid conn event %d", action.uAction);
@@ -589,7 +586,7 @@ void SServerEngine::processConnEvent()
 	m_xEventBuffer.Reset();
 }
 
-void SServerEngine::awake()
+void IOServer::awake()
 {
 	int nRet = send(m_arraySocketPair[1], "1", 1, 0);
 	if (nRet < 1) {
@@ -597,7 +594,7 @@ void SServerEngine::awake()
 	}
 }
 
-void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
+void IOServer::processConnectAction(IOActionConnectContext* _pAction)
 {
 	//	get new conn index
 	unsigned int uConnIndex = m_xServerIndexMgr.Pop();
@@ -607,7 +604,7 @@ void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
 		return;
 	}
 
-	bufferevent* pBev = bufferevent_socket_new(m_pEventBase, -1, SSERVERCONN_FLAG);
+	bufferevent* pBev = bufferevent_socket_new(m_pEventBase, -1, IOCONN_FLAG);
 	if ( NULL == pBev ) {
 		LOGERROR("Can't create bufferevent, addr %d port %d", _pAction->addr.sin_addr.s_addr, _pAction->addr.sin_port );
 		_pAction->fnFailed(uConnIndex, _pAction->pArg);
@@ -626,7 +623,7 @@ void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
 	int nFd = bufferevent_getfd(pBev);
 
 	//	create new conn context
-	SServerConn* pConn = new SServerConn;
+	IOConn* pConn = new IOConn;
 	pConn->pEng = this;
 	pConn->fd = nFd;
 	pConn->pEv = pBev;
@@ -636,9 +633,9 @@ void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
 	pConn->m_fnOnConnectFailed = _pAction->fnFailed;
 
 	bufferevent_setcb(pBev,
-		&SServerEngine::__onConnRead,
+		&IOServer::__onConnRead,
 		NULL,
-		&SServerEngine::__onConnEvent,
+		&IOServer::__onConnEvent,
 		pConn);
 	bufferevent_setwatermark(pBev, EV_READ, DEF_NETPROTOCOL_HEADER_LENGTH, 0);
 	bufferevent_setwatermark(pBev, EV_WRITE, 0, 0);
@@ -651,15 +648,15 @@ void SServerEngine::processConnectAction(SServerActionConnectContext* _pAction)
 	memset(&addr, 0, len);
 	getpeername (nFd, (sockaddr*)&addr, &len);
 	pConn->SetAddress(&addr);
-	pConn->eConnState = kSServerConnState_Connecting;
+	pConn->eConnState = IOConnState_Connecting;
 
 	//	wait for connect result
 }
 
-int SServerEngine::AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerIntervalMS, FUNC_ONTIMER _fnOnTimer)
+int IOServer::AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerIntervalMS, FUNC_ONTIMER _fnOnTimer)
 {
-	SServerTimerJob* pJob = new SServerTimerJob;
-	memset(pJob, 0, sizeof(SServerTimerJob));
+	IOTimerJob* pJob = new IOTimerJob;
+	memset(pJob, 0, sizeof(IOTimerJob));
 	pJob->nJobId = _nJobId;
 	pJob->nTriggerIntervalMS = _nTriggerIntervalMS;
 	pJob->fnOnTimer = _fnOnTimer;
@@ -670,16 +667,16 @@ int SServerEngine::AddTimerJob(unsigned int _nJobId, unsigned int _nTriggerInter
 	return 0;
 }
 
-int SServerEngine::RemoveTimerJob(unsigned int _nJobId)
+int IOServer::RemoveTimerJob(unsigned int _nJobId)
 {
 	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 
-	SServerTimerJobList::iterator iterB = m_xTimerJobs.begin();
+	IOTimerJobList::iterator iterB = m_xTimerJobs.begin();
 	for(iterB;
 		iterB != m_xTimerJobs.end();
 		)
 	{
-		SServerTimerJob* pJob = *iterB;
+		IOTimerJob* pJob = *iterB;
 
 		if (pJob->nJobId == _nJobId) {
 			delete pJob;
@@ -692,17 +689,17 @@ int SServerEngine::RemoveTimerJob(unsigned int _nJobId)
 	return 0;
 }
 
-int SServerEngine::ClearTimerJob()
+int IOServer::ClearTimerJob()
 {
 	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 
-	SServerTimerJobList::iterator iterB = m_xTimerJobs.begin();
+	IOTimerJobList::iterator iterB = m_xTimerJobs.begin();
 	for(iterB;
 		iterB != m_xTimerJobs.end();
 		++iterB
 		)
 	{
-		SServerTimerJob* pJob = *iterB;
+		IOTimerJob* pJob = *iterB;
 		delete pJob;
 	}
 
@@ -711,17 +708,17 @@ int SServerEngine::ClearTimerJob()
 	return 0;
 }
 
-void SServerEngine::processTimerJob()
+void IOServer::processTimerJob()
 {
 	std::unique_lock<std::mutex> locker(m_xTimerMutex);
 	unsigned int nNowTick = GetTickCount();
 
-	SServerTimerJobList::const_iterator iterB = m_xTimerJobs.begin();
+	IOTimerJobList::const_iterator iterB = m_xTimerJobs.begin();
 	for(iterB;
 		iterB != m_xTimerJobs.end();
 		++iterB)
 	{
-		SServerTimerJob* pJob = *iterB;
+		IOTimerJob* pJob = *iterB;
 
 		if (nNowTick > pJob->nLastTriggerTime + pJob->nTriggerIntervalMS) {
 			//	trigger
@@ -737,9 +734,9 @@ void SServerEngine::processTimerJob()
 
 //////////////////////////////////////////////////////////////////////////
 //	static handlers
-unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
+unsigned int __stdcall IOServer::__threadEntry(void* _pArg)
 {
-	SServerEngine* pIns = (SServerEngine*)_pArg;
+	IOServer* pIns = (IOServer*)_pArg;
 	pIns->m_nWorkingTid = (int)GetCurrentThreadId();
 
 	//	initialize
@@ -775,7 +772,7 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 	}
 
 	// set callback
-	bufferevent_setcb(pIns->m_pBvEvent, &SServerEngine::__onThreadRead, NULL, NULL, pIns);
+	bufferevent_setcb(pIns->m_pBvEvent, &IOServer::__onThreadRead, NULL, NULL, pIns);
 	bufferevent_setwatermark(pIns->m_pBvEvent, EV_READ, 1, 0);
 	bufferevent_enable(pIns->m_pBvEvent, EV_READ);
 
@@ -786,7 +783,7 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 
 	//	listen
 	pIns->m_pConnListener = evconnlistener_new_bind(pIns->m_pEventBase,
-		&SServerEngine::__onAcceptConn,
+		&IOServer::__onAcceptConn,
 		pIns,
 		LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE,
 		-1,
@@ -799,7 +796,7 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 
 	//	timer event
 	struct timeval tv = { 0, 5 * 1000 };
-	pIns->m_pTimerEvent = event_new(pIns->m_pEventBase, -1, EV_PERSIST, &SServerEngine::__onEventTimer, pIns);
+	pIns->m_pTimerEvent = event_new(pIns->m_pEventBase, -1, EV_PERSIST, &IOServer::__onEventTimer, pIns);
 	if ( NULL == pIns->m_pTimerEvent ) {
 		LOGERROR("Create lib event timer failed!");
 		exit(1);
@@ -823,7 +820,7 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 	LOGDEBUG("free connections");
 	for (int i = 0; i < (int)pIns->m_uMaxConnUser; ++i)
 	{
-		SServerConn* pConn = pIns->m_pUserConnArray[i];
+		IOConn* pConn = pIns->m_pUserConnArray[i];
 		if (NULL != pConn)
 		{
 			pIns->onUserConnectionClosed(pConn);
@@ -831,7 +828,7 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 	}
 	for (int i = 0; i < (int)pIns->m_uMaxConnServer; ++i)
 	{
-		SServerConn* pConn = pIns->m_pServerConnArray[i];
+		IOConn* pConn = pIns->m_pServerConnArray[i];
 		if (NULL != pConn)
 		{
 			pIns->onServerConnectionClosed(pConn);
@@ -859,9 +856,9 @@ unsigned int __stdcall SServerEngine::__threadEntry(void* _pArg)
 	return 0;
 }
 
-void SServerEngine::__onAcceptConn(struct evconnlistener *pEvListener, evutil_socket_t sock, struct sockaddr *pAddr, int iLen, void *ptr)
+void IOServer::__onAcceptConn(struct evconnlistener *pEvListener, evutil_socket_t sock, struct sockaddr *pAddr, int iLen, void *ptr)
 {
-	SServerEngine* pIns = (SServerEngine*)ptr;
+	IOServer* pIns = (IOServer*)ptr;
 	event_base* pEventBase = evconnlistener_get_base(pEvListener);
 
 	//	get new conn index
@@ -880,7 +877,7 @@ void SServerEngine::__onAcceptConn(struct evconnlistener *pEvListener, evutil_so
 	//	register event
 	bufferevent* pEv = bufferevent_socket_new(pEventBase,
 		sock,
-		SSERVERCONN_FLAG
+		IOCONN_FLAG
 		);
 	if (NULL == pEv) {
 		LOGPRINT("Failed to bind bufferevent");
@@ -891,16 +888,16 @@ void SServerEngine::__onAcceptConn(struct evconnlistener *pEvListener, evutil_so
 	++pIns->m_nConnectedUserCount;
 
 	//	create new conn context
-	SServerConn* pConn = new SServerConn;
+	IOConn* pConn = new IOConn;
 	pConn->pEng = pIns;
 	pConn->fd = sock;
 	pConn->pEv = pEv;
 	pConn->uConnIndex = uConnIndex;
 
 	bufferevent_setcb(pEv,
-		&SServerEngine::__onConnRead,
+		&IOServer::__onConnRead,
 		NULL,
-		&SServerEngine::__onConnEvent,
+		&IOServer::__onConnEvent,
 		pConn);
 	bufferevent_setwatermark(pEv, EV_READ, DEF_NETPROTOCOL_HEADER_LENGTH, 0);
 	bufferevent_setwatermark(pEv, EV_WRITE, 0, 0);
@@ -913,20 +910,20 @@ void SServerEngine::__onAcceptConn(struct evconnlistener *pEvListener, evutil_so
 	memset(&addr, 0, len);
 	getpeername (sock, (sockaddr*)&addr, &len);
 	pConn->SetAddress(&addr);
-	pConn->eConnState = kSServerConnState_Connected;
+	pConn->eConnState = IOConnState_Connected;
 
 	//	callback
 	pIns->Callback_OnAcceptUser(uConnIndex);
 }
 
-void SServerEngine::__onAcceptErr(struct evconnlistener *pEvListener, void *ptr)
+void IOServer::__onAcceptErr(struct evconnlistener *pEvListener, void *ptr)
 {
 	LOGPRINT("Accept error");
 }
 
-void SServerEngine::__onConnRead(struct bufferevent* pEv, void* pCtx)
+void IOServer::__onConnRead(struct bufferevent* pEv, void* pCtx)
 {
-	SServerConn* pConn = (SServerConn*)pCtx;
+	IOConn* pConn = (IOConn*)pCtx;
 	evbuffer* pInput = bufferevent_get_input(pEv);
 	size_t uRead = evbuffer_get_length(pInput);
 
@@ -946,16 +943,16 @@ void SServerEngine::__onConnRead(struct bufferevent* pEv, void* pCtx)
 	}
 }
 
-void SServerEngine::__onConnEvent(struct bufferevent* pEv, short what, void* pCtx)
+void IOServer::__onConnEvent(struct bufferevent* pEv, short what, void* pCtx)
 {
-	SServerConn* pConn = (SServerConn*)pCtx;
-	SServerEngine* pEng = pConn->pEng;
+	IOConn* pConn = (IOConn*)pCtx;
+	IOServer* pEng = pConn->pEng;
 
 	//	process event
 	if (what & BEV_EVENT_CONNECTED) {
 		if (pConn->bServerConn &&
-			pConn->eConnState == kSServerConnState_Connecting) {
-			pConn->eConnState = kSServerConnState_Connected;
+			pConn->eConnState == IOConnState_Connecting) {
+			pConn->eConnState = IOConnState_Connected;
 			pEng->Callback_OnAcceptServer(pConn->uConnIndex);
 			pConn->Callback_OnConnectSuccess();
 			++pEng->m_nConnectedServerCount;
@@ -971,17 +968,17 @@ void SServerEngine::__onConnEvent(struct bufferevent* pEv, short what, void* pCt
 
 	// on connecting as client role
 	if (pConn->bServerConn &&
-		pConn->eConnState == kSServerConnState_Connecting) {
+		pConn->eConnState == IOConnState_Connecting) {
 		pConn->Callback_OnConnectFailed();
-		pConn->eConnState = kSServerConnState_ConnectFailed;
+		pConn->eConnState = IOConnState_ConnectFailed;
 	}
 
 	pEng->onConnectionClosed(pConn);
 }
 
-void SServerEngine::__onThreadRead(struct bufferevent* pEv, void* pCtx)
+void IOServer::__onThreadRead(struct bufferevent* pEv, void* pCtx)
 {
-	SServerEngine* pEng = (SServerEngine*)pCtx;
+	IOServer* pEng = (IOServer*)pCtx;
 
 	struct evbuffer *pInput = bufferevent_get_input(pEv);
 	evbuffer_drain(pInput, evbuffer_get_length(pInput));
@@ -989,8 +986,10 @@ void SServerEngine::__onThreadRead(struct bufferevent* pEv, void* pCtx)
 	pEng->processConnEvent();
 }
 
-void SServerEngine::__onEventTimer(evutil_socket_t, short _nEvents, void * _pCxt)
+void IOServer::__onEventTimer(evutil_socket_t, short _nEvents, void * _pCxt)
 {
-	SServerEngine* pEng = (SServerEngine*)_pCxt;
+	IOServer* pEng = (IOServer*)_pCxt;
 	pEng->processTimerJob();
 }
+
+IONS_END

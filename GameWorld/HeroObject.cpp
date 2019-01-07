@@ -11,7 +11,7 @@
 #include <algorithm>
 #include "ObjectStatus.h"
 #include "ExceptionHandler.h"
-#include "../IOServer/SServerEngine.h"
+#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "../../CommonModule/SettingLoader.h"
 #include "../../CommonModule/StatusDefine.h"
@@ -40,6 +40,8 @@ static const int s_nMoveOft[] =
 extern HWND g_hServerDlg;
 
 PkgPlayerInteractiveDialogContentNot HeroObject::s_xInteractiveDialogItemPkg;
+
+using namespace ioserver;
 //////////////////////////////////////////////////////////////////////////
 HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 	/*,m_xSendBuffer(OBJECT_BUFFER_SIZE)*/

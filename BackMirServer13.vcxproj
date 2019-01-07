@@ -251,9 +251,8 @@
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Import\ImportModule.cpp" />
     <ClCompile Include="IOServer\IndexManager.cpp" />
-    <ClCompile Include="IOServer\main.cpp" />
-    <ClCompile Include="IOServer\SServerConn.cpp" />
-    <ClCompile Include="IOServer\SServerEngine.cpp" />
+    <ClCompile Include="IOServer\IOConn.cpp" />
+    <ClCompile Include="IOServer\IOServer.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="RegisterGameRoomDlg.cpp" />
     <ClCompile Include="runarg.cpp" />
@@ -361,11 +360,10 @@
     <ClInclude Include="IOServer\Def.h" />
     <ClInclude Include="IOServer\IndexManager.h" />
     <ClInclude Include="IOServer\Logger.h" />
-    <ClInclude Include="IOServer\netbase.h" />
-    <ClInclude Include="IOServer\SServerBuffer.h" />
-    <ClInclude Include="IOServer\SServerConn.h" />
-    <ClInclude Include="IOServer\SServerEngine.h" />
-    <ClInclude Include="IOServer\typedef.h" />
+    <ClInclude Include="IOServer\IOBuffer.h" />
+    <ClInclude Include="IOServer\IOConn.h" />
+    <ClInclude Include="IOServer\IOServer.h" />
+    <ClInclude Include="IOServer\namespace.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Net\Packet.h" />
     <ClInclude Include="RegisterGameRoomDlg.h" />

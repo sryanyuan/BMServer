@@ -1,4 +1,6 @@
 #include "IndexManager.h"
+
+IONS_START
 //////////////////////////////////////////////////////////////////////////
 unsigned int IndexManager::s_uInvalidIndex = 0;
 //////////////////////////////////////////////////////////////////////////
@@ -163,3 +165,5 @@ void IndexManager::Push(unsigned int _uIndex)
 {
 	FreeIndex(this, DWORD(_uIndex));
 }
+
+IONS_END

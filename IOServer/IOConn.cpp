@@ -1,6 +1,8 @@
-#include "SServerConn.h"
+#include "IOConn.h"
 #include "Logger.h"
-#include "SServerEngine.h"
+#include "IOServer.h"
+
+IONS_START
 //////////////////////////////////////////////////////////////////////////
 void AddressInfo::SetAddress(const sockaddr_in *_pAddr) {
 	strIP.clear();
@@ -16,7 +18,7 @@ void AddressInfo::SetAddress(const sockaddr_in *_pAddr) {
 	uPort = ntohs(_pAddr->sin_port);
 }
 //////////////////////////////////////////////////////////////////////////
-SServerConn::SServerConn()
+IOConn::IOConn()
 {
 	pEng = NULL;
 	pEv = NULL;
@@ -26,20 +28,20 @@ SServerConn::SServerConn()
 	m_xReadBuffer.AllocBuffer(5 * 1024);
 	memset(&m_stAddress, 0, sizeof(sockaddr_in));
 	bServerConn = false;
-	eConnState = kSServerConnState_None;
+	eConnState = IOConnState_None;
 
 	m_fnOnConnectSuccess = NULL;
 	m_fnOnConnectFailed = NULL;
 	m_pConnectResultArg = NULL;
 }
 
-SServerConn::~SServerConn()
+IOConn::~IOConn()
 {
 
 }
 
 
-void SServerConn::readHead()
+void IOConn::readHead()
 {
 	evbuffer* pInput = bufferevent_get_input(pEv);
 	size_t uLen = evbuffer_get_length(pInput);
@@ -86,7 +88,7 @@ void SServerConn::readHead()
 	}
 }
 
-void SServerConn::readBody()
+void IOConn::readBody()
 {
 	//	make sure we had read packet length
 	if(m_uPacketHeadLength <= DEF_NETPROTOCOL_HEADER_LENGTH)
@@ -147,17 +149,17 @@ void SServerConn::readBody()
 	}
 }
 
-void SServerConn::SetAddress(const sockaddr_in* _pAddr)
+void IOConn::SetAddress(const sockaddr_in* _pAddr)
 {
 	m_stAddress.SetAddress(_pAddr);
 }
 
-const AddressInfo* SServerConn::GetAddress()
+const AddressInfo* IOConn::GetAddress()
 {
 	return &m_stAddress;
 }
 
-bool SServerConn::GetAddress(char* _pBuffer, unsigned short* _pPort)
+bool IOConn::GetAddress(char* _pBuffer, unsigned short* _pPort)
 {
 	if (m_stAddress.strIP.empty()) {
 		return false;
@@ -167,7 +169,7 @@ bool SServerConn::GetAddress(char* _pBuffer, unsigned short* _pPort)
 	return true;
 }
 
-void SServerConn::Callback_OnConnectSuccess()
+void IOConn::Callback_OnConnectSuccess()
 {
 	if(NULL == m_fnOnConnectSuccess)
 	{
@@ -176,7 +178,7 @@ void SServerConn::Callback_OnConnectSuccess()
 	m_fnOnConnectSuccess(uConnIndex, m_pConnectResultArg);
 }
 
-void SServerConn::Callback_OnConnectFailed()
+void IOConn::Callback_OnConnectFailed()
 {
 	if(NULL == m_fnOnConnectFailed)
 	{
@@ -184,3 +186,5 @@ void SServerConn::Callback_OnConnectFailed()
 	}
 	m_fnOnConnectFailed(uConnIndex, m_pConnectResultArg);
 }
+
+IONS_END

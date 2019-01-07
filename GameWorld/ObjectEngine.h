@@ -9,8 +9,7 @@
 #include "../../CommonModule/ShareData.h"
 #include <stdlib.h>
 #include <string>
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 #include "../../CommonModule/QuestContext.h"
 #include "ObjectValid.h"
 #include "../../CommonModule/ShareDefine.h"
@@ -19,6 +18,7 @@
 #include "../../CommonModule/StoveManager.h"
 #include "FreeListManager.h"
 #include <google/protobuf/message.h>
+#include <mutex>
 //#include "../common/memleak.h"
 //////////////////////////////////////////////////////////////////////////
 extern ByteBuffer g_xThreadBuffer;
@@ -166,25 +166,25 @@ class LockObject
 public:
 	LockObject()
 	{
-		InitializeCriticalSection(&m_stCS);
+		
 	}
 	virtual ~LockObject()
 	{
-		DeleteCriticalSection(&m_stCS);
+		
 	}
 
 public:
 	void Lock()
 	{
-		EnterCriticalSection(&m_stCS);
+		m_stCS.lock();
 	}
 	void Unlock()
 	{
-		LeaveCriticalSection(&m_stCS);
+		m_stCS.unlock();
 	}
 
 protected:
-	CRITICAL_SECTION m_stCS;
+	std::mutex m_stCS;
 };
 //////////////////////////////////////////////////////////////////////////
 struct ReceiveDamageInfo

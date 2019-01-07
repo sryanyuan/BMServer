@@ -2,8 +2,7 @@
 #include <WinSock2.h>
 #endif
 #include "ObjectEngine.h"
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#include <glog/logging.h>
+#include "../common/glog.h"
 #include "../CMainServer/CMainServer.h"
 #include "../GameWorld/GameSceneManager.h"
 #include "../GameWorld/MonsterObject.h"
