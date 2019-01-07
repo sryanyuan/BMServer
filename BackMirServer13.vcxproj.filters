@@ -447,9 +447,6 @@
     <ClCompile Include="IOServer\main.cpp">
       <Filter>IOServer</Filter>
     </ClCompile>
-    <ClCompile Include="IOServer\NetbaseWrapper.cpp">
-      <Filter>IOServer</Filter>
-    </ClCompile>
     <ClCompile Include="IOServer\SServerConn.cpp">
       <Filter>IOServer</Filter>
     </ClCompile>
@@ -750,9 +747,6 @@
       <Filter>IOServer</Filter>
     </ClInclude>
     <ClInclude Include="IOServer\netbase.h">
-      <Filter>IOServer</Filter>
-    </ClInclude>
-    <ClInclude Include="IOServer\NetbaseWrapper.h">
       <Filter>IOServer</Filter>
     </ClInclude>
     <ClInclude Include="IOServer\SServerBuffer.h">

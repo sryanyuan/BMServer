@@ -2,6 +2,20 @@
 #include "Logger.h"
 #include "SServerEngine.h"
 //////////////////////////////////////////////////////////////////////////
+void AddressInfo::SetAddress(const sockaddr_in *_pAddr) {
+	strIP.clear();
+	uPort = 0;
+
+	char* paddr = inet_ntoa(_pAddr->sin_addr);
+	if (NULL == paddr)
+	{
+		return;
+	}
+
+	strIP = paddr;
+	uPort = ntohs(_pAddr->sin_port);
+}
+//////////////////////////////////////////////////////////////////////////
 SServerConn::SServerConn()
 {
 	pEng = NULL;
@@ -135,27 +149,21 @@ void SServerConn::readBody()
 
 void SServerConn::SetAddress(const sockaddr_in* _pAddr)
 {
-	memcpy(&m_stAddress, _pAddr, sizeof(sockaddr_in));
+	m_stAddress.SetAddress(_pAddr);
 }
 
-sockaddr_in* SServerConn::GetAddress()
+const AddressInfo* SServerConn::GetAddress()
 {
 	return &m_stAddress;
 }
 
 bool SServerConn::GetAddress(char* _pBuffer, unsigned short* _pPort)
 {
-	*_pPort = 0;
-	memset(_pBuffer, 0, 15);
-
-	char* paddr = inet_ntoa(m_stAddress.sin_addr);
-	if(NULL == paddr)
-	{
+	if (m_stAddress.strIP.empty()) {
 		return false;
 	}
-
-	memcpy(_pBuffer, paddr, lstrlen(paddr) + 1);
-	*_pPort = ntohs(m_stAddress.sin_port);
+	strcpy(_pBuffer, m_stAddress.strIP.c_str());
+	*_pPort = m_stAddress.uPort;
 	return true;
 }
 

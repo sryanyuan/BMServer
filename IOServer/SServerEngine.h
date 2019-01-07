@@ -9,9 +9,6 @@
 #include <process.h>
 #include <string>
 #include <list>
-#ifdef _WIN32
-#include <WinSock2.h>
-#endif
 #include <stdio.h>
 #include <atomic>
 #include <mutex>
@@ -93,20 +90,6 @@ struct SServerInitDesc
 		uMaxPacketLength = DEF_DEFAULT_MAX_PACKET_LENGTH;
 		bUseIOCP = false;
 	}
-};
-
-struct SServerAutoLocker
-{
-	SServerAutoLocker(CRITICAL_SECTION* _cs)
-	{
-		pCs = _cs;
-		EnterCriticalSection(pCs);
-	}
-	~SServerAutoLocker()
-	{
-		LeaveCriticalSection(pCs);
-	}
-	CRITICAL_SECTION* pCs;
 };
 
 struct SServerTimerJob

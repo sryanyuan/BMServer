@@ -252,7 +252,6 @@
     <ClCompile Include="Import\ImportModule.cpp" />
     <ClCompile Include="IOServer\IndexManager.cpp" />
     <ClCompile Include="IOServer\main.cpp" />
-    <ClCompile Include="IOServer\NetbaseWrapper.cpp" />
     <ClCompile Include="IOServer\SServerConn.cpp" />
     <ClCompile Include="IOServer\SServerEngine.cpp" />
     <ClCompile Include="MainFrm.cpp" />
@@ -363,7 +362,6 @@
     <ClInclude Include="IOServer\IndexManager.h" />
     <ClInclude Include="IOServer\Logger.h" />
     <ClInclude Include="IOServer\netbase.h" />
-    <ClInclude Include="IOServer\NetbaseWrapper.h" />
     <ClInclude Include="IOServer\SServerBuffer.h" />
     <ClInclude Include="IOServer\SServerConn.h" />
     <ClInclude Include="IOServer\SServerEngine.h" />

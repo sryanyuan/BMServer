@@ -5,6 +5,7 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/listener.h>
+#include <string>
 #include "SServerBuffer.h"
 #include "Def.h"
 //////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,19 @@ enum SServerConnStateType
 	kSServerConnState_Disconnected
 };
 //////////////////////////////////////////////////////////////////////////
+struct sockaddr_in;
+
+struct AddressInfo {
+	std::string strIP;
+	unsigned short uPort;
+
+	AddressInfo() {
+		uPort = 0;
+	}
+
+	void SetAddress(const sockaddr_in *_pAddr);
+};
+//////////////////////////////////////////////////////////////////////////
 #define SSERVERCONN_FLAG	BEV_OPT_CLOSE_ON_FREE
 //////////////////////////////////////////////////////////////////////////
 class SServerConn
@@ -31,7 +45,7 @@ public:
 
 public:
 	void SetAddress(const sockaddr_in* _pAddr);
-	sockaddr_in* GetAddress();
+	const AddressInfo* GetAddress();
 	bool GetAddress(char* _pBuffer, unsigned short* _pPort);
 
 	void Callback_OnConnectSuccess();
@@ -53,7 +67,7 @@ private:
 
 	SServerBuffer m_xReadBuffer;
 
-	sockaddr_in m_stAddress;
+	AddressInfo m_stAddress;
 
 	//	for connect to server
 	FUNC_ONCONNECTFAILED m_fnOnConnectFailed;
