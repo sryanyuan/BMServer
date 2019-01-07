@@ -53,7 +53,7 @@ IONS_START
 //////////////////////////////////////////////////////////////////////////
 IOServer::IOServer()
 {
-	m_eStatus = kSServerStatus_Stop;
+	m_eStatus = IOServerStatus_Stop;
 	m_nWorkingTid = 0;
 
 	m_pBvEvent = NULL;
@@ -128,7 +128,7 @@ int IOServer::Init(const IOInitDesc* _pDesc)
 	// limit max packet length
 	m_uMaxPacketLength = (size_t)_pDesc->uMaxPacketLength;
 
-	return kSServerResult_Ok;
+	return IOResult_Ok;
 }
 
 int IOServer::Start(const char* _pszAddr, unsigned short _uPort)
@@ -147,12 +147,12 @@ int IOServer::Start(const char* _pszAddr, unsigned short _uPort)
 		return 0;
 	}
 
-	return kSServerResult_Ok;
+	return IOResult_Ok;
 }
 
 int IOServer::Stop()
 {
-	if(m_eStatus != kSServerStatus_Running)
+	if(m_eStatus != IOServerStatus_Running)
 	{
 		return 1;
 	}
@@ -175,7 +175,7 @@ int IOServer::Connect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCONNEC
 {
 	IOAction action = {0};
 	IOActionConnectContext ctx = {0};
-	action.uAction = kSServerAction_Connect;
+	action.uAction = IOAction_Connect;
 	ctx.addr.sin_family = AF_INET;
 	ctx.addr.sin_port = htons(_sPort);
 	ctx.addr.sin_addr.s_addr = inet_addr(_pszAddr);
@@ -198,7 +198,7 @@ int IOServer::SyncConnect(const char* _pszAddr, unsigned short _sPort, FUNC_ONCO
 {
 	IOAction action = {0};
 	IOActionConnectContext ctx = {0};
-	action.uAction = kSServerAction_Connect;
+	action.uAction = IOAction_Connect;
 	ctx.addr.sin_family = AF_INET;
 	ctx.addr.sin_port = htons(_sPort);
 	ctx.addr.sin_addr.s_addr = inet_addr(_pszAddr);
@@ -219,7 +219,7 @@ int IOServer::SendPacketToServer(unsigned int _uConnIndex, char* _pData, size_t 
 	LockSendBuffer();
 
 	IOAction action = {0};
-	action.uAction = kSServerAction_SendToServer;
+	action.uAction = IOAction_SendToServer;
 	action.uIndex = (unsigned short)_uConnIndex;
 	action.uTag = (unsigned short)_uLength;
 	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
@@ -243,7 +243,7 @@ int IOServer::SendPacketToUser(unsigned int _uConnIndex, char* _pData, size_t _u
 	LockSendBuffer();
 
 	IOAction action = {0};
-	action.uAction = kSServerAction_SendToUser;
+	action.uAction = IOAction_SendToUser;
 	action.uIndex = (unsigned short)_uConnIndex;
 	action.uTag = (unsigned short)_uLength;
 	size_t uRet = m_xEventBuffer.Write((char*)&action, sizeof(IOAction));
@@ -320,7 +320,7 @@ int IOServer::SyncSendPacketToUser(unsigned int _uConnIndex, char* _pData, size_
 int IOServer::CloseUserConnection(unsigned int _uConnIndex)
 {
 	IOAction action = {0};
-	action.uAction = kSServerAction_CloseUserConn;
+	action.uAction = IOAction_CloseUserConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
 	{
@@ -386,7 +386,7 @@ void IOServer::UnlockSendBuffer()
 int IOServer::CloseServerConnection(unsigned int _uConnIndex)
 {
 	IOAction action = {0};
-	action.uAction = kSServerAction_CloseServerConn;
+	action.uAction = IOAction_CloseServerConn;
 	action.uIndex = (unsigned short)_uConnIndex;
 
 	{
@@ -516,7 +516,7 @@ void IOServer::processConnEvent()
 			return;
 		}
 
-		if (kSServerAction_SendToUser == action.uAction) {
+		if (IOAction_SendToUser == action.uAction) {
 			IOConn* pConn = GetUserConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to get conn, index:%d", action.uIndex);
@@ -531,7 +531,7 @@ void IOServer::processConnEvent()
 				}
 			}
 			m_xEventBuffer.Read(NULL, action.uTag);
-		} else if(kSServerAction_SendToServer == action.uAction) {
+		} else if(IOAction_SendToServer == action.uAction) {
 			IOConn* pConn = GetServerConn((unsigned int)action.uIndex);
 			if(NULL == pConn) {
 				LOGERROR("Failed to get conn, index:%d", action.uIndex);
@@ -546,7 +546,7 @@ void IOServer::processConnEvent()
 				}
 			}
 			m_xEventBuffer.Read(NULL, action.uTag);
-		} else if (kSServerAction_CloseUserConn == action.uAction) {
+		} else if (IOAction_CloseUserConn == action.uAction) {
 			IOConn* pConn = GetUserConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to close conn, index:%d", action.uIndex);
@@ -559,7 +559,7 @@ void IOServer::processConnEvent()
 					LOGDEBUG("Close fd of user con %d", pConn->uConnIndex);
 				}*/
 			}
-		} else if (kSServerAction_CloseServerConn == action.uAction) {
+		} else if (IOAction_CloseServerConn == action.uAction) {
 			IOConn* pConn = GetServerConn((unsigned int)action.uIndex);
 			if (NULL == pConn) {
 				LOGERROR("Failed to close conn, index:%d", action.uIndex);
@@ -572,7 +572,7 @@ void IOServer::processConnEvent()
 					LOGDEBUG("Close fd of server con %d", pConn->uConnIndex);
 				}*/
 			}
-		} else if (kSServerAction_Connect == action.uAction) {
+		} else if (IOAction_Connect == action.uAction) {
 			IOActionConnectContext ctx;
 			m_xEventBuffer.Read((char*)&ctx, sizeof(IOActionConnectContext));
 			processConnectAction(&ctx);
@@ -791,7 +791,7 @@ unsigned int __stdcall IOServer::__threadEntry(void* _pArg)
 		sizeof(sin));
 	if (NULL == pIns->m_pConnListener) {
 		LOGPRINT("Failed to listen on host:%s port:%d", pIns->m_xAddr.c_str(), pIns->m_uPort);
-		exit(kSServerResult_ListenFailed);
+		exit(IOResult_ListenFailed);
 	}
 
 	//	timer event
@@ -806,9 +806,9 @@ unsigned int __stdcall IOServer::__threadEntry(void* _pArg)
 	LOGPRINT("Thread working, Id %d", GetCurrentThreadId());
 
 	//	event loop
-	pIns->m_eStatus = kSServerStatus_Running;
+	pIns->m_eStatus = IOServerStatus_Running;
 	int nResult = event_base_dispatch(pIns->m_pEventBase);
-	pIns->m_eStatus = kSServerStatus_Stop;
+	pIns->m_eStatus = IOServerStatus_Stop;
 	LOGINFO("event loop quit with code %d", nResult);
 
 	// do clear up works

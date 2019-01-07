@@ -157,7 +157,7 @@ bool CMainServer::InitNetWork()
 	serverInitDesc.pFuncOnRecvServer = (FUNC_ONRECV)_OnRecvFromServerTCP;
 	serverInitDesc.uMaxConnUser = MAX_USER_NUMBER;
 
-	if (kSServerResult_Ok != m_pIOServer->Init(&serverInitDesc))
+	if (IOResult_Ok != m_pIOServer->Init(&serverInitDesc))
 	{
 		//	LOG??
 		LOG(FATAL) << "网络引擎创建失败";
@@ -184,7 +184,7 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 		return false;
 	}
 
-	if (kSServerResult_Ok != m_pIOServer->Start(_szIP, _wPort))
+	if (IOResult_Ok != m_pIOServer->Start(_szIP, _wPort))
 	{
 		//	LOG??
 		LOG(ERROR) << "地址[" << _szIP << "]:[" << _wPort << "]启动服务器失败";
@@ -274,7 +274,7 @@ bool CMainServer::ConnectToLoginSvr()
 			return m_pIOServer->SyncConnect(szIP, nPort, 
 				FUNC_ONCONNECTSUCCESS(&CMainServer::_OnLsConnSuccess), 
 				FUNC_ONCONNECTFAILED(&CMainServer::_OnLsConnFailed), 
-				NULL) == kSServerResult_Ok ? true : false;
+				NULL) == IOResult_Ok ? true : false;
 		}
 		else
 		{

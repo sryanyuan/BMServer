@@ -21,10 +21,10 @@ IONS_START
 //////////////////////////////////////////////////////////////////////////
 enum IOResultType
 {
-	kSServerResult_Ok	=	0,
-	kSServerResult_InvalidParam,
-	kSServerResult_CreateThreadFailed,
-	kSServerResult_ListenFailed,
+	IOResult_Ok	=	0,
+	IOResult_InvalidParam,
+	IOResult_CreateThreadFailed,
+	IOResult_ListenFailed,
 };
 //////////////////////////////////////////////////////////////////////////
 struct IOEvent
@@ -36,17 +36,17 @@ struct IOEvent
 
 enum IOActionType
 {
-	kSServerAction_CloseUserConn,
-	kSServerAction_CloseServerConn,
-	kSServerAction_SendToUser,
-	kSServerAction_SendToServer,
-	kSServerAction_Connect
+	IOAction_CloseUserConn,
+	IOAction_CloseServerConn,
+	IOAction_SendToUser,
+	IOAction_SendToServer,
+	IOAction_Connect
 };
 
 enum IOServerStatus
 {
-	kSServerStatus_Stop,
-	kSServerStatus_Running,
+	IOServerStatus_Stop,
+	IOServerStatus_Running,
 };
 
 struct IOAction
