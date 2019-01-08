@@ -2,7 +2,7 @@
 #define _INC_DBTHREAD_
 //////////////////////////////////////////////////////////////////////////
 #include <sqlite3.h>
-#include <Windows.h>
+#include "../../CommonModule/osapi.h"
 #include "Struct.h"
 #include "LuaServerEngine.h"
 #include <list>

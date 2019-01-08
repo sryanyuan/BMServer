@@ -4,13 +4,12 @@
 #include "ObjectEngine.h"
 #include "Struct.h"
 #include <map>
-#include <Windows.h>
+#include "../../CommonModule/osapi.h"
 #include <mutex>
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/cron/CronSchedule.h"
 #include "../common/shared.h"
 #include "DBThread.h"
-//#include "../../CommonModule/ScriptEngine.h"
 #include "LuaServerEngine.h"
 #include "GameDbBuffer.h"
 #include "WorldEventDispatcher.h"
@@ -18,6 +17,7 @@
 #include "WeightCalc.h"
 //////////////////////////////////////////////////////////////////////////
 //	For encrypt
+#ifdef _WIN32
 #ifdef _THEMIDA_
 
 #include "../Themida/ThemidaSDK.h"
@@ -39,6 +39,10 @@
 		#define PROTECT_END_VM
 	#endif
 
+#endif
+#else
+#define PROTECT_START_VM	
+#define PROTECT_END_VM
 #endif
 //////////////////////////////////////////////////////////////////////////
 #define THREAD_CALL __stdcall

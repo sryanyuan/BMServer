@@ -50,7 +50,6 @@ CMainServer::CMainServer()
 	m_dwUserNumber = 0;
 	InitLogFile();
 	m_dwThreadID = GetCurrentThreadId();
-	m_pWatcherThread = NULL;
 	m_eMode = GM_NORMAL;
 	srand((unsigned int)time(NULL));
 	m_bLoginConnected = false;
@@ -221,10 +220,6 @@ bool CMainServer::StartServer(char* _szIP, WORD _wPort)
 		AddInformationToMessageBoard("游戏世界成功启动");
 	}
 
-	//	Run the crc thread
-	//InitCRCThread();
-	//m_pWatcherThread->Run();
-
 	LOG(INFO) << "地址[" << _szIP << "]:[" << _wPort << "]启动服务器成功";
 	m_bMode = MODE_RUNNING;
 	m_dwListenPort = _wPort;
@@ -384,10 +379,6 @@ void CMainServer::WaitForStopEngine()
 	google::protobuf::ShutdownProtobufLibrary();
 	GlobalAllocRecord::GetInstance()->DeleteAll();
 	GlobalAllocRecord::DestroyInstance();
-	// Stop watching thread
-	m_pWatcherThread->Stop();
-	m_pWatcherThread->Join();
-	SAFE_DELETE(m_pWatcherThread);
 }
 
 void CMainServer::StopEngine()
@@ -789,12 +780,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		msgQuery.message = WM_PLAYERRANKLIST;
 		msgQuery.wParam = (WPARAM)pszRankCopy;
 		msgQuery.lParam = 0;
-
-		if (GameWorld::GetInstance().GetThreadRunMode()) {
-			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
-		} else {
-			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
-		}
+		GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
 	}
 	else if(dwOpCode == PKG_LOGIN_CHECKBUYSHOPITEM_ACK)
 	{
@@ -805,12 +791,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery;
 		msgQuery.message = WM_CHECKBUYOLSHOPITEM;
 		msgQuery.wParam = (WPARAM)pAck;
-
-		if (GameWorld::GetInstance().GetThreadRunMode()) {
-			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
-		} else {
-			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
-		}
+		GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
 	}
 	else if(dwOpCode == PKG_LOGIN_CONSUMEDONATE_ACK)
 	{
@@ -821,12 +802,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery;
 		msgQuery.message = WM_CONSUMEDONATE;
 		msgQuery.wParam = (WPARAM)pAck;
-		
-		if (GameWorld::GetInstance().GetThreadRunMode()) {
-			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
-		} else {
-			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
-		}
+		GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
 	}
 	else if(dwOpCode == PKG_LOGIN_SCHEDULE_ACTIVE_RSP)
 	{
@@ -837,12 +813,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 		MSG msgQuery = {0};
 		msgQuery.message = WM_SCHEDULEACTIVE;
 		msgQuery.wParam = rsp.nEventId;
-		
-		if (GameWorld::GetInstance().GetThreadRunMode()) {
-			GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
-		} else {
-			GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
-		}
+		GameWorld::GetInstance().Thread_ProcessMessage(&msgQuery);
 	}
 	else
 	{
@@ -1695,453 +1666,6 @@ bool CMainServer::OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _
 	AddInformationToMessageBoard("玩家[%s]登入游戏",
 		req.stHeader.szName);
 	return true;
-}
-
-bool CMainServer::InitCRCThread()
-{
-	PROTECT_START_VM
-
-		//////////////////////////////////////////////////////////////////////////
-	bool bRet = false;
-
-	if(NULL == m_pWatcherThread)
-	{
-		m_pWatcherThread = new WatcherThread;
-		//	Load the CRC Data
-		//	Write the correct crc data
-		char szBuf[MAX_PATH];
-		sprintf(szBuf, "%s\\help\\",
-			GetRootPath());
-		int nStrlen = strlen(szBuf);
-		szBuf[nStrlen] = 'd';
-		szBuf[nStrlen + 1] = 'e';
-		szBuf[nStrlen + 2] = 'a';
-		szBuf[nStrlen + 3] = 'd';
-		szBuf[nStrlen + 4] = '.';
-		szBuf[nStrlen + 5] = 'i';
-		szBuf[nStrlen + 6] = 'n';
-		szBuf[nStrlen + 7] = 'i';
-		szBuf[nStrlen + 8] = '\0';
-
-		if(PathFileExists(szBuf))
-		{
-			//	Write the data
-			//	Check valid
-			CSimpleIniA xIniFile;
-			xIniFile.LoadFile(szBuf);
-
-			const char* pszValue = xIniFile.GetValue("GameWorld", "GameSceneManager");
-			if(NULL != pszValue)
-			{
-				if(0 == strcmp(pszValue, "DBThread...Open"))
-				{
-					DWORD dwCRC32 = 0;
-					WORD wCRC16 = 0;
-
-					//	First function
-					int nCheckIndex = 0;
-					int nCodeLength = 0;
-					char szIndex[10];
-					char szCRC[32];
-					//	Get Object
-					void* pFunc = GetFuncAddr(&GameObject::GetObject_MaxAC);
-					LPBYTE pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&GameObject::GetObject_MaxMAC);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&GameObject::GetObject_MaxDC);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&GameObject::GetObject_MaxMC);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&GameObject::GetObject_MaxSC);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	Get random
-					dwCRC32 = 0;
-					GameObject xObj;
-					pFunc = GetVirtualFuncAddr(&xObj, &GameObject::GetRandomAbility);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 40;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	Receive damage
-					dwCRC32 = 0;
-					MonsterObject xMons;
-					pFunc = GetVirtualFuncAddr(&xMons, &MonsterObject::ReceiveDamage);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 20;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					HeroObject xHero(0);
-					pFunc = GetVirtualFuncAddr(&xHero, &HeroObject::ReceiveDamage);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 50;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	Do spell
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&HeroObject::DoSpell);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 300;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	Parse attack message
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&MonsterObject::ParseAttackMsg);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 300;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	Drop down monster items
-					dwCRC32 = 0;
-					void (MonsterObject::* pFunc_v_ph)(HeroObject*);
-					pFunc_v_ph = &MonsterObject::DropMonsterItems;
-					pFunc = GetFuncAddr(pFunc_v_ph);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 10;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	attack target
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&MonsterObject::AttackTarget);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 100;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	add money
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&HeroObject::AddMoney);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 100;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	gain exp
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&HeroObject::GainExp);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 50;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	autogeneratemonster
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&GameScene::AutoGenerateMonster);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 100;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	use drug item
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&HeroObject::UseDrugItem);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 80;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	upgrade items
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&DBThread::UpgradeItems);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	upgrade attrib
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&DBThread::UpgradeAttrib);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	db dropdown monster items
-					dwCRC32 = 0;
-					pFunc = GetFuncAddr(&DBThread::DBDropItemExCallback);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 300;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	dopacket pkgplayerforgeitemreq
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_HERO_DOPACKET_FORGEITEM);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 300;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	upgrade attrib
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_WORLD_UPGRADEATTRIB);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	upgrade items with addtion
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_WORLD_UPGRADEITEMSWITHADDITION);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 250;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	update status
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_HERO_UPDATESTATUS);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 100;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_OBJ_UPDATESTATUS);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	thread_dowork
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_WATCHER_THREAD_DOWORK);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	dowork_delayedprocess
-					dwCRC32 = 0;
-					pFunc = m_pWatcherThread->GetVerifyFunctionAddr(WatcherThread::VF_WORLD_DOWORK_DELAYEDPROCESS);
-					pData = (LPBYTE)pFunc;
-					nCodeLength = 150;
-					CalcCRC32(&dwCRC32, nCodeLength, pData);
-					itoa(nCheckIndex++, szIndex, 10);
-					//itoa(dwCRC32, szCRC, 10);
-					xIniFile.SetLongValue("GameWorld", szIndex, dwCRC32);
-					xIniFile.SetLongValue("Size", szIndex, nCodeLength);
-
-					//	save
-					xIniFile.SaveFile(szBuf);
-					xIniFile.Reset();
-				}
-			}
-		}
-
-		//	Load check data
-		//if(false)
-		{
-			int nCRCItemCounter = 0;
-
-			if(false)
-			{
-				sprintf(szBuf, "%s\\Help\\Mouse.idx",
-					GetRootPath());
-				BYTE* pData = NULL;
-				size_t uSize = 0;
-
-				if(READZIP_OK == ReadZipData(szBuf, "dead.ini", &pData, &uSize, SaveFile::CalcInternalPassword()))
-				{
-					CSimpleIniA xIniFile;
-					if(SI_OK == xIniFile.LoadData((const char*)pData, uSize))
-					{
-						CSimpleIni::TNamesDepend xAllKeys;
-						const CSimpleIni::Entry* pEntry = NULL;
-
-						if(xIniFile.GetAllKeys("GameWorld", xAllKeys))
-						{
-							if(!xAllKeys.empty())
-							{
-								CSimpleIni::TNamesDepend::const_iterator begIter = xAllKeys.begin();
-								CSimpleIni::TNamesDepend::const_iterator endIter = xAllKeys.end();
-
-								char szTag[10];
-
-								for(begIter;
-									begIter != endIter;
-									++begIter)
-								{
-									pEntry = &(*begIter);
-
-									CRCVerifyElement stElement;
-									ZeroMemory(&stElement, sizeof(CRCVerifyElement));
-									stElement.dwCRC32 = xIniFile.GetLongValue("GameWorld",
-										pEntry->pItem);
-									stElement.dwSize = xIniFile.GetLongValue("Size",
-										pEntry->pItem);
-									stElement.uTag = atoi(pEntry->pItem);
-									stElement.pData = m_pWatcherThread->GetVerifyFunctionAddr((WatcherThread::Verify_Function)stElement.uTag);
-									m_pWatcherThread->Push(stElement);
-
-									if(stElement.dwSize != 0 &&
-										stElement.pData != NULL &&
-										stElement.dwCRC32 != 0)
-									{
-										++nCRCItemCounter;
-									}
-								}
-							}
-						}
-					}
-					SAFE_DELETE_ARRAY(pData);
-				}
-			}
-
-			//	Load internal data
-			if(true)
-			{
-				for(int i = 0; i < WatcherThread::VF_TOTAL; ++i)
-				{
-					CRCVerifyElement stElement;
-					ZeroMemory(&stElement, sizeof(CRCVerifyElement));
-					stElement.uTag = i;
-					stElement.pData = m_pWatcherThread->GetVerifyFunctionAddr((WatcherThread::Verify_Function)stElement.uTag);
-					stElement.dwSize = WatcherThread::s_nVerifySize[i];
-					CalcCRC32(&stElement.dwCRC32, stElement.dwSize, (LPBYTE)stElement.pData);
-					m_pWatcherThread->Push(stElement);
-
-					if(stElement.dwSize != 0 &&
-						stElement.pData != NULL &&
-						stElement.dwCRC32 != 0)
-					{
-						++nCRCItemCounter;
-					}
-				}
-			}
-
-			if(WatcherThread::VF_TOTAL != nCRCItemCounter)
-			{
-#ifndef _DISABLE_CONSOLE
-				g_xConsole.CPrint("Lost crc check data , require[%d], read[%d]",
-					WatcherThread::VF_TOTAL, nCRCItemCounter);
-#endif
-				if(GetServerMode() == GM_LOGIN)
-				{
-					LOG(ERROR) << "DESTORY_GAMESCENE";
-				}
-				else
-				{
-					DESTORY_GAMESCENE;
-				}
-			}
-		}
-		
-		//	Run
-		if(!m_pWatcherThread->Run())
-		{
-			bRet = false;
-		}
-	}
-		//////////////////////////////////////////////////////////////////////////
-		PROTECT_END_VM
-
-	return bRet;
 }
 
 unsigned int CMainServer::SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)

@@ -1,7 +1,7 @@
 #ifndef _INC_GAMESCENEMANAGER_
 #define _INC_GAMESCENEMANAGER_
 //////////////////////////////////////////////////////////////////////////
-#include <Windows.h>
+#include "../../CommonModule/osapi.h"
 #include <map>
 #include <mutex>
 #include "../../CommonModule/MirMap.h"

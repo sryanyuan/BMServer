@@ -265,6 +265,7 @@
     <ClCompile Include="tolua\luaServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\CommonModule\BlockingQueue.h" />
     <ClInclude Include="..\CommonModule\BMHttpManager.h" />
     <ClInclude Include="..\CommonModule\ByteBuffer.h" />
     <ClInclude Include="..\CommonModule\cJSON.h" />
@@ -275,7 +276,7 @@
     <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCCalc.h" />
     <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.h" />
     <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunner.h" />
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunnerWin.h" />
     <ClInclude Include="..\CommonModule\cron\ccronexpr.h" />
     <ClInclude Include="..\CommonModule\cron\CronSchedule.h" />
     <ClInclude Include="..\CommonModule\DataEncryptor.h" />
@@ -302,6 +303,7 @@
     <ClInclude Include="..\CommonModule\MirMap.h" />
     <ClInclude Include="..\CommonModule\NotifySystem.h" />
     <ClInclude Include="..\CommonModule\OfflineSellSystem.h" />
+    <ClInclude Include="..\CommonModule\osapi.h" />
     <ClInclude Include="..\CommonModule\ProtoType.h" />
     <ClInclude Include="..\CommonModule\QuestContext.h" />
     <ClInclude Include="..\CommonModule\SaveFile.h" />
@@ -314,6 +316,7 @@
     <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h" />
     <ClInclude Include="..\CommonModule\StoveManager.h" />
     <ClInclude Include="..\CommonModule\stove_def.h" />
+    <ClInclude Include="..\CommonModule\ThreadRunner.h" />
     <ClInclude Include="..\CommonModule\utils.h" />
     <ClInclude Include="..\CommonModule\xxtea.h" />
     <ClInclude Include="..\CommonModule\ZipDataReader.h" />

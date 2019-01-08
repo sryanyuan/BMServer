@@ -623,9 +623,6 @@
     <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h">
       <Filter>Module\CRCVerifyThread</Filter>
     </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunner.h">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClInclude>
     <ClInclude Include="..\CommonModule\cron\ccronexpr.h">
       <Filter>Module\cron</Filter>
     </ClInclude>
@@ -781,6 +778,18 @@
     </ClInclude>
     <ClInclude Include="IOServer\namespace.h">
       <Filter>IOServer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunnerWin.h">
+      <Filter>Module\CRCVerifyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\ThreadRunner.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\BlockingQueue.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\osapi.h">
+      <Filter>Module</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

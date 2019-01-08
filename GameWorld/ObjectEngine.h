@@ -1,7 +1,7 @@
 #ifndef _INC_OBJECTENGINE_
 #define _INC_OBJECTENGINE_
 //////////////////////////////////////////////////////////////////////////
-#include <Windows.h>
+#include "../../CommonModule/osapi.h"
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
 #include "../../CommonModule/ObjectData.h"

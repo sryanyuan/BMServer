@@ -12,7 +12,6 @@
 #include <sstream>
 #include "ExceptionHandler.h"
 #include "OlShopManager.h"
-#include "../../CommonModule/CRCVerifyThread/CRCCalc.h"
 #include "../../CommonModule/SettingLoader.h"
 #include "../../CommonModule/OfflineSellSystem.h"
 #include "../../CommonModule/NotifySystem.h"
@@ -296,28 +295,12 @@ unsigned int GameWorld::ProcessThreadMsg()
 //////////////////////////////////////////////////////////////////////////
 void GameWorld::PostRunMessage(const MSG* _pMsg)
 {
-	if (WS_WORKING != m_eState &&
-		_pMsg->message == WM_WORLDCHECKCRC) {
-		// ignore all msg while not working
-		g_xConsole.CPrint("Error:Ignore crc message in %d status", _pMsg->message, m_eState);
-		return;
-	}
+	//	push into msg queue
+	MSG* pMsg = new MSG;
+	memcpy(pMsg, _pMsg, sizeof(MSG));
 
-	if (m_bThreadRunMode) {
-		if (m_hThread != NULL &&
-			m_dwThreadID != 0)
-		{
-			PostThreadMessage(m_dwThreadID, _pMsg->message, _pMsg->wParam, _pMsg->lParam);
-		}
-	}
-	else {
-		//	push into msg queue
-		MSG* pMsg = new MSG;
-		memcpy(pMsg, _pMsg, sizeof(MSG));
-
-		std::unique_lock<std::mutex> locker(m_csMsgStack);
-		m_xMsgStack.push(pMsg);
-	}
+	std::unique_lock<std::mutex> locker(m_csMsgStack);
+	m_xMsgStack.push(pMsg);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1015,22 +998,6 @@ void GameWorld::DoWork_DelayedProcess(DWORD _dwTick)
 	}
 	RECORD_FUNCLINE_WORLD;
 	m_xProcessD.Reset();
-
-	if(GetTickCount() - m_dwLastRecWatcherMsgTime > 30000)
-	{
-#ifndef _DISABLE_CONSOLE
-		g_xConsole.CPrint("Watcher thread abnormal!!!");
-		m_dwLastRecWatcherMsgTime = GetTickCount();
-#endif
-		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-		{
-			LOG(ERROR) << "DESTORY_GAMESCENE";
-		}
-		else
-		{
-			DESTORY_GAMESCENE;
-		}
-	}
 
 	RECORD_FUNCLINE_WORLD;
 	UnlockProcess();
@@ -3164,86 +3131,11 @@ unsigned int GameWorld::Thread_ProcessMessage(const MSG* _pMsg)
 	unsigned int uRet = 0;
 	DWORD dwCurrentTick = GetTickCount();
 
-	if(_pMsg->message != WM_WORLDCHECKCRC)
-	{
-		g_xConsole.CPrint("Receive thread msg:%d", _pMsg->message);
-	}
+	g_xConsole.CPrint("Receive thread msg:%d", _pMsg->message);
 
 	static int s_nTimeoutCounter = 0;
 
-	if (_pMsg->message == WM_WORLDCHECKCRC)
-	{
-		if(dwCurrentTick - _pMsg->wParam >= 0 &&
-			dwCurrentTick - _pMsg->wParam <= 500)
-		{
-			//	Check crc
-			WORD wCRC16 = 0;
-			CalcCRC16(&wCRC16, 4, (LPBYTE)&_pMsg->wParam);
-
-			if(wCRC16 != _pMsg->lParam)
-			{
-#ifndef _DISABLE_CONSOLE
-				g_xConsole.CPrint("A invalid CRC16 data.");
-#endif
-				if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-				{
-					LOG(ERROR) << "DESTORY_GAMEWORLD";
-				}
-				else
-				{
-					DESTORY_GAMEWORLD;
-				}
-			}
-			else
-			{
-				m_dwLastRecWatcherMsgTime = dwCurrentTick;
-			}
-		}
-		else
-		{
-#ifndef _DISABLE_CONSOLE
-			g_xConsole.CPrint("Invalid thread message from WatcherThread.Current tick[%d] and sent tick[%d]",
-				GetTickCount(), _pMsg->wParam);
-#endif
-			++s_nTimeoutCounter;
-
-			if(s_nTimeoutCounter > 5)
-			{
-				if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-				{
-					LOG(ERROR) << "DESTORY_GAMEWORLD";
-				}
-				else
-				{
-					DESTORY_GAMEWORLD;
-				}
-			}
-		}
-	}
-	else if(_pMsg->message == WM_USERCONNECTED)
-	{
-		/*PkgLoginGameTypeNot not;
-		not.bType = PLGTN_GAMESERVER;
-		not.dwConnIdx = _pMsg->wParam;
-		g_xThreadBuffer.Reset();
-		g_xThreadBuffer << not;
-		SendBuffer(_pMsg->wParam, &g_xThreadBuffer);*/
-	}
-	else if(_pMsg->message == WM_PLAYERLOGIN)
-	{
-		LoginQueryInfo* pInfo = (LoginQueryInfo*)_pMsg->lParam;
-		HANDLE hEvent = (HANDLE)_pMsg->wParam;
-
-		HeroObject* pHero = (HeroObject*)GameSceneManager::GetInstance()->GetPlayerByName(pInfo->szName);
-		pInfo->bExists = (pHero != NULL);
-		if(NULL != pHero)
-		{
-			pInfo->dwConnID = pHero->GetUserIndex();
-		}
-
-		SetEvent(hEvent);
-	}
-	else if(_pMsg->message == WM_PLAYERRANKLIST)
+	if(_pMsg->message == WM_PLAYERRANKLIST)
 	{
 		SAFE_DELETE_ARRAY(m_pRankListData);
 		m_pRankListData = (char*)_pMsg->wParam;

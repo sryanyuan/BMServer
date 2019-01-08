@@ -141,12 +141,6 @@ BOOL CServerDlg::OnInitDialog()
 	// Initialize message board timer check
 	SetTimer(TIMER_MSGBOARD, 50, NULL);
 
-	//	生成CRC信息
-	if(!m_pxMainServer->InitCRCThread())
-	{
-
-	}
-
 	SetRandomTitle(GetSafeHwnd());
 
 #ifndef _DEBUG
@@ -200,7 +194,8 @@ void CServerDlg::OnDestroy()
 	{
 		char szUrl[MAX_PATH] = {0};
 		sprintf(szUrl, "%s/removegs?id=%d", m_xRegisterGameRoomUrl.c_str(), m_nGameRoomServerID);
-		BMHttpManager::GetInstance()->DoGetRequestSync(szUrl, fastdelegate::bind(&CServerDlg::OnRemoveGsResult, this));
+		BMHttpManager::GetInstance()->DoGetRequestSync(szUrl, std::bind(&CServerDlg::OnRemoveGsResult, this, 
+			std::placeholders::_1, std::placeholders::_2));
 	}
 
 	__super::OnDestroy();
@@ -805,7 +800,8 @@ void CServerDlg::RegisterGameRoom()
 		m_nOnlinePlayerCount,
 		BACKMIR_CURVERSION);
 
-	BMHttpManager::GetInstance()->DoGetRequestSync(szUrl, fastdelegate::bind(&CServerDlg::OnRegisterGsResult, this));
+	BMHttpManager::GetInstance()->DoGetRequestSync(szUrl, std::bind(&CServerDlg::OnRegisterGsResult, this,
+		std::placeholders::_1, std::placeholders::_2));
 }
 
 void CServerDlg::OnRegisterGsResult(const char *_pData, size_t _uLen)

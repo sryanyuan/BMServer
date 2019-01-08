@@ -3,7 +3,6 @@
 
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
-#include "../GameWorld/WatcherThread.h"
 #include "../common/shared.h"
 #include <string>
 #include <set>
@@ -71,7 +70,6 @@ public:
 	void StopEngine();
 	void WaitForStopEngine();
 	bool InitDatabase();
-	bool InitCRCThread();
 
 	ioserver::IOServer* GetIOServer();
 
@@ -177,9 +175,6 @@ protected:
 	DWORD m_dwUserNumber;
 
 	DWORD m_dwThreadID;
-
-	//	CRC检测线程
-	WatcherThread* m_pWatcherThread;
 
 	//	服务器游戏模式
 	GAME_MODE m_eMode;
