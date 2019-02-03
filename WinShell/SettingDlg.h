@@ -12,8 +12,8 @@ struct OnlineUserInfo
 	std::string xIP;
 	std::string xMap;
 	USHORT uPort;
-	DWORD dwCnnIndex;
-	DWORD dwDelay;
+	unsigned int dwCnnIndex;
+	unsigned int dwDelay;
 };
 
 typedef std::list<OnlineUserInfo> OnlineUserInfoList;

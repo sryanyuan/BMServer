@@ -1,6 +1,7 @@
 #include "LuaItemHelper.h"
 #include "ObjectValid.h"
 #include "../../CommonModule/ShareData.h"
+#include "../../CommonModule/bitop.h"
 //////////////////////////////////////////////////////////////////////////
 int LuaItemHelper::GetItemType(ItemAttrib* _pItem)
 {
@@ -54,12 +55,12 @@ int LuaItemHelper::GetItemAtkPalsy(ItemAttrib* _pItem)
 
 unsigned int GetLoWord(unsigned int _nValue)
 {
-	return LOWORD(DWORD(_nValue));
+	return LOWORD((unsigned int)(_nValue));
 }
 
 unsigned int GetHiWord(unsigned int _nValue)
 {
-	return HIWORD(DWORD(_nValue));
+	return HIWORD((unsigned int)(_nValue));
 }
 
 unsigned int MakeLong(unsigned int _nLow, unsigned int _nHigh)

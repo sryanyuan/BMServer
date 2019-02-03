@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="头文件">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
     <Filter Include="资源文件">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
@@ -16,17 +8,11 @@
     <Filter Include="CMainServer">
       <UniqueIdentifier>{0143a02f-3191-4932-a3d8-de26145ffc6a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Net">
-      <UniqueIdentifier>{2a4c3ee9-6934-4d9c-8f17-ad78c2f94102}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Module">
       <UniqueIdentifier>{95ba37e1-dcb1-4ba1-a3e7-9cb14756fc6f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Module\StackWalker">
       <UniqueIdentifier>{787b6ad3-8f1d-41fe-a826-139848af0caf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Module\CRCVerifyThread">
-      <UniqueIdentifier>{2032ba7d-ed9a-40df-85b2-dcef780996a3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Module\cron">
       <UniqueIdentifier>{59f67b43-08c7-42a9-b017-c9736a4c1ebb}</UniqueIdentifier>
@@ -55,44 +41,11 @@
     <Filter Include="Interface">
       <UniqueIdentifier>{10b46e9f-999e-4c86-a1ab-188055e23398}</UniqueIdentifier>
     </Filter>
+    <Filter Include="WinShell">
+      <UniqueIdentifier>{484fa503-bf41-47b6-89ea-fab7936bac0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BackMirServer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ChildView.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="CpuQueryDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Helper.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MainFrm.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="GameWorld\ObjectStatus.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="RegisterGameRoomDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="runarg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ServerDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="SettingDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CMainServer\CMainServer.cpp">
       <Filter>CMainServer</Filter>
     </ClCompile>
@@ -174,9 +127,6 @@
     <ClCompile Include="..\CommonModule\SaveFile.cpp">
       <Filter>Module</Filter>
     </ClCompile>
-    <ClCompile Include="..\CommonModule\ScriptEngine.cpp">
-      <Filter>Module</Filter>
-    </ClCompile>
     <ClCompile Include="..\CommonModule\ShareData.cpp">
       <Filter>Module</Filter>
     </ClCompile>
@@ -191,12 +141,6 @@
     </ClCompile>
     <ClCompile Include="..\CommonModule\StackWalker\StackWalker.cpp">
       <Filter>Module\StackWalker</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCCalc.cpp">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.cpp">
-      <Filter>Module\CRCVerifyThread</Filter>
     </ClCompile>
     <ClCompile Include="..\CommonModule\cron\ccronexpr.cpp">
       <Filter>Module\cron</Filter>
@@ -280,9 +224,6 @@
       <Filter>GameWorld</Filter>
     </ClCompile>
     <ClCompile Include="GameWorld\TeammateControl.cpp">
-      <Filter>GameWorld</Filter>
-    </ClCompile>
-    <ClCompile Include="GameWorld\WatcherThread.cpp">
       <Filter>GameWorld</Filter>
     </ClCompile>
     <ClCompile Include="GameWorld\WeightCalc.cpp">
@@ -456,55 +397,55 @@
     <ClCompile Include="IOServer\IOConn.cpp">
       <Filter>IOServer</Filter>
     </ClCompile>
+    <ClCompile Include="WinShell\BackMirServer.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\ChildView.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\ConfigDlg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\CpuQueryDlg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\Helper.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\MainFrm.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\RegisterGameRoomDlg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\runarg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\ServerDlg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\SettingDlg.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="WinShell\stdafx.cpp">
+      <Filter>WinShell</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\ObjectStatus.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\fileopt.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\StateController.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CommonModule\CollDownController.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BackMirServer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ChildView.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ConfigDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="CpuQueryDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Helper.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MainFrm.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="GameWorld\ObjectStatus.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="RegisterGameRoomDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="runarg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ServerDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="SettingDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="CMainServer\CMainServer.h">
       <Filter>CMainServer</Filter>
-    </ClInclude>
-    <ClInclude Include="Net\Packet.h">
-      <Filter>Net</Filter>
     </ClInclude>
     <ClInclude Include="..\CommonModule\BMHttpManager.h">
       <Filter>Module</Filter>
@@ -584,9 +525,6 @@
     <ClInclude Include="..\CommonModule\SaveFile.h">
       <Filter>Module</Filter>
     </ClInclude>
-    <ClInclude Include="..\CommonModule\ScriptEngine.h">
-      <Filter>Module</Filter>
-    </ClInclude>
     <ClInclude Include="..\CommonModule\SettingLoader.h">
       <Filter>Module</Filter>
     </ClInclude>
@@ -610,18 +548,6 @@
     </ClInclude>
     <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h">
       <Filter>Module\StackWalker</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\AntiRE.h">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCCalc.h">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.h">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h">
-      <Filter>Module\CRCVerifyThread</Filter>
     </ClInclude>
     <ClInclude Include="..\CommonModule\cron\ccronexpr.h">
       <Filter>Module\cron</Filter>
@@ -693,9 +619,6 @@
       <Filter>GameWorld</Filter>
     </ClInclude>
     <ClInclude Include="GameWorld\TeammateControl.h">
-      <Filter>GameWorld</Filter>
-    </ClInclude>
-    <ClInclude Include="GameWorld\WatcherThread.h">
       <Filter>GameWorld</Filter>
     </ClInclude>
     <ClInclude Include="GameWorld\WeightCalc.h">
@@ -779,9 +702,6 @@
     <ClInclude Include="IOServer\namespace.h">
       <Filter>IOServer</Filter>
     </ClInclude>
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunnerWin.h">
-      <Filter>Module\CRCVerifyThread</Filter>
-    </ClInclude>
     <ClInclude Include="..\CommonModule\ThreadRunner.h">
       <Filter>Module</Filter>
     </ClInclude>
@@ -791,29 +711,86 @@
     <ClInclude Include="..\CommonModule\osapi.h">
       <Filter>Module</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\BackMirServer.ico">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="res\Toolbar.bmp">
-      <Filter>资源文件</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="BackMirServer.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\BackMirServer.rc2">
-      <Filter>资源文件</Filter>
-    </None>
+    <ClInclude Include="WinShell\BackMirServer.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\ChildView.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\ConfigDlg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\CpuQueryDlg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\Helper.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\MainFrm.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\RegisterGameRoomDlg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\resource.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\runarg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\ServerDlg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\SettingDlg.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\stdafx.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="WinShell\targetver.h">
+      <Filter>WinShell</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ObjectStatus.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\bitop.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\SWilFile.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\fileopt.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\StateController.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CommonModule\CollDownController.h">
+      <Filter>Module</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CommonModule\Doc\ItemAttrib_field.txt">
       <Filter>Doc</Filter>
     </Text>
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WinShell\BackMirServer.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="WinShell\res\BackMirServer.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="WinShell\res\Toolbar.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WinShell\res\BackMirServer.rc2">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

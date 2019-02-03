@@ -5,7 +5,7 @@ IONS_START
 unsigned int IndexManager::s_uInvalidIndex = 0;
 //////////////////////////////////////////////////////////////////////////
 //	ASM source
-static void __declspec(naked) InitializeIndexDesc(void* pEntry,DWORD dwNum)
+static void __declspec(naked) InitializeIndexDesc(void* pEntry,unsigned int dwNum)
 {
 	__asm
 	{
@@ -48,9 +48,9 @@ lb_loop:
 	}
 }
 
-static DWORD __stdcall AllocIndex(IndexManager* pIM)
+static unsigned int __stdcall AllocIndex(IndexManager* pIM)
 {
-	DWORD	dwResult;
+	unsigned int	dwResult;
 	__asm
 	{
 		xor			eax,eax
@@ -86,7 +86,7 @@ lb_return:
 	return dwResult;
 }
 
-static void __stdcall FreeIndex(IndexManager* pIM,DWORD dwIndex)
+static void __stdcall FreeIndex(IndexManager* pIM,unsigned int dwIndex)
 {
 	__asm
 	{
@@ -163,7 +163,7 @@ unsigned int IndexManager::Pop()
 
 void IndexManager::Push(unsigned int _uIndex)
 {
-	FreeIndex(this, DWORD(_uIndex));
+	FreeIndex(this, unsigned int(_uIndex));
 }
 
 IONS_END

@@ -4,12 +4,12 @@
 #include "stdafx.h"
 #include "BackMirServer.h"
 #include "SettingDlg.h"
-#include "IOServer/IOServer.h"
-#include "./GameWorld/GameWorld.h"
-#include "./CMainServer/CMainServer.h"
-#include "./GameWorld/GameSceneManager.h"
+#include "../IOServer/IOServer.h"
+#include "../GameWorld/GameWorld.h"
+#include "../CMainServer/CMainServer.h"
+#include "../GameWorld/GameSceneManager.h"
 #include "Helper.h"
-#include "../CommonModule/SimpleIni.h"
+#include "../../CommonModule/SimpleIni.h"
 
 //////////////////////////////////////////////////////////////////////////
 using namespace ioserver;
@@ -83,7 +83,7 @@ BOOL CSettingDlg::OnInitDialog()
 		lStyle &= ~LVS_TYPEMASK; // 清除显示方式位 
 		lStyle |= LVS_REPORT; // 设置style 
 		SetWindowLong(pListCtrl->GetSafeHwnd(), GWL_STYLE, lStyle);// 设置style 
-		DWORD dwStyle = pListCtrl->GetExtendedStyle(); 
+		unsigned int dwStyle = pListCtrl->GetExtendedStyle(); 
 		dwStyle |= LVS_EX_FULLROWSELECT;// 选中某行使整行高亮（只适用与report 风格的listctrl ） 
 		dwStyle |= LVS_EX_GRIDLINES;// 网格线（只适用与report 风格的listctrl ） 
 		pListCtrl->SetExtendedStyle(dwStyle);
@@ -154,9 +154,6 @@ void CSettingDlg::OnBnClickedButton1()
 			nMapID = pScene->GetMapID();
 			int nMapResID = pScene->GetMapResID();
 			itoa(nMapID, szIP, 10);
-			//const char* pszMapName = xIniFile.GetValue("MapNameInfo", szIP);
-			const char* pszMapName = GameSceneManager::GetInstance()->GetRunMap(nMapID);
-			const char* pszChMapName = xIniFile.GetValue("MapNameInfo", pszMapName);
 			const LuaMapInfo* pMapInfo = GameSceneManager::GetInstance()->GetMapConfigManager().GetLuaMapInfo(nMapResID);
 
 			if (NULL == pMapInfo)
@@ -203,7 +200,7 @@ void CSettingDlg::OnBnClickedButton2()
 	// TODO: 在此添加控件通知处理程序代码
 	//	踢出
 	int nSelIndex = -1;
-	DWORD dwCnnIndex = 0xFFFFFFFF;
+	unsigned int dwCnnIndex = 0xFFFFFFFF;
 
 	for(int i = 0; i < m_xListCtrl.GetItemCount(); ++i)
 	{
@@ -246,7 +243,7 @@ void CSettingDlg::OnBnClickedButton2()
 			//	Kick out
 			if(dwCnnIndex != 0xFFFFFFFF)
 			{
-				CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(dwCnnIndex);
+				CMainServer::GetInstance()->ForceCloseConnection(dwCnnIndex);
 			}
 		}
 	}
@@ -257,7 +254,7 @@ void CSettingDlg::OnBnClickedButton3()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//	发送公告
-	static DWORD dwLastSendTime = 0;
+	static unsigned int dwLastSendTime = 0;
 	if(GetTickCount() - dwLastSendTime < 1000)
 	{
 		AfxMessageBox("您的发言太快");
@@ -294,8 +291,8 @@ void CSettingDlg::OnBnClickedButton4()
 		begIter != endIter;
 		++begIter)
 	{
-		DWORD dwCnnIndex = begIter->dwCnnIndex;
-		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(dwCnnIndex);
+		unsigned int dwCnnIndex = begIter->dwCnnIndex;
+		CMainServer::GetInstance()->ForceCloseConnection(dwCnnIndex);
 
 		Sleep(1);
 	}

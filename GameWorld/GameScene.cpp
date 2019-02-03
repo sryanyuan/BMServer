@@ -3,10 +3,8 @@
 #include "ObjectEngine.h"
 #include "MonsterObject.h"
 #include <io.h>
-#include <Shlwapi.h>
 #include "../common/glog.h"
 #include "DBThread.h"
-#include "../Helper.h"
 #include "GameWorld.h"
 #include "struct.h"
 #include "ObjectValid.h"
@@ -83,7 +81,7 @@ GameScene::~GameScene()
 	m_xDoorEvts.clear();
 
 	// Delete all monsters and npcs
-	std::map<DWORD, GameObject*>::iterator it = m_xPlayers.begin();
+	std::map<unsigned int, GameObject*>::iterator it = m_xPlayers.begin();
 	for (it; it != m_xPlayers.end(); ++it) {
 		delete it->second;
 	}
@@ -95,7 +93,7 @@ GameScene::~GameScene()
 	}
 	m_xNPCs.clear();
 
-	std::map<DWORD, GroundItem*>::iterator iit = m_xItems.begin();
+	std::map<unsigned int, GroundItem*>::iterator iit = m_xItems.begin();
 	for (iit; iit != m_xItems.end(); ++iit) {
 		delete iit->second;
 	}
@@ -111,7 +109,7 @@ GameScene::~GameScene()
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::Initialize(DWORD _dwMapResID, DWORD _dwMapID)
+bool GameScene::Initialize(unsigned int _dwMapResID, unsigned int _dwMapID)
 {
 	char szRootPath[MAX_PATH];
 	char szMapFile[MAX_PATH];
@@ -128,38 +126,38 @@ bool GameScene::Initialize(DWORD _dwMapResID, DWORD _dwMapID)
 	m_xDelaySendBuf.Resize(10);
 	m_xWaitDelay.Resize(10);
 
-	GetRootPath(szRootPath, MAX_PATH);
+	strcpy(szRootPath, CMainServer::GetInstance()->GetRootPath());
 	sprintf(szMapFile, "%s\\Map\\%s.map",
 		szRootPath, pMapInfo->szMapResFile);
 
 	TileMap xMap;
-	DWORD* pMapData = NULL;
-	if(xMap.GetMapSnapShot(szMapFile, &pMapData, &m_stMapInfo))
-	{
-		LOG(INFO) << "载入地图[" << pMapInfo->szMapResFile << "]成功";
+	unsigned int* pMapData = NULL;
+	if (!xMap.LoadMap(szMapFile)) {
+		LOG(ERROR) << "读取地图[" << pMapInfo->szMapResFile << "]失败";
+		return false;
 	}
-	else
-	{
-		LOG(ERROR) << "载入地图[" << pMapInfo->szMapResFile << "]失败";
-		bRet = false;
-	}
+	LOG(INFO) << "读取地图[" << pMapInfo->szMapResFile << "]成功";
 
-	if(bRet == true)
+	if (!xMap.GetMapSnapShot(&pMapData, &m_stMapInfo))
 	{
-		if(m_pCellData)
+		LOG(ERROR) << "载入地图[" << pMapInfo->szMapResFile << "]数据失败";
+		return false;
+	}
+	LOG(INFO) << "载入地图[" << pMapInfo->szMapResFile << "]数据成功";
+
+	if (m_pCellData)
+	{
+		Release();
+	}
+	m_pCellData = new MapCellInfo[m_stMapInfo.nCol * m_stMapInfo.nRow];
+	memset(m_pCellData, 0, sizeof(MapCellInfo) * m_stMapInfo.nCol * m_stMapInfo.nRow);
+	for (int i = 0; i < m_stMapInfo.nRow; ++i)
+	{
+		for (int j = 0; j < m_stMapInfo.nCol; ++j)
 		{
-			Release();
-		}
-		m_pCellData = new MapCellInfo[m_stMapInfo.nCol * m_stMapInfo.nRow];
-		memset(m_pCellData, 0, sizeof(MapCellInfo) * m_stMapInfo.nCol * m_stMapInfo.nRow);
-		for(int i = 0; i < m_stMapInfo.nRow; ++i)
-		{
-			for(int j = 0; j < m_stMapInfo.nCol; ++j)
+			if (pMapData[j + i * m_stMapInfo.nCol])
 			{
-				if(pMapData[j + i * m_stMapInfo.nCol])
-				{
-					m_pCellData[j + i * m_stMapInfo.nCol].bFlag |= BLOCK_MASK;
-				}
+				m_pCellData[j + i * m_stMapInfo.nCol].bFlag |= BLOCK_MASK;
 			}
 		}
 	}
@@ -227,7 +225,7 @@ bool GameScene::Initialize(DWORD _dwMapResID, DWORD _dwMapID)
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::Initialize(DWORD _dwMapID)
+/*bool GameScene::Initialize(unsigned int _dwMapID)
 {
 	char szRootPath[MAX_PATH];
 	char szMapFile[MAX_PATH];
@@ -238,7 +236,7 @@ bool GameScene::Initialize(DWORD _dwMapID)
 	m_xDelaySendBuf.Resize(10);
 	m_xWaitDelay.Resize(10);
 
-	GetRootPath(szRootPath, MAX_PATH);
+	strcpy(szRootPath, CMainServer::GetInstance()->GetRootPath());
 
 	const char* pszMapName = NULL;
 
@@ -260,17 +258,23 @@ bool GameScene::Initialize(DWORD _dwMapID)
 		szRootPath, pszMapName);
 
 	TileMap xMap;
-	DWORD* pMapData = NULL;
-	if(xMap.GetMapSnapShot(szMapFile, &pMapData, &m_stMapInfo))
-	{
-		LOG(INFO) << "载入地图[" << pszMapName << "]成功";
-		//return true;
-	}
-	else
-	{
-		LOG(ERROR) << "载入地图[" << pszMapName << "]失败";
+	unsigned int* pMapData = NULL;
+	if (!xMap.LoadMap(szMapFile)) {
+		LOG(ERROR) << "载入地图[" << pMapInfo->szMapResFile << "]失败";
 		bRet = false;
-		//return false;
+	}
+	else {
+		LOG(INFO) << "载入地图[" << pMapInfo->szMapResFile << "]成功";
+
+		if (xMap.GetMapSnapShot(&pMapData, &m_stMapInfo))
+		{
+			LOG(INFO) << "载入地图[" << pMapInfo->szMapResFile << "]数据成功";
+		}
+		else
+		{
+			LOG(ERROR) << "载入地图[" << pMapInfo->szMapResFile << "]数据失败";
+			bRet = false;
+		}
 	}
 
 	if(bRet == true)
@@ -347,7 +351,7 @@ bool GameScene::Initialize(DWORD _dwMapID)
 	}
 
 	return bRet;
-}
+}*/
 
 //////////////////////////////////////////////////////////////////////////
 void GameScene::Release()
@@ -389,7 +393,7 @@ void GameScene::DeleteAllMonster()
 	//	Only use in a instance map when all players have gone
 	if(!m_xNPCs.empty())
 	{
-		std::map<DWORD, GameObject*>::const_iterator begiter = m_xNPCs.begin();
+		std::map<unsigned int, GameObject*>::const_iterator begiter = m_xNPCs.begin();
 		GameObject* pObj = NULL;
 
 		for(begiter;
@@ -448,7 +452,7 @@ void GameScene::DeleteAllNPC()
 	//	Only use in a instance map when all players have gone
 	if(!m_xNPCs.empty())
 	{
-		std::map<DWORD, GameObject*>::const_iterator begiter = m_xNPCs.begin();
+		std::map<unsigned int, GameObject*>::const_iterator begiter = m_xNPCs.begin();
 		GameObject* pObj = NULL;
 
 		for(begiter;
@@ -483,7 +487,7 @@ void GameScene::DeleteAllItem()
 
 	if(!m_xItems.empty())
 	{
-		std::map<DWORD, GroundItem*>::const_iterator begiter = m_xItems.begin();
+		std::map<unsigned int, GroundItem*>::const_iterator begiter = m_xItems.begin();
 		GroundItem* pItem = NULL;
 
 		for(begiter;
@@ -508,7 +512,7 @@ bool GameScene::GetSceneData(HeroObject* _pObj)
 
 	//	Players
 	HeroObject* pHero = NULL;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -576,7 +580,7 @@ bool GameScene::GetSceneData(HeroObject* _pObj)
 	PkgNewNPCNot stNpcNot;
 	MonsterObject* pMonster = NULL;
 	bool bNotify = true;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -633,7 +637,7 @@ bool GameScene::GetSceneData(HeroObject* _pObj)
 	//	Items
 	PkgSystemNewItemNot stItemNot;
 	stItemNot.uTargetId = _pObj->GetID();
-	for(std::map<DWORD, GroundItem*>::const_iterator iter = m_xItems.begin();
+	for(std::map<unsigned int, GroundItem*>::const_iterator iter = m_xItems.begin();
 		iter != m_xItems.end();
 		++iter)
 	{
@@ -710,7 +714,7 @@ bool GameScene::GetSceneData(HeroObject* _pObj)
 	return true;
 }
 //////////////////////////////////////////////////////////////////////////
-GameObject* GameScene::GetPlayer(DWORD _dwID)
+GameObject* GameScene::GetPlayer(unsigned int _dwID)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -727,7 +731,7 @@ GameObject* GameScene::GetPlayerByName(const char* _pszName)
 	GameObject* pFind = NULL;
 	char szName[20] = {0};
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -743,12 +747,12 @@ GameObject* GameScene::GetPlayerByName(const char* _pszName)
 	return pFind;
 }
 
-GameObject* GameScene::GetPlayerWithoutLock(DWORD _dwID)
+GameObject* GameScene::GetPlayerWithoutLock(unsigned int _dwID)
 {
 	RECORD_FUNCNAME_WORLD;
 
 	GameObject* pFind = NULL;
-	std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.find(_dwID);
+	std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.find(_dwID);
 	if(iter != m_xPlayers.end())
 	{
 		pFind = iter->second;
@@ -761,7 +765,7 @@ GameObject* GameScene::GetPlayerWithoutLockInt(int _dwID)
 	RECORD_FUNCNAME_WORLD;
 
 	GameObject* pFind = NULL;
-	std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.find(_dwID);
+	std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.find(_dwID);
 	if(iter != m_xPlayers.end())
 	{
 		pFind = iter->second;
@@ -774,7 +778,7 @@ GameObject* GameScene::GetMonster(int _nAttribID)
 	RECORD_FUNCNAME_WORLD;
 
 	GameObject* pMonster = NULL;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -795,7 +799,7 @@ int GameScene::MoveSomeMonsterTo(int _nAttribID,int _nSum, int _x, int _y)
 	int nMoveX = 0;
 	int nMoveY = 0;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -906,7 +910,7 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 		{
 			HeroObject* pHero = (HeroObject*)_pObj;
 
-			for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+			for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 				iter != m_xPlayers.end();
 				++iter)
 			{
@@ -944,7 +948,7 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 				HeroObject* pHero = (HeroObject*)_pObj;
 
 				// Push login event to ls
-				DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+				unsigned int dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
 				if (!pHero->GetLSLoginPushed()) {
 					PkgLoginGSRoleUpdateNtf ntf;
 					ntf.nUID = pHero->GetUID();
@@ -973,7 +977,7 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 	return bRet;
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::RemovePlayer(DWORD _dwID, bool _bDelete /* = true */)
+bool GameScene::RemovePlayer(unsigned int _dwID, bool _bDelete /* = true */)
 {
 	RECORD_FUNCNAME_WORLD;
 	//	Clean up player data...
@@ -983,7 +987,7 @@ bool GameScene::RemovePlayer(DWORD _dwID, bool _bDelete /* = true */)
 
 	std::unique_lock<std::mutex> locker(m_csPlayer);
 
-	std::map<DWORD, GameObject*>::iterator iter = m_xPlayers.find(_dwID);
+	std::map<unsigned int, GameObject*>::iterator iter = m_xPlayers.find(_dwID);
 	if(iter == m_xPlayers.end())
 	{
 		return false;
@@ -1128,7 +1132,7 @@ bool GameScene::InsertNPC(GameObject* _pNPC)
 	PkgNewNPCNot stNpcNot;
 	MonsterObject* pMonster = NULL;
 
-	std::map<DWORD, GameObject*>::iterator iter = m_xNPCs.find(_pNPC->GetID());
+	std::map<unsigned int, GameObject*>::iterator iter = m_xNPCs.find(_pNPC->GetID());
 
 	if(iter == m_xNPCs.end())
 	{
@@ -1204,14 +1208,14 @@ bool GameScene::InsertNPC(GameObject* _pNPC)
 	return bRet;
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::RemoveNPC(DWORD _dwID, bool _bDelete /* = true */)
+bool GameScene::RemoveNPC(unsigned int _dwID, bool _bDelete /* = true */)
 {
 	RECORD_FUNCNAME_WORLD;
 
 	GameObject* pObj = NULL;
 	bool bRet = false;
 
-	std::map<DWORD, GameObject*>::iterator iter = m_xNPCs.find(_dwID);
+	std::map<unsigned int, GameObject*>::iterator iter = m_xNPCs.find(_dwID);
 	if(iter != m_xNPCs.end())
 	{
 		pObj = iter->second;
@@ -1252,7 +1256,7 @@ bool GameScene::RemoveNPC(DWORD _dwID, bool _bDelete /* = true */)
 	return bRet;
 }
 //////////////////////////////////////////////////////////////////////////
-void GameScene::Update(DWORD _dwTick)
+void GameScene::Update(unsigned int _dwTick)
 {
 	RECORD_FUNCNAME_WORLD;
 	ExecuteTimer xSceneTime;
@@ -1276,7 +1280,7 @@ void GameScene::Update(DWORD _dwTick)
 	int nPreUserCount = m_nCurPlayers;
 	bool bPlayerSumChanged = false;
 	m_nCurPlayers = 0;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -1292,7 +1296,7 @@ void GameScene::Update(DWORD _dwTick)
 	m_xMonsCountRecorder.Reset();
 	m_nCurMonsters = 0;
 	{
-		for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+		for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 			iter != m_xNPCs.end();
 			++iter)
 		{
@@ -1336,7 +1340,7 @@ void GameScene::Update(DWORD _dwTick)
 				m_bGiveReward = true;
 				HeroObject* pHero = NULL;
 
-				std::map<DWORD, GameObject*>::const_iterator begiter = m_xPlayers.begin();
+				std::map<unsigned int, GameObject*>::const_iterator begiter = m_xPlayers.begin();
 				for(begiter;
 					begiter != m_xPlayers.end();
 					++begiter)
@@ -1368,7 +1372,7 @@ void GameScene::Update(DWORD _dwTick)
 				{
 					HeroObject* pHero = NULL;
 
-					std::map<DWORD, GameObject*>::const_iterator begiter = m_xPlayers.begin();
+					std::map<unsigned int, GameObject*>::const_iterator begiter = m_xPlayers.begin();
 					for(begiter;
 						begiter != m_xPlayers.end();
 						++begiter)
@@ -1393,7 +1397,7 @@ void GameScene::Update(DWORD _dwTick)
 					HeroObject* pHero = NULL;
 					sprintf(szBuf, "还剩 %d 只怪物",
 						m_nCurMonsters);
-					std::map<DWORD, GameObject*>::const_iterator begiter = m_xPlayers.begin();
+					std::map<unsigned int, GameObject*>::const_iterator begiter = m_xPlayers.begin();
 					for(begiter;
 						begiter != m_xPlayers.end();
 						++begiter)
@@ -1556,14 +1560,14 @@ void GameScene::ProcessWaitDelete()
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-DWORD GameScene::BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID /* = 0 */)
+unsigned int GameScene::BroadcastPacket(ByteBuffer* _pBuf, unsigned int _dwIgnoreID /* = 0 */)
 {
 	RECORD_FUNCNAME_WORLD;
 
 	HeroObject* pObj = NULL;
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -1581,12 +1585,12 @@ DWORD GameScene::BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID /* = 0 */)
 	return dwCounter;
 }
 //////////////////////////////////////////////////////////////////////////
-DWORD GameScene::BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, DWORD _dwIgnoreID /* = 0 */)
+unsigned int GameScene::BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, unsigned int _dwIgnoreID /* = 0 */)
 {
 	HeroObject* pObj = NULL;
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -1596,8 +1600,8 @@ DWORD GameScene::BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, DWORD _d
 			if(pObj->GetID() != _dwIgnoreID)
 			{
 				//SendBuffer(pObj->GetUserIndex(), _pBuf);
-				DWORD dwCoordX = pObj->GetCoordX();
-				DWORD dwCoordY = pObj->GetCoordY();
+				unsigned int dwCoordX = pObj->GetCoordX();
+				unsigned int dwCoordY = pObj->GetCoordY();
 
 				if(dwCoordX >= rcRange.left &&
 					dwCoordX <= rcRange.right &&
@@ -1639,7 +1643,7 @@ void GameScene::FlushDelayBuf()
 	RECORD_FUNCNAME_WORLD;
 	//////////////////////////////////////////////////////////////////////////
 	//	New version
-	DWORD dwCurrentTime = GetTickCount();
+	unsigned int dwCurrentTime = GetTickCount();
 	SceneDelayMsg* pMsg = NULL;
 
 	if(!m_xSceneDelayMsgList.empty())
@@ -1724,7 +1728,7 @@ void GameScene::ParseDelayInfo(SceneDelayMsg* _pMsg)
 			MonsterObject* pMonster = (MonsterObject*)GetNPCByHandleID(_inf.uParam[0]);
 			g_xThreadBuffer.Reset();
 			AttackMsg* pMsg = FreeListManager::GetInstance()->GetFreeAttackMsg();
-			pMsg->wDamage = (WORD)_inf.uParam[1];
+			pMsg->wDamage = (unsigned short)_inf.uParam[1];
 			pMsg->dwInfo = _inf.uParam[4];
 			pMsg->dwAttacker = _inf.uParam[2];
 			pMsg->bType = _inf.uParam[3];
@@ -1912,7 +1916,7 @@ void GameScene::ParseDelayInfo(DelaySendInfo& _inf)
 			MonsterObject* pMonster = (MonsterObject*)GetNPCByHandleID(_inf.uParam[0]);
 			g_xThreadBuffer.Reset();
 			AttackInfo info;
-			info.wDamage = (WORD)_inf.uParam[1];
+			info.wDamage = (unsigned short)_inf.uParam[1];
 			info.dwInfo = _inf.uParam[4];
 			info.dwAttacker = _inf.uParam[2];
 			info.bType = _inf.uParam[3];
@@ -2071,11 +2075,11 @@ bool GameScene::InsertItem(GroundItem* _pItem, bool _bCopy /* = true */)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::RemoveItem(DWORD _dwItemUniqueID)
+bool GameScene::RemoveItem(unsigned int _dwItemUniqueID)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	std::map<DWORD, GroundItem*>::iterator iter = m_xItems.find(_dwItemUniqueID);
+	std::map<unsigned int, GroundItem*>::iterator iter = m_xItems.find(_dwItemUniqueID);
 	if(iter != m_xItems.end())
 	{
 		delete iter->second;
@@ -2085,11 +2089,11 @@ bool GameScene::RemoveItem(DWORD _dwItemUniqueID)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-GroundItem* GameScene::GetItem(DWORD _dwTag)
+GroundItem* GameScene::GetItem(unsigned int _dwTag)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	std::map<DWORD, GroundItem*>::iterator iter = m_xItems.find(_dwTag);
+	std::map<unsigned int, GroundItem*>::iterator iter = m_xItems.find(_dwTag);
 	if(iter != m_xItems.end())
 	{
 		return iter->second;
@@ -2101,11 +2105,11 @@ void GameScene::CheckGroundItems()
 {
 	RECORD_FUNCNAME_WORLD;
 
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 	//PkgPlayerClearItemNtf ntf;
 	PkgSystemClearGroundItemNtf ntf;
 
-	std::map<DWORD, GroundItem*>::iterator begiter = m_xItems.begin();
+	std::map<unsigned int, GroundItem*>::iterator begiter = m_xItems.begin();
 	for(begiter;
 		begiter != m_xItems.end();
 		)
@@ -2131,7 +2135,7 @@ bool GameScene::IsUserNameExist(const char* _pszName)
 {
 	char szName[20];
 
-	std::map<DWORD, GameObject*>::const_iterator begiter = m_xPlayers.begin();
+	std::map<unsigned int, GameObject*>::const_iterator begiter = m_xPlayers.begin();
 	for(begiter;
 		begiter != m_xPlayers.end();
 		++begiter)
@@ -2145,7 +2149,7 @@ bool GameScene::IsUserNameExist(const char* _pszName)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::GetRandomPosition(DWORD* _pOut)
+bool GameScene::GetRandomPosition(unsigned int* _pOut)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -2156,8 +2160,8 @@ bool GameScene::GetRandomPosition(DWORD* _pOut)
 		return false;
 	}
 
-	WORD wPosX = 0;
-	WORD wPosY = 0;
+	unsigned short wPosX = 0;
+	unsigned short wPosY = 0;
 
 	int nCounter = 0;
 	wPosX = rand() % m_stMapInfo.nCol;
@@ -2178,7 +2182,7 @@ bool GameScene::GetRandomPosition(DWORD* _pOut)
 	return true;
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::GetDropPosition(WORD _wX, WORD _wY, DWORD* _pOut)
+bool GameScene::GetDropPosition(unsigned short _wX, unsigned short _wY, unsigned int* _pOut)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -2594,7 +2598,7 @@ void GameScene::BroadcastChatMessage(std::string& _xMsg, unsigned int _dwExtra)
 
 	HeroObject* pObj = NULL;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -2612,7 +2616,7 @@ void GameScene::BroadcastChatMessage(const char* _pszMsg, unsigned int _dwExtra)
 
 	HeroObject* pObj = NULL;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -2628,7 +2632,7 @@ void GameScene::BroadcastSceneSystemMessage(const char* _pszMsg)
 {
 	HeroObject* pObj = NULL;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -2649,7 +2653,7 @@ void GameScene::BroadcastSystemNotify(const char* _pszMsg)
 	not.dwTimes = 1;
 	not.xMsg = _pszMsg;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -2672,7 +2676,7 @@ int GameScene::GetSlaveSum()
 {
 	int nCounter = 0;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -2693,7 +2697,7 @@ int GameScene::GetMonsterSum(unsigned int _uID)
 	RECORD_FUNCNAME_WORLD;
 
 	int nCounter = 0;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -2721,7 +2725,7 @@ void GameScene::CreateNPC(unsigned int _uID, unsigned short _uX, unsigned short 
 	pNPC->GetUserData()->stAttrib.id = _uID;
 	pNPC->GetUserData()->wCoordX = _uX;
 	pNPC->GetUserData()->wCoordY = _uY;
-	pNPC->GetUserData()->wMapID = (WORD)m_dwMapID;
+	pNPC->GetUserData()->wMapID = (unsigned short)m_dwMapID;
 
 #ifdef _SYNC_CREATE
 	if(GetRecordInMonsterTable(_uID, &pNPC->GetUserData()->stAttrib))
@@ -2740,7 +2744,7 @@ void GameScene::CreateNPC(unsigned int _uID, unsigned short _uX, unsigned short 
 #else
 	DBOperationParam* pParam = new DBOperationParam;
 	pParam->dwOperation = DO_QUERY_MONSATTRIB;
-	pParam->dwParam[0] = (DWORD)pNPC;
+	pParam->dwParam[0] = (unsigned int)pNPC;
 	pParam->dwParam[1] = pNPC->GetUserData()->stAttrib.id;
 	DBThread::GetInstance()->AsynExecute(pParam);
 #endif
@@ -2809,7 +2813,7 @@ void GameScene::CreateGroundItem(unsigned _uID, unsigned short _uX, unsigned sho
 	DBOperationParam* pParam = new DBOperationParam;
 	pParam->dwOperation = DO_QUERY_ITEMATTRIB;
 	//	Head of GroundItem, so can transform to ItemAttrib
-	pParam->dwParam[0] = (DWORD)pItem;
+	pParam->dwParam[0] = (unsigned int)pItem;
 	pParam->dwParam[1] = MAKELONG(0, _uID);
 	pParam->dwParam[2] = MAKELONG(IE_ADDGROUNDITEM, m_dwMapID);
 	DBThread::GetInstance()->AsynExecute(pParam);
@@ -2859,7 +2863,7 @@ void GameScene::CreateGroundItem(unsigned _uID, unsigned short _uX, unsigned sho
 	DBOperationParam* pParam = new DBOperationParam;
 	pParam->dwOperation = DO_QUERY_ITEMATTRIB;
 	//	Head of GroundItem, so can transform to ItemAttrib
-	pParam->dwParam[0] = (DWORD)pItem;
+	pParam->dwParam[0] = (unsigned int)pItem;
 	pParam->dwParam[1] = MAKELONG(0, _uID);
 	pParam->dwParam[2] = MAKELONG(IE_ADDGROUNDITEM, m_dwMapID);
 	DBThread::GetInstance()->AsynExecute(pParam);
@@ -2873,7 +2877,7 @@ bool GameScene::IsItemInGround(int _nAttribID, int _x, int _y)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	std::map<DWORD, GroundItem*>::const_iterator begiter = m_xItems.begin();
+	std::map<unsigned int, GroundItem*>::const_iterator begiter = m_xItems.begin();
 	GroundItem* pItem = NULL;
 
 	for(begiter;
@@ -2895,7 +2899,7 @@ void GameScene::RemoveGroundItem(int _nAttribID, int _x, int _y)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	std::map<DWORD, GroundItem*>::const_iterator begiter = m_xItems.begin();
+	std::map<unsigned int, GroundItem*>::const_iterator begiter = m_xItems.begin();
 	GroundItem* pItem = NULL;
 	bool bFind = false;
 
@@ -2916,7 +2920,7 @@ void GameScene::RemoveGroundItem(int _nAttribID, int _x, int _y)
 	if(NULL != pItem &&
 		bFind)
 	{
-		std::map<DWORD, GroundItem*>::iterator fnditer = m_xItems.find(pItem->stAttrib.tag);
+		std::map<unsigned int, GroundItem*>::iterator fnditer = m_xItems.find(pItem->stAttrib.tag);
 		if(fnditer != m_xItems.end())
 		{
 			PkgSystemClearGroundItemNtf ntf;
@@ -2942,7 +2946,7 @@ NPCObject* GameScene::GetNPCByID(unsigned int _uID)
 	}
 	else
 	{
-		std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.find((DWORD)_uID);
+		std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.find((unsigned int)_uID);
 		if(iter != m_xNPCs.end())
 		{
 			return (NPCObject*)iter->second;
@@ -2955,7 +2959,7 @@ GameObject* GameScene::GetNPCByHandleID(unsigned int _uID)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.find((DWORD)_uID);
+	std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.find((unsigned int)_uID);
 	if(iter != m_xNPCs.end())
 	{
 		return iter->second;
@@ -3223,7 +3227,7 @@ int GameScene::CreateNormalMonster(unsigned int _uID, unsigned short _uX, unsign
 		pNewMonster->GetUserData()->stAttrib.id = _uID;
 		pNewMonster->GetUserData()->wCoordX = _uX;
 		pNewMonster->GetUserData()->wCoordY = _uY;
-		pNewMonster->GetUserData()->wMapID = (WORD)m_dwMapID;
+		pNewMonster->GetUserData()->wMapID = (unsigned short)m_dwMapID;
 
 #ifdef _SYNC_CREATE
 		if(GetRecordInMonsterTable(_uID, &pNewMonster->GetUserData()->stAttrib))
@@ -3249,7 +3253,7 @@ int GameScene::CreateNormalMonster(unsigned int _uID, unsigned short _uX, unsign
 #else
 		DBOperationParam* pParam = new DBOperationParam;
 		pParam->dwOperation = DO_QUERY_MONSATTRIB;
-		pParam->dwParam[0] = (DWORD)pNewMonster;
+		pParam->dwParam[0] = (unsigned int)pNewMonster;
 		pParam->dwParam[1] = pNewMonster->GetUserData()->stAttrib.id;
 		DBThread::GetInstance()->AsynExecute(pParam);
 #endif
@@ -3285,7 +3289,7 @@ int GameScene::CreateLeaderMonster(unsigned int _uID, unsigned short _uX, unsign
 		pNewMonster->GetUserData()->stAttrib.id = _uID;
 		pNewMonster->GetUserData()->wCoordX = _uX;
 		pNewMonster->GetUserData()->wCoordY = _uY;
-		pNewMonster->GetUserData()->wMapID = (WORD)m_dwMapID;
+		pNewMonster->GetUserData()->wMapID = (unsigned short)m_dwMapID;
 
 #ifdef _SYNC_CREATE
 		if(GetRecordInMonsterTable(_uID, &pNewMonster->GetUserData()->stAttrib))
@@ -3364,7 +3368,7 @@ int GameScene::CreateLeaderMonster(unsigned int _uID, unsigned short _uX, unsign
 #else
 		DBOperationParam* pParam = new DBOperationParam;
 		pParam->dwOperation = DO_QUERY_MONSATTRIB;
-		pParam->dwParam[0] = (DWORD)pNewMonster;
+		pParam->dwParam[0] = (unsigned int)pNewMonster;
 		pParam->dwParam[1] = pNewMonster->GetUserData()->stAttrib.id;
 		DBThread::GetInstance()->AsynExecute(pParam);
 #endif
@@ -3400,7 +3404,7 @@ int GameScene::CreateEliteMonster(unsigned int _uID, unsigned short _uX, unsigne
 		pNewMonster->GetUserData()->stAttrib.id = _uID;
 		pNewMonster->GetUserData()->wCoordX = _uX;
 		pNewMonster->GetUserData()->wCoordY = _uY;
-		pNewMonster->GetUserData()->wMapID = (WORD)m_dwMapID;
+		pNewMonster->GetUserData()->wMapID = (unsigned short)m_dwMapID;
 
 #ifdef _SYNC_CREATE
 		if(GetRecordInMonsterTable(_uID, &pNewMonster->GetUserData()->stAttrib))
@@ -3479,7 +3483,7 @@ int GameScene::CreateEliteMonster(unsigned int _uID, unsigned short _uX, unsigne
 #else
 		DBOperationParam* pParam = new DBOperationParam;
 		pParam->dwOperation = DO_QUERY_MONSATTRIB;
-		pParam->dwParam[0] = (DWORD)pNewMonster;
+		pParam->dwParam[0] = (unsigned int)pNewMonster;
 		pParam->dwParam[1] = pNewMonster->GetUserData()->stAttrib.id;
 		DBThread::GetInstance()->AsynExecute(pParam);
 #endif
@@ -3540,7 +3544,7 @@ int GameScene::CreateMonster(unsigned int _uID, unsigned short _uX, unsigned sho
 		pNewMonster->GetUserData()->stAttrib.id = _uID;
 		pNewMonster->GetUserData()->wCoordX = _uX;
 		pNewMonster->GetUserData()->wCoordY = _uY;
-		pNewMonster->GetUserData()->wMapID = (WORD)m_dwMapID;
+		pNewMonster->GetUserData()->wMapID = (unsigned short)m_dwMapID;
 
 #ifdef _SYNC_CREATE
 		if(GetRecordInMonsterTable(_uID, &pNewMonster->GetUserData()->stAttrib))
@@ -3631,7 +3635,7 @@ int GameScene::CreateMonster(unsigned int _uID, unsigned short _uX, unsigned sho
 #else
 		DBOperationParam* pParam = new DBOperationParam;
 		pParam->dwOperation = DO_QUERY_MONSATTRIB;
-		pParam->dwParam[0] = (DWORD)pNewMonster;
+		pParam->dwParam[0] = (unsigned int)pNewMonster;
 		pParam->dwParam[1] = pNewMonster->GetUserData()->stAttrib.id;
 		DBThread::GetInstance()->AsynExecute(pParam);
 #endif
@@ -3801,7 +3805,7 @@ int GameScene::CreateMonster(unsigned int _uID)
 		return 0;
 	}
 
-	DWORD dwPos = 0;
+	unsigned int dwPos = 0;
 	if(GetRandomPosition(&dwPos))
 	{
 		return CreateMonster(_uID, LOWORD(dwPos), HIWORD(dwPos));
@@ -3820,7 +3824,7 @@ int GameScene::CreateNormalMonster(unsigned int _uID)
 		return 0;
 	}
 
-	DWORD dwPos = 0;
+	unsigned int dwPos = 0;
 	if(GetRandomPosition(&dwPos))
 	{
 		return CreateNormalMonster(_uID, LOWORD(dwPos), HIWORD(dwPos));
@@ -3839,7 +3843,7 @@ int GameScene::CreateEliteMonster(unsigned int _uID)
 		return 0;
 	}
 
-	DWORD dwPos = 0;
+	unsigned int dwPos = 0;
 	if(GetRandomPosition(&dwPos))
 	{
 		return CreateEliteMonster(_uID, LOWORD(dwPos), HIWORD(dwPos));
@@ -3858,7 +3862,7 @@ int GameScene::CreateLeaderMonster(unsigned int _uID)
 		return 0;
 	}
 
-	DWORD dwPos = 0;
+	unsigned int dwPos = 0;
 	if(GetRandomPosition(&dwPos))
 	{
 		return CreateLeaderMonster(_uID, LOWORD(dwPos), HIWORD(dwPos));
@@ -4092,7 +4096,7 @@ void GameScene::SetCityRange(int _x, int _y, int _width, int _height, int _cente
 	m_dwCityCenter = MAKELONG(_centerx, _centery);
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::IsInCity(WORD _wPosX, WORD _wPosY)
+bool GameScene::IsInCity(unsigned short _wPosX, unsigned short _wPosY)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -4133,14 +4137,14 @@ void GameScene::AutoGenerateMonster()
 	return;
 
 	// old version
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 
 	int nCanGenerate = 0;
 	int nLoopGuard = 0;
 	MonsterGenerateInfo* pInfo = NULL;
 	MONSTERGENERATEINFOLIST::iterator endIter = m_xMonsterGenerator.end();
 	MONSTERGENERATEINFOLIST::iterator gbegiter = m_xMonsterGenerator.begin();
-	std::map<DWORD, GameObject*>::const_iterator mbegiter = m_xNPCs.begin();
+	std::map<unsigned int, GameObject*>::const_iterator mbegiter = m_xNPCs.begin();
 	for(gbegiter; gbegiter != endIter;
 		++gbegiter)
 	{
@@ -4178,8 +4182,8 @@ void GameScene::AutoGenerateMonster()
 		}
 		if(nCanGenerate > 0)
 		{
-			WORD wBaseX = LOWORD(pInfo->dwPos);
-			WORD wBaseY = HIWORD(pInfo->dwPos);
+			unsigned short wBaseX = LOWORD(pInfo->dwPos);
+			unsigned short wBaseY = HIWORD(pInfo->dwPos);
 			RECT rcGenerate;
 			rcGenerate.left = (int)wBaseX - (int)pInfo->bOft;
 			if(rcGenerate.left < 0)
@@ -4257,7 +4261,7 @@ void GameScene::AutoGenerateMonster()
 
 	if(GetMapID() == 30)
 	{
-		DWORD dwExeTime = xExeTimer.GetExecuteTime();
+		unsigned int dwExeTime = xExeTimer.GetExecuteTime();
 		dwExeTime += 1;
 	}
 }
@@ -4272,7 +4276,7 @@ GameObject* GameScene::GetOnePlayerInRange(RECT& _rc, bool _bCanSeeHide /* = fal
 	}
 
 	POINT ptPlayer;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -4425,7 +4429,7 @@ void GameScene::EraseTarget(GameObject* _pObj)
 	RECORD_FUNCNAME_WORLD;
 
 	MonsterObject* pMons = NULL;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xNPCs.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xNPCs.begin();
 		iter != m_xNPCs.end();
 		++iter)
 	{
@@ -4440,7 +4444,7 @@ void GameScene::EraseTarget(GameObject* _pObj)
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameScene::AddMappedObject(int _x, int _y,BYTE _type, void* _pData)
+bool GameScene::AddMappedObject(int _x, int _y,unsigned char _type, void* _pData)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -4934,7 +4938,7 @@ void GameScene::ParseStaticMagic(const StaticMagic* _pMgc)
 	int nPosX = 0;
 	int nPosY = 0;
 	int nDamage = 0;
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 	static const int s_nAtkOft[] =
 	{
 		0,0,
@@ -5160,7 +5164,7 @@ void GameScene::HandleStaticMagic()
 	{
 		return;
 	}
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 	StaticMagic* pMgc = NULL;
 	int nDamage = 0;
 
@@ -5395,7 +5399,7 @@ void GameScene::CreateDoorEventWithNotification(unsigned int _uMapID, unsigned i
 
 	HeroObject* pObj = NULL;
 
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{
@@ -5420,7 +5424,7 @@ void GameScene::UpdateDoorEvent()
 	if(!m_xDoorEvts.empty())
 	{
 		DOOREVENTLIST::iterator begiter = m_xDoorEvts.begin();
-		DWORD dwCurTick = GetTickCount();
+		unsigned int dwCurTick = GetTickCount();
 		DoorEvent* pDoorEvt = NULL;
 
 		for(begiter;
@@ -5470,7 +5474,7 @@ void GameScene::AllMonsterHPToFull()
 
 	if(m_bAutoReset)
 	{
-		for(std::map<DWORD, GameObject*>::const_iterator begiter = m_xNPCs.begin();
+		for(std::map<unsigned int, GameObject*>::const_iterator begiter = m_xNPCs.begin();
 			begiter != m_xNPCs.end();
 			++begiter)
 		{
@@ -5715,7 +5719,7 @@ void GameScene::ChallengeSuccess(int _nItemID)
 	if(0 != GetPlayerSum())
 	{
 		HeroObject* pHero = NULL;
-		for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+		for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 			iter != m_xPlayers.end();
 			++iter)
 		{
@@ -5758,7 +5762,7 @@ void GameScene::AllHeroFlyToHome()
 {
 	//	Players
 	HeroObject* pHero = NULL;
-	for(std::map<DWORD, GameObject*>::const_iterator iter = m_xPlayers.begin();
+	for(std::map<unsigned int, GameObject*>::const_iterator iter = m_xPlayers.begin();
 		iter != m_xPlayers.end();
 		++iter)
 	{

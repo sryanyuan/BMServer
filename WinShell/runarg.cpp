@@ -1,6 +1,6 @@
 #include "runarg.h"
-#include "../CommonModule/CommandLineHelper.h"
-#include "common/glog.h"
+#include "../../CommonModule/CommandLineHelper.h"
+#include "../common/glog.h"
 #include "Helper.h"
 //////////////////////////////////////////////////////////////////////////
 CommandLineHelper g_Cl;

@@ -1,6 +1,6 @@
 /*
 ** Lua binding: BackMirServer
-** Generated automatically by tolua++-1.0.92 on 02/04/17 18:47:41.
+** Generated automatically by tolua++-1.0.92 on 01/13/19 15:19:59.
 */
 
 #ifndef __cplusplus
@@ -33,27 +33,6 @@ TOLUA_API int  tolua_BackMirServer_open (lua_State* tolua_S);
 /* function to release collected object via destructor */
 #ifdef __cplusplus
 
-static int tolua_collect_DWORD (lua_State* tolua_S)
-{
- DWORD* self = (DWORD*) tolua_tousertype(tolua_S,1,0);
-	Mtolua_delete(self);
-	return 0;
-}
-
-static int tolua_collect_GameSceneManager (lua_State* tolua_S)
-{
- GameSceneManager* self = (GameSceneManager*) tolua_tousertype(tolua_S,1,0);
-	Mtolua_delete(self);
-	return 0;
-}
-
-static int tolua_collect_WORD (lua_State* tolua_S)
-{
- WORD* self = (WORD*) tolua_tousertype(tolua_S,1,0);
-	Mtolua_delete(self);
-	return 0;
-}
-
 static int tolua_collect_NPCObject (lua_State* tolua_S)
 {
  NPCObject* self = (NPCObject*) tolua_tousertype(tolua_S,1,0);
@@ -67,6 +46,13 @@ static int tolua_collect_GameObject (lua_State* tolua_S)
 	Mtolua_delete(self);
 	return 0;
 }
+
+static int tolua_collect_GameSceneManager (lua_State* tolua_S)
+{
+ GameSceneManager* self = (GameSceneManager*) tolua_tousertype(tolua_S,1,0);
+	Mtolua_delete(self);
+	return 0;
+}
 #endif
 
 
@@ -75,33 +61,31 @@ static void tolua_reg_types (lua_State* tolua_S)
 {
  tolua_usertype(tolua_S,"OBJECT_STATE");
  tolua_usertype(tolua_S,"GroundItem");
- tolua_usertype(tolua_S,"WORD");
  tolua_usertype(tolua_S,"NPCObject");
  tolua_usertype(tolua_S,"LuaItemHelper");
- tolua_usertype(tolua_S,"CMainServer");
- tolua_usertype(tolua_S,"DWORD");
+ tolua_usertype(tolua_S,"std::list<int>");
  tolua_usertype(tolua_S,"GameScene");
  tolua_usertype(tolua_S,"GameWorld");
+ tolua_usertype(tolua_S,"CMainServer");
  tolua_usertype(tolua_S,"OlShopManager");
- tolua_usertype(tolua_S,"DBDropDownContext");
  tolua_usertype(tolua_S,"GameInstanceScene");
  tolua_usertype(tolua_S,"ItemAttrib");
- tolua_usertype(tolua_S,"LuaBaseEngine");
+ tolua_usertype(tolua_S,"DBDropDownContext");
  tolua_usertype(tolua_S,"DBThread");
- tolua_usertype(tolua_S,"USER_STATE");
+ tolua_usertype(tolua_S,"LuaBaseEngine");
+ tolua_usertype(tolua_S,"UserData");
  tolua_usertype(tolua_S,"GameSceneManager");
- tolua_usertype(tolua_S,"std::list<int>");
  tolua_usertype(tolua_S,"ItemIDList");
  tolua_usertype(tolua_S,"GameObject");
  tolua_usertype(tolua_S,"QuestContext");
  tolua_usertype(tolua_S,"LuaServerEngine");
- tolua_usertype(tolua_S,"PacketHeader");
+ tolua_usertype(tolua_S,"ByteBuffer");
  tolua_usertype(tolua_S,"MonsterObject");
  tolua_usertype(tolua_S,"LockObject");
  tolua_usertype(tolua_S,"DBOperationParam");
- tolua_usertype(tolua_S,"UserData");
+ tolua_usertype(tolua_S,"USER_STATE");
  tolua_usertype(tolua_S,"HeroObject");
- tolua_usertype(tolua_S,"ByteBuffer");
+ tolua_usertype(tolua_S,"PacketHeader");
 }
 
 /* function: MirLog */
@@ -337,18 +321,8 @@ static int tolua_BackMirServer_GameObject_GetMapID00(lua_State* tolua_S)
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetMapID'", NULL);
 #endif
   {
-   WORD tolua_ret = (WORD)  self->GetMapID();
-   {
-#ifdef __cplusplus
-    void* tolua_obj = Mtolua_new((WORD)(tolua_ret));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#else
-    void* tolua_obj = tolua_copy(tolua_S,(void*)&tolua_ret,sizeof(WORD));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#endif
-   }
+   unsigned short tolua_ret = (unsigned short)  self->GetMapID();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
  return 1;
@@ -572,7 +546,7 @@ static int tolua_BackMirServer_GameObject_IncHP00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -580,7 +554,7 @@ static int tolua_BackMirServer_GameObject_IncHP00(lua_State* tolua_S)
 #endif
  {
   GameObject* self = (GameObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwHP = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwHP = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'IncHP'", NULL);
 #endif
@@ -606,7 +580,7 @@ static int tolua_BackMirServer_GameObject_DecHP00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -614,7 +588,7 @@ static int tolua_BackMirServer_GameObject_DecHP00(lua_State* tolua_S)
 #endif
  {
   GameObject* self = (GameObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwHP = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwHP = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'DecHP'", NULL);
 #endif
@@ -640,7 +614,7 @@ static int tolua_BackMirServer_GameObject_IncMP00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -648,7 +622,7 @@ static int tolua_BackMirServer_GameObject_IncMP00(lua_State* tolua_S)
 #endif
  {
   GameObject* self = (GameObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwMP = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwMP = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'IncMP'", NULL);
 #endif
@@ -674,7 +648,7 @@ static int tolua_BackMirServer_GameObject_DecMP00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -682,7 +656,7 @@ static int tolua_BackMirServer_GameObject_DecMP00(lua_State* tolua_S)
 #endif
  {
   GameObject* self = (GameObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwMP = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwMP = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'DecMP'", NULL);
 #endif
@@ -719,18 +693,8 @@ static int tolua_BackMirServer_GameObject_GetCoordX00(lua_State* tolua_S)
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetCoordX'", NULL);
 #endif
   {
-   WORD tolua_ret = (WORD)  self->GetCoordX();
-   {
-#ifdef __cplusplus
-    void* tolua_obj = Mtolua_new((WORD)(tolua_ret));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#else
-    void* tolua_obj = tolua_copy(tolua_S,(void*)&tolua_ret,sizeof(WORD));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#endif
-   }
+   unsigned short tolua_ret = (unsigned short)  self->GetCoordX();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
  return 1;
@@ -761,18 +725,8 @@ static int tolua_BackMirServer_GameObject_GetCoordY00(lua_State* tolua_S)
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetCoordY'", NULL);
 #endif
   {
-   WORD tolua_ret = (WORD)  self->GetCoordY();
-   {
-#ifdef __cplusplus
-    void* tolua_obj = Mtolua_new((WORD)(tolua_ret));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#else
-    void* tolua_obj = tolua_copy(tolua_S,(void*)&tolua_ret,sizeof(WORD));
-     tolua_pushusertype(tolua_S,tolua_obj,"WORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#endif
-   }
+   unsigned short tolua_ret = (unsigned short)  self->GetCoordY();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
  return 1;
@@ -1048,7 +1002,7 @@ static int tolua_BackMirServer_HeroObject_GetItemByIndex00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"HeroObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -1056,7 +1010,7 @@ static int tolua_BackMirServer_HeroObject_GetItemByIndex00(lua_State* tolua_S)
 #endif
  {
   HeroObject* self = (HeroObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwIndex = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwIndex = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetItemByIndex'", NULL);
 #endif
@@ -1082,7 +1036,7 @@ static int tolua_BackMirServer_HeroObject_GetItemByTag00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"HeroObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -1090,7 +1044,7 @@ static int tolua_BackMirServer_HeroObject_GetItemByTag00(lua_State* tolua_S)
 #endif
  {
   HeroObject* self = (HeroObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwTag = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwTag = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetItemByTag'", NULL);
 #endif
@@ -1217,7 +1171,7 @@ static int tolua_BackMirServer_HeroObject_AddBagItem01(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"HeroObject",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isusertype(tolua_S,3,"const ItemAttrib",0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,4,&tolua_err)
  )
@@ -1225,7 +1179,7 @@ static int tolua_BackMirServer_HeroObject_AddBagItem01(lua_State* tolua_S)
  else
  {
   HeroObject* self = (HeroObject*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwIndex = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwIndex = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
   const ItemAttrib* _pItem = ((const ItemAttrib*)  tolua_tousertype(tolua_S,3,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'AddBagItem'", NULL);
@@ -3163,7 +3117,7 @@ static int tolua_BackMirServer_GameScene_GetPlayer00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -3171,7 +3125,7 @@ static int tolua_BackMirServer_GameScene_GetPlayer00(lua_State* tolua_S)
 #endif
  {
   GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwID = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwID = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetPlayer'", NULL);
 #endif
@@ -3197,7 +3151,7 @@ static int tolua_BackMirServer_GameScene_GetPlayerWithoutLock00(lua_State* tolua
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -3205,7 +3159,7 @@ static int tolua_BackMirServer_GameScene_GetPlayerWithoutLock00(lua_State* tolua
 #endif
  {
   GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwID = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwID = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetPlayerWithoutLock'", NULL);
 #endif
@@ -3265,7 +3219,7 @@ static int tolua_BackMirServer_GameScene_GetItem00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -3273,7 +3227,7 @@ static int tolua_BackMirServer_GameScene_GetItem00(lua_State* tolua_S)
 #endif
  {
   GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwTag = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwTag = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetItem'", NULL);
 #endif
@@ -3300,7 +3254,7 @@ static int tolua_BackMirServer_GameScene_BroadcastPacket00(lua_State* tolua_S)
  if (
      !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
      !tolua_isusertype(tolua_S,2,"ByteBuffer",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,3,&tolua_err) || !tolua_isusertype(tolua_S,3,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,3,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,4,&tolua_err)
  )
   goto tolua_lerror;
@@ -3309,23 +3263,13 @@ static int tolua_BackMirServer_GameScene_BroadcastPacket00(lua_State* tolua_S)
  {
   GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
   ByteBuffer* _pBuf = ((ByteBuffer*)  tolua_tousertype(tolua_S,2,0));
-  DWORD _dwIgnoreID = *((DWORD*)  tolua_tousertype(tolua_S,3,0));
+  unsigned int _dwIgnoreID = ((unsigned int)  tolua_tonumber(tolua_S,3,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'BroadcastPacket'", NULL);
 #endif
   {
-   DWORD tolua_ret = (DWORD)  self->BroadcastPacket(_pBuf,_dwIgnoreID);
-   {
-#ifdef __cplusplus
-    void* tolua_obj = Mtolua_new((DWORD)(tolua_ret));
-     tolua_pushusertype(tolua_S,tolua_obj,"DWORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#else
-    void* tolua_obj = tolua_copy(tolua_S,(void*)&tolua_ret,sizeof(DWORD));
-     tolua_pushusertype(tolua_S,tolua_obj,"DWORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#endif
-   }
+   unsigned int tolua_ret = (unsigned int)  self->BroadcastPacket(_pBuf,_dwIgnoreID);
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
  return 1;
@@ -3379,7 +3323,7 @@ static int tolua_BackMirServer_GameScene_GetRandomPosition00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameScene",0,&tolua_err) ||
-     !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -3387,16 +3331,17 @@ static int tolua_BackMirServer_GameScene_GetRandomPosition00(lua_State* tolua_S)
 #endif
  {
   GameScene* self = (GameScene*)  tolua_tousertype(tolua_S,1,0);
-  DWORD* _pOut = ((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _pOut = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetRandomPosition'", NULL);
 #endif
   {
-   bool tolua_ret = (bool)  self->GetRandomPosition(_pOut);
+   bool tolua_ret = (bool)  self->GetRandomPosition(&_pOut);
    tolua_pushboolean(tolua_S,(bool)tolua_ret);
+   tolua_pushnumber(tolua_S,(lua_Number)_pOut);
   }
  }
- return 1;
+ return 2;
 #ifndef TOLUA_RELEASE
  tolua_lerror:
  tolua_error(tolua_S,"#ferror in function 'GetRandomPosition'.",&tolua_err);
@@ -4542,18 +4487,8 @@ static int tolua_BackMirServer_GameScene_GetTimeCount00(lua_State* tolua_S)
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetTimeCount'", NULL);
 #endif
   {
-   DWORD tolua_ret = (DWORD)  self->GetTimeCount();
-   {
-#ifdef __cplusplus
-    void* tolua_obj = Mtolua_new((DWORD)(tolua_ret));
-     tolua_pushusertype(tolua_S,tolua_obj,"DWORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#else
-    void* tolua_obj = tolua_copy(tolua_S,(void*)&tolua_ret,sizeof(DWORD));
-     tolua_pushusertype(tolua_S,tolua_obj,"DWORD");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-#endif
-   }
+   unsigned int tolua_ret = (unsigned int)  self->GetTimeCount();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
  return 1;
@@ -5285,7 +5220,7 @@ static int tolua_BackMirServer_GameSceneManager_RemovePlayer00(lua_State* tolua_
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -5293,7 +5228,7 @@ static int tolua_BackMirServer_GameSceneManager_RemovePlayer00(lua_State* tolua_
 #endif
  {
   GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwID = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwID = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'RemovePlayer'", NULL);
 #endif
@@ -5319,8 +5254,8 @@ static int tolua_BackMirServer_GameSceneManager_GetPlayer00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"WORD",0,&tolua_err)) ||
-     (tolua_isvaluenil(tolua_S,3,&tolua_err) || !tolua_isusertype(tolua_S,3,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
+     !tolua_isnumber(tolua_S,3,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,4,&tolua_err)
  )
   goto tolua_lerror;
@@ -5328,8 +5263,8 @@ static int tolua_BackMirServer_GameSceneManager_GetPlayer00(lua_State* tolua_S)
 #endif
  {
   GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
-  WORD _wMapID = *((WORD*)  tolua_tousertype(tolua_S,2,0));
-  DWORD _dwID = *((DWORD*)  tolua_tousertype(tolua_S,3,0));
+  unsigned short _wMapID = ((unsigned short)  tolua_tonumber(tolua_S,2,0));
+  unsigned int _dwID = ((unsigned int)  tolua_tonumber(tolua_S,3,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetPlayer'", NULL);
 #endif
@@ -5354,14 +5289,14 @@ static int tolua_BackMirServer_GameSceneManager_GetPlayer01(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
  else
  {
   GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwID = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwID = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetPlayer'", NULL);
 #endif
@@ -5384,7 +5319,7 @@ static int tolua_BackMirServer_GameSceneManager_GetScene00(lua_State* tolua_S)
  tolua_Error tolua_err;
  if (
      !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
-     (tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"DWORD",0,&tolua_err)) ||
+     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnoobj(tolua_S,3,&tolua_err)
  )
   goto tolua_lerror;
@@ -5392,7 +5327,7 @@ static int tolua_BackMirServer_GameSceneManager_GetScene00(lua_State* tolua_S)
 #endif
  {
   GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
-  DWORD _dwMapID = *((DWORD*)  tolua_tousertype(tolua_S,2,0));
+  unsigned int _dwMapID = ((unsigned int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetScene'", NULL);
 #endif
@@ -5439,40 +5374,6 @@ static int tolua_BackMirServer_GameSceneManager_GetSceneInt00(lua_State* tolua_S
 #ifndef TOLUA_RELEASE
  tolua_lerror:
  tolua_error(tolua_S,"#ferror in function 'GetSceneInt'.",&tolua_err);
- return 0;
-#endif
-}
-#endif //#ifndef TOLUA_DISABLE
-
-/* method: GetFreeInstanceScene of class  GameSceneManager */
-#ifndef TOLUA_DISABLE_tolua_BackMirServer_GameSceneManager_GetFreeInstanceScene00
-static int tolua_BackMirServer_GameSceneManager_GetFreeInstanceScene00(lua_State* tolua_S)
-{
-#ifndef TOLUA_RELEASE
- tolua_Error tolua_err;
- if (
-     !tolua_isusertype(tolua_S,1,"GameSceneManager",0,&tolua_err) ||
-     !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
-     !tolua_isnoobj(tolua_S,3,&tolua_err)
- )
-  goto tolua_lerror;
- else
-#endif
- {
-  GameSceneManager* self = (GameSceneManager*)  tolua_tousertype(tolua_S,1,0);
-  int _id = ((int)  tolua_tonumber(tolua_S,2,0));
-#ifndef TOLUA_RELEASE
-  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetFreeInstanceScene'", NULL);
-#endif
-  {
-   GameInstanceScene* tolua_ret = (GameInstanceScene*)  self->GetFreeInstanceScene(_id);
-    tolua_pushusertype(tolua_S,(void*)tolua_ret,"GameInstanceScene");
-  }
- }
- return 1;
-#ifndef TOLUA_RELEASE
- tolua_lerror:
- tolua_error(tolua_S,"#ferror in function 'GetFreeInstanceScene'.",&tolua_err);
  return 0;
 #endif
 }
@@ -5738,90 +5639,90 @@ static int tolua_set_UserData_stAttrib(lua_State* tolua_S)
 #endif //#ifndef TOLUA_DISABLE
 
 /* get function: wCoordX of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_get_UserData_wCoordX
-static int tolua_get_UserData_wCoordX(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_get_UserData_unsigned_wCoordX
+static int tolua_get_UserData_unsigned_wCoordX(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wCoordX'",NULL);
 #endif
-   tolua_pushusertype(tolua_S,(void*)&self->wCoordX,"WORD");
+  tolua_pushnumber(tolua_S,(lua_Number)self->wCoordX);
  return 1;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* set function: wCoordX of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_set_UserData_wCoordX
-static int tolua_set_UserData_wCoordX(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_set_UserData_unsigned_wCoordX
+static int tolua_set_UserData_unsigned_wCoordX(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   tolua_Error tolua_err;
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wCoordX'",NULL);
-  if ((tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"WORD",0,&tolua_err)))
+  if (!tolua_isnumber(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->wCoordX = *((WORD*)  tolua_tousertype(tolua_S,2,0))
+  self->wCoordX = ((unsigned short)  tolua_tonumber(tolua_S,2,0))
 ;
  return 0;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* get function: wCoordY of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_get_UserData_wCoordY
-static int tolua_get_UserData_wCoordY(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_get_UserData_unsigned_wCoordY
+static int tolua_get_UserData_unsigned_wCoordY(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wCoordY'",NULL);
 #endif
-   tolua_pushusertype(tolua_S,(void*)&self->wCoordY,"WORD");
+  tolua_pushnumber(tolua_S,(lua_Number)self->wCoordY);
  return 1;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* set function: wCoordY of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_set_UserData_wCoordY
-static int tolua_set_UserData_wCoordY(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_set_UserData_unsigned_wCoordY
+static int tolua_set_UserData_unsigned_wCoordY(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   tolua_Error tolua_err;
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wCoordY'",NULL);
-  if ((tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"WORD",0,&tolua_err)))
+  if (!tolua_isnumber(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->wCoordY = *((WORD*)  tolua_tousertype(tolua_S,2,0))
+  self->wCoordY = ((unsigned short)  tolua_tonumber(tolua_S,2,0))
 ;
  return 0;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* get function: wMapID of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_get_UserData_wMapID
-static int tolua_get_UserData_wMapID(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_get_UserData_unsigned_wMapID
+static int tolua_get_UserData_unsigned_wMapID(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wMapID'",NULL);
 #endif
-   tolua_pushusertype(tolua_S,(void*)&self->wMapID,"WORD");
+  tolua_pushnumber(tolua_S,(lua_Number)self->wMapID);
  return 1;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* set function: wMapID of class  UserData */
-#ifndef TOLUA_DISABLE_tolua_set_UserData_wMapID
-static int tolua_set_UserData_wMapID(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_set_UserData_unsigned_wMapID
+static int tolua_set_UserData_unsigned_wMapID(lua_State* tolua_S)
 {
   UserData* self = (UserData*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   tolua_Error tolua_err;
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'wMapID'",NULL);
-  if ((tolua_isvaluenil(tolua_S,2,&tolua_err) || !tolua_isusertype(tolua_S,2,"WORD",0,&tolua_err)))
+  if (!tolua_isnumber(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->wMapID = *((WORD*)  tolua_tousertype(tolua_S,2,0))
+  self->wMapID = ((unsigned short)  tolua_tonumber(tolua_S,2,0))
 ;
  return 0;
 }
@@ -8689,7 +8590,6 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"GetPlayer",tolua_BackMirServer_GameSceneManager_GetPlayer01);
    tolua_function(tolua_S,"GetScene",tolua_BackMirServer_GameSceneManager_GetScene00);
    tolua_function(tolua_S,"GetSceneInt",tolua_BackMirServer_GameSceneManager_GetSceneInt00);
-   tolua_function(tolua_S,"GetFreeInstanceScene",tolua_BackMirServer_GameSceneManager_GetFreeInstanceScene00);
    tolua_function(tolua_S,"SendSystemMessageAllScene",tolua_BackMirServer_GameSceneManager_SendSystemMessageAllScene00);
    tolua_function(tolua_S,"SendSystemNotifyAllScene",tolua_BackMirServer_GameSceneManager_SendSystemNotifyAllScene00);
    tolua_function(tolua_S,"CreateInstanceScene",tolua_BackMirServer_GameSceneManager_CreateInstanceScene00);
@@ -8704,9 +8604,9 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
   tolua_cclass(tolua_S,"UserData","UserData","",NULL);
   tolua_beginmodule(tolua_S,"UserData");
    tolua_variable(tolua_S,"stAttrib",tolua_get_UserData_stAttrib,tolua_set_UserData_stAttrib);
-   tolua_variable(tolua_S,"wCoordX",tolua_get_UserData_wCoordX,tolua_set_UserData_wCoordX);
-   tolua_variable(tolua_S,"wCoordY",tolua_get_UserData_wCoordY,tolua_set_UserData_wCoordY);
-   tolua_variable(tolua_S,"wMapID",tolua_get_UserData_wMapID,tolua_set_UserData_wMapID);
+   tolua_variable(tolua_S,"wCoordX",tolua_get_UserData_unsigned_wCoordX,tolua_set_UserData_unsigned_wCoordX);
+   tolua_variable(tolua_S,"wCoordY",tolua_get_UserData_unsigned_wCoordY,tolua_set_UserData_unsigned_wCoordY);
+   tolua_variable(tolua_S,"wMapID",tolua_get_UserData_unsigned_wMapID,tolua_set_UserData_unsigned_wMapID);
    tolua_variable(tolua_S,"eServerState",tolua_get_UserData_eServerState,tolua_set_UserData_eServerState);
    tolua_variable(tolua_S,"eGameState",tolua_get_UserData_eGameState,tolua_set_UserData_eGameState);
    tolua_variable(tolua_S,"nDrt",tolua_get_UserData_nDrt,tolua_set_UserData_nDrt);

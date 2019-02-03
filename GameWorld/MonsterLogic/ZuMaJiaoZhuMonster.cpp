@@ -16,10 +16,10 @@ ZuMaJiaoZhuMonster::~ZuMaJiaoZhuMonster()
 
 void ZuMaJiaoZhuMonster::MonsterLogic()
 {
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 
 	bool bNeedFly = false;
-	DWORD dwInterval = 15000;
+	unsigned int dwInterval = 15000;
 	if(GetObject_HP() < 4000)
 	{
 		dwInterval = 8000;
@@ -110,7 +110,7 @@ void ZuMaJiaoZhuMonster::MonsterLogic()
 		if(dwCurTick - m_dwLastSummonTime > 60 * 1000)
 		{
 			m_dwLastSummonTime = dwCurTick;
-			DWORD dwMonsNumber = GetLocateScene()->GetMonsterSum(47);
+			unsigned int dwMonsNumber = GetLocateScene()->GetMonsterSum(47);
 
 			if(dwMonsNumber < 10)
 			{

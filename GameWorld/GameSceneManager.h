@@ -1,20 +1,18 @@
 #ifndef _INC_GAMESCENEMANAGER_
 #define _INC_GAMESCENEMANAGER_
 //////////////////////////////////////////////////////////////////////////
-#include "../../CommonModule/osapi.h"
 #include <map>
 #include <mutex>
-#include "../../CommonModule/MirMap.h"
 #include "../../CommonModule/MapConfigManager.h"
 #include "LuaServerEngine.h"
 #include "../../CommonModule/ByteBuffer.h"
-#include "../../CommonModule/SaveFile.h"
 #include "../../CommonModule/GDefine.h"
 #include "../../CommonModule/SimpleIni.h"
 #include "SceneEvent.h"
 #include "FreeListManager.h"
 #include "MonsGenEngine.h"
 #include "WeightCalc.h"
+#include "../../CommonModule/MirMap.h"
 //////////////////////////////////////////////////////////////////////////
 #define MAX_SCENE_NUMBER		60/*60个地图场景*/
 #define EXECUTE_SCRIPT_INTERVAL	2*1000
@@ -49,8 +47,8 @@ enum MapPkType
 struct CellData
 {
 	void* pData;
-	BYTE bType;
-	DWORD dwInfo;
+	unsigned char bType;
+	unsigned int dwInfo;
 };
 
 typedef std::list<CellData*> CELLDATALIST;
@@ -58,50 +56,50 @@ typedef std::list<CellData*> CELLDATALIST;
 struct MapCellInfo
 {
 	//	0x80 for block
-	BYTE bFlag;
+	unsigned char bFlag;
 	CELLDATALIST* pCellObjects;
 };
 
 struct StaticMagic
 {
-	WORD wMgcID;
-	WORD wMinDC;
-	WORD wMaxDC;
-	DWORD dwFire;
-	DWORD dwEffectActive;
-	DWORD dwEffectActiveCount;
+	unsigned short wMgcID;
+	unsigned short wMinDC;
+	unsigned short wMaxDC;
+	unsigned int dwFire;
+	unsigned int dwEffectActive;
+	unsigned int dwEffectActiveCount;
 	short sPosX;
 	short sPoxY;
-	DWORD dwEnableTime;
-	DWORD dwExpire;
-	WORD wMgcLevel;
+	unsigned int dwEnableTime;
+	unsigned int dwExpire;
+	unsigned short wMgcLevel;
 	GameObject* pFire;
 };
 
 struct DoorEvent
 {
-	WORD wMapID;
-	WORD wOX;
-	WORD wOY;
-	WORD wPosX;
-	WORD wPoxY;
-	DWORD dwTime;
+	unsigned short wMapID;
+	unsigned short wOX;
+	unsigned short wOY;
+	unsigned short wPosX;
+	unsigned short wPoxY;
+	unsigned int dwTime;
 };
 
 struct MonsterGenerateInfo
 {
-	DWORD dwPos;
-	BYTE bNumber;
-	BYTE bOft;
-	BYTE bMonsGenerateType;
-	DWORD dwInterval;
-	DWORD dwMonsID;
-	DWORD dwLastExecuteTime;
+	unsigned int dwPos;
+	unsigned char bNumber;
+	unsigned char bOft;
+	unsigned char bMonsGenerateType;
+	unsigned int dwInterval;
+	unsigned int dwMonsID;
+	unsigned int dwLastExecuteTime;
 };
 
 typedef std::list<StaticMagic*> STATICMAGICLIST;
 typedef std::list<DoorEvent*>	DOOREVENTLIST;
-typedef std::list<DWORD>		DOORPOSITIONLIST;
+typedef std::list<unsigned int>		DOORPOSITIONLIST;
 typedef std::list<MonsterGenerateInfo*> MONSTERGENERATEINFOLIST;
 typedef std::list<GameObject*> GameObjectList;
 //////////////////////////////////////////////////////////////////////////
@@ -125,30 +123,30 @@ public:
 	virtual ~GameScene();
 
 public:
-	virtual bool Initialize(DWORD _dwMapID);
-	virtual bool Initialize(DWORD _dwMapResID, DWORD _dwMapID);
+	//virtual bool Initialize(unsigned int _dwMapID);
+	virtual bool Initialize(unsigned int _dwMapResID, unsigned int _dwMapID);
 	virtual void Release();
 
 public:
-	virtual void Update(DWORD _dwTick);
+	virtual void Update(unsigned int _dwTick);
 
 public:
 	bool InsertPlayer(GameObject* _pObj);
-	bool RemovePlayer(DWORD _dwID, bool _bDelete = true);
-	GameObject* GetPlayer(DWORD _dwID);
+	bool RemovePlayer(unsigned int _dwID, bool _bDelete = true);
+	GameObject* GetPlayer(unsigned int _dwID);
 	GameObject* GetPlayerByName(const char* _pszName);
-	GameObject* GetPlayerWithoutLock(DWORD _dwID);
+	GameObject* GetPlayerWithoutLock(unsigned int _dwID);
 	GameObject* GetPlayerWithoutLockInt(int _dwID);
 	bool InsertNPC(GameObject* _pNPC);
-	bool RemoveNPC(DWORD _dwID, bool _bDelete = true);
+	bool RemoveNPC(unsigned int _dwID, bool _bDelete = true);
 	bool InsertItem(GroundItem* _pItem, bool _bCopy = true);
-	bool RemoveItem(DWORD _dwItemUniqueID);
-	GroundItem* GetItem(DWORD _dwTag);
+	bool RemoveItem(unsigned int _dwItemUniqueID);
+	GroundItem* GetItem(unsigned int _dwTag);
 	GameObject* GetMonster(int _nAttribID);
 	int MoveSomeMonsterTo(int _nAttribID,int _nSum, int _x, int _y);
 
-	DWORD BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID = 0);
-	DWORD BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, DWORD _dwIgnoreID = 0);
+	unsigned int BroadcastPacket(ByteBuffer* _pBuf, unsigned int _dwIgnoreID = 0);
+	unsigned int BroadcastPacketRange(ByteBuffer* _pBuf, RECT& rcRange, unsigned int _dwIgnoreID = 0);
 
 	void OnPlayerEnterScene();
 	void OnPlayerLeaveScene(GameScene* _pNewScene);
@@ -156,8 +154,8 @@ public:
 	//	For broadcasting in a range
 	//DWORD BroadcastPacketRange(ByteBuffer* _pBuf, DWORD _dwIgnoreID = 0);
 	bool GetSceneData(HeroObject* _pObj);
-	bool GetRandomPosition(DWORD* _pOut);
-	bool GetDropPosition(WORD _wX, WORD _wY, DWORD* _pOut);
+	bool GetRandomPosition(unsigned int* _pOut);
+	bool GetDropPosition(unsigned short _wX, unsigned short _wY, unsigned int* _pOut);
 	//DWORD GetMapData(int _x, int _y);
 	MapCellInfo* GetMapData(int _x, int _y);
 	void UpdateObjectBlockInfo();
@@ -170,13 +168,13 @@ public:
 	bool CanDrop(int _x, int _y);
 	bool CanCross(int _sx, int _sy, int _dx, int _dy);
 
-	bool IsInCity(WORD _wPosX, WORD _wPosY);
-	inline WORD GetCityCenterX()			{return LOWORD(m_dwCityCenter);}
-	inline WORD GetCityCenterY()			{return HIWORD(m_dwCityCenter);}
-	inline WORD GetMapID()					{return m_dwMapID;}
-	inline WORD GetMapResID()				{return m_dwMapResID;}
+	bool IsInCity(unsigned short _wPosX, unsigned short _wPosY);
+	inline unsigned short GetCityCenterX()			{return LOWORD(m_dwCityCenter);}
+	inline unsigned short GetCityCenterY()			{return HIWORD(m_dwCityCenter);}
+	inline unsigned short GetMapID()					{return m_dwMapID;}
+	inline unsigned short GetMapResID()				{return m_dwMapResID;}
 	inline int GetMapIDInt()				{return m_dwMapID;}
-	inline DWORD GetMapUID()				{return m_dwMapUID;}
+	inline unsigned int GetMapUID()				{ return m_dwMapUID; }
 
 	inline int GetTimeLimitID()				{return m_nTimeLimitID;}
 	inline void SetTimeLimitID(int _id)		{m_nTimeLimitID = _id;}
@@ -299,7 +297,7 @@ public:
 	inline float GetMonsterAttackMulti()			{return m_fSceneMonsterAttackMulti;}
 	inline void SetMonsterAttackMulti(float _fMulti)	{m_fSceneMonsterAttackMulti = _fMulti;}
 
-	inline DWORD GetTimeCount()						{return GetTickCount();}
+	inline unsigned int GetTimeCount()						{ return GetTickCount(); }
 
 	void EraseTarget(GameObject* _pObj);
 
@@ -324,13 +322,13 @@ protected:
 	void ParseDelayInfo(SceneDelayMsg* _pMsg);
 
 public:
-	void ClearGroundItem(DWORD _dwExpire);
+	void ClearGroundItem(unsigned int _dwExpire);
 	void AutoGenerateMonster();
 	void AllMonsterHPToFull();
 public:
 	//	Not:Don't use those
 	bool RemoveMappedObject(int _x, int _y, void* _pData);
-	bool AddMappedObject(int _x, int _y,BYTE _type, void* _pData);
+	bool AddMappedObject(int _x, int _y,unsigned char _type, void* _pData);
 	bool MoveMappedObject(int _sx, int _sy, int _dx, int _dy, void* _pData);
 	void GetMapObjects(int _x, int _y, int _oft, GameObjectList& _xObjList);
 	int GetMappedObjects(int _x, int _y, int _ofx, int _ofy, GameObjectList& _refList, int _nTypeFlag = MAPPEDOBJECT_ALL);
@@ -351,22 +349,22 @@ protected:
 	//DWORD* m_pMapData;
 	MapCellInfo* m_pCellData;
 	MapInfo m_stMapInfo;
-	std::map<DWORD, GameObject*> m_xPlayers;
+	std::map<unsigned int, GameObject*> m_xPlayers;
 
 	std::list<GameObject*> m_xWaitRemovePlayers;
 	std::list<GameObject*> m_xWaitInsertPlayers;
 	std::list<GameObject*> m_xWaitDeletePlayers;
 
-	std::map<DWORD, GameObject*> m_xNPCs;
-	std::map<DWORD, GroundItem*> m_xItems;
+	std::map<unsigned int, GameObject*> m_xNPCs;
+	std::map<unsigned int, GroundItem*> m_xItems;
 	std::mutex m_csPlayer;
 
 	LuaServerEngine m_xScript;
-	DWORD m_dwExecuteScriptInterval;
-	DWORD m_dwMapID;
-	DWORD m_dwMapResID;
+	unsigned int m_dwExecuteScriptInterval;
+	unsigned int m_dwMapID;
+	unsigned int m_dwMapResID;
 
-	DWORD m_dwLoopTime;
+	unsigned int m_dwLoopTime;
 	//DWORD m_dwLastUpdateObjectBlockTime;
 
 	//	Delay send packet
@@ -377,19 +375,19 @@ protected:
 
 	//	static magic
 	STATICMAGICLIST m_xStaticMagic;
-	DWORD m_dwLastUpdateMagicTime;
+	unsigned int m_dwLastUpdateMagicTime;
 	//	door event
 	DOOREVENTLIST m_xDoorEvts;
 	DOORPOSITIONLIST m_xDoorPos;
 	//	monster generate controls
 	MONSTERGENERATEINFOLIST m_xMonsterGenerator;
-	DWORD m_dwLastGenerateMonsterTime;
+	unsigned int m_dwLastGenerateMonsterTime;
 	//	clean items
-	DWORD m_dwLastCleanItemTime;
+	unsigned int m_dwLastCleanItemTime;
 
 	//	City map info
 	RECT m_stCityRect;
-	DWORD m_dwCityCenter;
+	unsigned int m_dwCityCenter;
 
 	//	Log out and return to full HP?
 	bool m_bAutoReset;
@@ -404,15 +402,15 @@ protected:
 	bool m_bIsTreasureMap;
 	bool m_bGiveReward;
 	bool m_bKilledMonster;
-	DWORD m_dwTreasureTipTime;
-	DWORD m_dwTreasureGiveRewardTime;
+	unsigned int m_dwTreasureTipTime;
+	unsigned int m_dwTreasureGiveRewardTime;
 
 	bool m_bCanUseScroll;
 
 	bool m_bCanUseMove;
 
 	//	Unique map id
-	DWORD m_dwMapUID;
+	unsigned int m_dwMapUID;
 
 //#ifdef _FREELIST_
 	//	Msg queue
@@ -441,7 +439,7 @@ protected:
 	// 场景的极品掉落权重
 	WeightCalc m_xAdditionPointCalc;
 
-	DWORD m_dwInstanceMapFreeTime;
+	unsigned int m_dwInstanceMapFreeTime;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -468,10 +466,10 @@ public:
 
 	bool InsertPlayer(GameObject* _pObj);
 	bool InsertNPC(GameObject* _pObj);
-	bool RemovePlayer(DWORD _dwID);
+	bool RemovePlayer(unsigned int _dwID);
 
-	GameObject* GetPlayer(WORD _wMapID, DWORD _dwID);
-	GameObject* GetPlayer(DWORD _dwID);
+	GameObject* GetPlayer(unsigned short _wMapID, unsigned int _dwID);
+	GameObject* GetPlayer(unsigned int _dwID);
 	void GetPlayerByUid(int _nUid, GameObjectList& _refList);
 	GameObject* GetPlayerByName(const char* _pszName);
 
@@ -483,7 +481,7 @@ public:
 
 	void AllMonsterHPToFull();
 
-	void BroadcastPacketAllScene(ByteBuffer* _xBuf, DWORD _dwIgnore = 0);
+	void BroadcastPacketAllScene(ByteBuffer* _xBuf, unsigned int _dwIgnore = 0);
 
 	void SendRawSystemMessageAllScene(const char* _pszMsg);
 
@@ -491,55 +489,30 @@ public:
 
 	void SendSystemNotifyAllScene(const char* _pszMsg);
 
-	GameInstanceScene* GetFreeInstanceScene(int _id);
-
 	MapConfigManager& GetMapConfigManager()
 	{
 		return m_xMapConfigManager;
 	}
 	
 public:
-	GameScene* GetScene(DWORD _dwMapID);
+	GameScene* GetScene(unsigned int _dwMapID);
 	inline GameScene* GetSceneInt(int _nMapID)
 	{
 		return GetScene(_nMapID);
 	}
-	void Update(DWORD _dwTick);
-	// deprecate
-	inline const char* GetRunMap(int _id)
-	{
-		if(_id < 0 ||
-			_id >= m_xRunMapData.size())
-		{
-			return NULL;
-		}
-		return m_xRunMapData[_id].c_str();
-	}
-	const char* GetMapChName(int _id);
-	// deprecate
-	inline const char* GetInstanceMap(int _id)
-	{
-		INSTANCEMAPDATA::const_iterator fndIter = m_xInsMapData.find(_id);
-		if(fndIter != m_xInsMapData.end())
-		{
-			return fndIter->second.c_str();
-		}
+	void Update(unsigned int _dwTick);
 
-		return NULL;
-	}
+	const char* GetMapChName(int _id);
+
 	bool IsUserNameExist(const char* _pszName);
 
 	GameScene* CreateInstanceScene(int _nResID);
 
 protected:
 	GameScene* m_pScenes[MAX_SCENE_NUMBER];
-	DWORD m_dwLoadedMap;
-	RUNMAPDATA m_xRunMapData;
+	unsigned int m_dwLoadedMap;
 
-	INSTANCEMAPLIST m_xInsMaps;
-	INSTANCEMAPDATA m_xInsMapData;
-
-	DWORD m_dwLastNotifyPlayerCount;
+	unsigned int m_dwLastNotifyPlayerCount;
 	CSimpleIniA m_xIniMapName;
 
 	// dynamic create instance scenes
@@ -548,8 +521,8 @@ protected:
 	int m_nMaxInstanceScenesCount;
 
 	MapConfigManager m_xMapConfigManager;
-	DWORD m_dwFixedMapIDSeed;
-	DWORD m_dwInstanceMapIDSeed;
+	unsigned int m_dwFixedMapIDSeed;
+	unsigned int m_dwInstanceMapIDSeed;
 };
 
 //////////////////////////////////////////////////////////////////////////

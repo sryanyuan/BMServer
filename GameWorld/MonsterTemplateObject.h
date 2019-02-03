@@ -31,15 +31,15 @@ public:
 	//	will send to client,determine which special action
 	int m_nActionCode;
 	//	last execute time
-	DWORD m_dwLastExecuteTime;
+	unsigned int m_dwLastExecuteTime;
 	//	recover time , to stand state
-	DWORD m_dwRecoverTime;
+	unsigned int m_dwRecoverTime;
 	//	execute probability
 	int m_nProbability;
 	//	executable
 	bool m_bExecutable;
 	//	execute interval
-	DWORD m_dwExecuteInterval;
+	unsigned int m_dwExecuteInterval;
 };
 typedef std::vector<MonsLogicItem> MonsLogicList;
 
@@ -89,7 +89,7 @@ protected:
 protected:
 	MonsLogicList m_xMonsLogicList;
 	int m_nExecuteLogicIndex;
-	DWORD m_dwLastRecoverTime;
+	unsigned int m_dwLastRecoverTime;
 	ATTACK_MODE m_eAttackMode;
 };
 
@@ -147,7 +147,7 @@ public:
 	MoonWarLordMonster();
 
 public:
-	virtual DWORD GetAttackCostTime();
+	virtual unsigned int GetAttackCostTime();
 	virtual int GetRandomAbility(ABILITY_TYPE _type);
 	virtual void DoAction(unsigned int _dwTick);
 	virtual void AttackHero();
@@ -159,10 +159,10 @@ protected:
 	virtual void SelectAttackMode();
 
 protected:
-	DWORD m_dwLastDefenceTime;
-	DWORD m_dwLastFlyTime;
-	DWORD m_dwLastSummonTime;
-	DWORD m_dwLastAttackHeroTime;
+	unsigned int m_dwLastDefenceTime;
+	unsigned int m_dwLastFlyTime;
+	unsigned int m_dwLastSummonTime;
+	unsigned int m_dwLastAttackHeroTime;
 }; 
 //////////////////////////////////////////////////////////////////////////
 class YamaKingMonster : public MonsterTemplateObject
@@ -188,7 +188,7 @@ public:
 	void UpdateLogicProb();
 
 protected:
-	DWORD m_dwLastSummonTime;
+	unsigned int m_dwLastSummonTime;
 };
 //////////////////////////////////////////////////////////////////////////
 class FireDragonMonster : public MonsterTemplateObject
@@ -227,7 +227,7 @@ public:
 	bool ExtAttack0();
 
 private:
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastFlyTime;
 };
 //////////////////////////////////////////////////////////////////////////
 class DevilOldManMonster : public MonsterTemplateObject

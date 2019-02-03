@@ -7,8 +7,8 @@
 //////////////////////////////////////////////////////////////////////////
 struct SceneDelayMsg
 {
-	USHORT uOp;
-	DWORD dwDelayTime;
+	unsigned short uOp;
+	unsigned int dwDelayTime;
 	UINT uParam[6];
 };
 
@@ -19,12 +19,12 @@ typedef std::stack<SceneDelayMsg*> SceneDelayMsgStack;
 
 struct AttackMsg
 {
-	WORD wDamage;
-	DWORD dwInfo;
-	DWORD dwAttacker;
-	BYTE bType;
-	DWORD dwMasks;
-	DWORD dwActiveTime;
+	unsigned short wDamage;
+	unsigned int dwInfo;
+	unsigned int dwAttacker;
+	unsigned char bType;
+	unsigned int dwMasks;
+	unsigned int dwActiveTime;
 };
 
 typedef std::list<AttackMsg*> AttackMsgList;
@@ -54,8 +54,8 @@ public:
 	}
 
 public:
-	USHORT uOp;
-	DWORD dwActiveTime;
+	unsigned short uOp;
+	unsigned int dwActiveTime;
 };
 
 class DelayActionAttacked : public DelayActionBase
@@ -82,8 +82,8 @@ public:
 public:
 	int nDamage;
 	short nMgcId;
-	DWORD dwAttackerId;
-	DWORD dwAttackMask;
+	unsigned int dwAttackerId;
+	unsigned int dwAttackMask;
 };
 
 class DelayActionStruck : public DelayActionBase
@@ -159,8 +159,8 @@ public:
 	int nMapId;
 	int nMagicId;
 	int nMagicLevel;
-	WORD wMaxDC;
-	WORD wMinDC;
+	unsigned short wMaxDC;
+	unsigned short wMinDC;
 	short nPosX;
 	short nPosY;
 	int nContinueTime;

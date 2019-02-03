@@ -1,5 +1,3 @@
-//typedef unsigned int DWORD;
-//typedef unsigned short WORD;
 //void ConsolePrint(const char* _pszMsg);
 
 enum MapPkType
@@ -12,14 +10,14 @@ enum MapPkType
 
 class GameScene
 {
-	GameObject* GetPlayer(DWORD _dwID);
-	GameObject* GetPlayerWithoutLock(DWORD _dwID);
+	GameObject* GetPlayer(unsigned int _dwID);
+	GameObject* GetPlayerWithoutLock(unsigned int _dwID);
 	GameObject* GetPlayerWithoutLockInt(int _dwID);
-	GroundItem* GetItem(DWORD _dwTag);
+	GroundItem* GetItem(unsigned int _dwTag);
 
-	DWORD BroadcastPacket(ByteBuffer* _pBuf, DWORD _dwIgnoreID);
+	unsigned int BroadcastPacket(ByteBuffer* _pBuf, unsigned int _dwIgnoreID);
 	bool GetSceneData(HeroObject* _pObj);
-	bool GetRandomPosition(DWORD* _pOut);
+	bool GetRandomPosition(unsigned int* _pOut);
 	
 	void BroadcastChatMessage(std::string& _xMsg, unsigned int _dwExtra);
 	void BroadcastSceneSystemMessage(const char* _pszMsg);
@@ -65,7 +63,7 @@ class GameScene
 	
 	int GetMonsterSum(unsigned int _uID);
 	
-	DWORD GetTimeCount();
+	unsigned int GetTimeCount();
 	
 	void RegisterCallback(SceneEvent _eType, const char* _pszFuncName, int _nInterval);
 	
@@ -103,15 +101,15 @@ class GameSceneManager
 
 	bool InsertPlayer(GameObject* _pObj);
 	bool InsertNPC(GameObject* _pObj);
-	bool RemovePlayer(DWORD _dwID);
+	bool RemovePlayer(unsigned int _dwID);
 
-	GameObject* GetPlayer(WORD _wMapID, DWORD _dwID);
-	GameObject* GetPlayer(DWORD _dwID);
+	GameObject* GetPlayer(unsigned short _wMapID, unsigned int _dwID);
+	GameObject* GetPlayer(unsigned int _dwID);
 	
-	GameScene* GetScene(DWORD _dwMapID);
+	GameScene* GetScene(unsigned int _dwMapID);
 	GameScene* GetSceneInt(int _nMapID);
 	
-	GameInstanceScene* GetFreeInstanceScene(int _id);
+	//GameInstanceScene* GetFreeInstanceScene(int _id);
 	void SendSystemMessageAllScene(const char* _pszMsg);
 	void SendSystemNotifyAllScene(const char* _pszMsg);
 	

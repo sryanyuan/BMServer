@@ -4,7 +4,6 @@
 #include "ObjectEngine.h"
 #include "Struct.h"
 #include <map>
-#include "../../CommonModule/osapi.h"
 #include <mutex>
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/cron/CronSchedule.h"
@@ -86,9 +85,9 @@ enum BUFFER_OPERATE
 struct BlackListItem
 {
 	std::string xName;
-	BYTE bJob;
+	unsigned char bJob;
 	int nLevel;
-	BYTE bSex;
+	unsigned char bSex;
 };
 
 typedef std::list<BlackListItem> BlackList;
@@ -115,8 +114,6 @@ public:
 	//	timer process
 	unsigned int WorldRun();
 	unsigned int ProcessThreadMsg();
-	//	world control
-	void Initialize(const char* _pszDestFile = NULL);
 	int Init();
 	unsigned int Run();
 	void Stop()
@@ -208,8 +205,8 @@ public:
 	//	Broadcast msg
 	unsigned int Broadcast(ByteBuffer* _pBuf);
 	unsigned int BroadcastExcept(GameObject* _pObj, ByteBuffer* _pBuf);
-	unsigned int BroadcastRange(ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX = 10, DWORD _dwOftY = 10);
-	unsigned int BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX = 10, DWORD _dwOftY = 10);
+	unsigned int BroadcastRange(ByteBuffer* _pBuf, unsigned int _dwSrcX, unsigned int _dwSrcY, unsigned int _dwOftX = 10, unsigned int _dwOftY = 10);
+	unsigned int BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBuf, unsigned int _dwSrcX, unsigned int _dwSrcY, unsigned int _dwOftX = 10, unsigned int _dwOftY = 10);
 
 	//	script function
 	/*inline ScriptEngine* GetScript()
@@ -230,7 +227,6 @@ public:
 	}
 	bool LoadScript();
 	bool ReloadScript();
-	bool LoadBlackList();
 
 	inline const char* GetRankListData()
 	{
@@ -256,9 +252,9 @@ public:
 
 public:
 	//	working process
-	void DoWork_Objects(DWORD _dwTick);
-	void DoWork_System(DWORD _dwTick);
-	void DoWork_DelayedProcess(DWORD _dwTick);
+	void DoWork_Objects(unsigned int _dwTick);
+	void DoWork_System(unsigned int _dwTick);
+	void DoWork_DelayedProcess(unsigned int _dwTick);
 	unsigned int Thread_ProcessMessage(const MSG* _pMsg);
 
 private:
@@ -320,12 +316,12 @@ public:
 	inline void SetMagicDropFireworkUserName(const char* _pszUserName){
 		m_xMagicDropFireworkUserName = _pszUserName;
 	}
-	inline DWORD GetExpFireworkTime()				{return m_dwLastExpFireworkTime;}
-	inline void SetExpFireworkTime(DWORD _dwTime)	{m_dwLastExpFireworkTime = _dwTime;}
-	inline DWORD GetBurstFireworkTime()				{return m_dwLastBurstFireworkTime;}
-	inline void SetBurstFireworkTime(DWORD _dwTime)	{m_dwLastBurstFireworkTime = _dwTime;}
-	inline DWORD GetMagicDropFireworkTime()			{return m_dwLastMagicDropFireworkTime;}
-	inline void SetMagicDropFireworkTime(DWORD _dwTime)	{m_dwLastMagicDropFireworkTime = _dwTime;}
+	inline unsigned int GetExpFireworkTime()				{ return m_dwLastExpFireworkTime; }
+	inline void SetExpFireworkTime(unsigned int _dwTime)	{ m_dwLastExpFireworkTime = _dwTime; }
+	inline unsigned int GetBurstFireworkTime()				{ return m_dwLastBurstFireworkTime; }
+	inline void SetBurstFireworkTime(unsigned int _dwTime)	{ m_dwLastBurstFireworkTime = _dwTime; }
+	inline unsigned int GetMagicDropFireworkTime()			{ return m_dwLastMagicDropFireworkTime; }
+	inline void SetMagicDropFireworkTime(unsigned int _dwTime)	{ m_dwLastMagicDropFireworkTime = _dwTime; }
 
 	inline int GetDifficultyLevel()					{return m_nDifficultyLevel;}
 	inline void SetDifficultyLevel(int _nLevel)		{m_nDifficultyLevel = _nLevel;}
@@ -341,9 +337,9 @@ private:
 	ObjectMap m_xPlayers;
 
 	//	For working thread
-	DWORD m_dwThreadID;
+	unsigned int m_dwThreadID;
 	HANDLE m_hThread;
-	DWORD m_dwWorkTotalTime;
+	unsigned int m_dwWorkTotalTime;
 
 	//	delayed command buffer
 	ByteBuffer m_xProcessD;
@@ -363,7 +359,7 @@ private:
 
 	BlackList m_xBlackList;
 	//	Last receive watcher msg time
-	DWORD m_dwLastRecWatcherMsgTime;
+	unsigned int m_dwLastRecWatcherMsgTime;
 
 	bool m_bGenElitMons;
 	bool m_bEnableOfflineSell;
@@ -375,20 +371,20 @@ private:
 	char* m_pRankListData;
 
 	//	放烟花产生的状态
-	DWORD m_dwLastExpFireworkTime;
+	unsigned int m_dwLastExpFireworkTime;
 	std::string m_xExpFireworkUserName;
 	int m_nExpFireworkUID;
 
-	DWORD m_dwLastBurstFireworkTime;
+	unsigned int m_dwLastBurstFireworkTime;
 	std::string m_xBurstFireworkUserName;
 	int m_nBurstFireworkUID;
 
-	DWORD m_dwLastMagicDropFireworkTime;
+	unsigned int m_dwLastMagicDropFireworkTime;
 	std::string m_xMagicDropFireworkUserName;
 	int m_nMagicDropFireworkUID;
 
 	//	更新脚本引擎的时间
-	DWORD m_dwLastUpdateScriptEngineTime;
+	unsigned int m_dwLastUpdateScriptEngineTime;
 
 	//	游戏难度
 	int m_nDifficultyLevel;

@@ -7,7 +7,7 @@ struct LoginQueryInfo
 {
 	char szName[20];
 	bool bExists;
-	DWORD dwConnID;
+	unsigned int dwConnID;
 };
 //////////////////////////////////////////////////////////////////////////
 #endif

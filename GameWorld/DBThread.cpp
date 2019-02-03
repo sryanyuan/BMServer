@@ -1,14 +1,13 @@
 #include "DBThread.h"
 #include "../common/glog.h"
 #include <process.h>
-#include <Shlwapi.h>
 #include "../../CommonModule/ObjectData.h"
 #include "../GameWorld/GameWorld.h"
 #include "../GameWorld/GameSceneManager.h"
 #include "../GameWorld/ExceptionHandler.h"
 #include "../../CommonModule/version.h"
 #include "DBDropDownContext.h"
-#include "../Helper.h"
+#include "../CMainServer/CMainServer.h"
 //////////////////////////////////////////////////////////////////////////
 const int g_nOpQueryItemAttrib = DO_QUERY_ITEMATTRIB;
 USHORT g_nItemPrice[ITEM_ID_MAX];
@@ -48,7 +47,7 @@ unsigned int DBThread::Run()
 	char szBuf[MAX_PATH];
 #ifdef _DEBUG
 	sprintf(szBuf, "%s\\Script\\",
-		GetRootPath());
+		CMainServer::GetInstance()->GetRootPath());
 	m_xScript.SetModulePath(szBuf, LOADMODE_PATH);
 	m_xScript.SetLuaLoadPath(szBuf);
 #else
@@ -648,11 +647,19 @@ bool DBThread::ConnectDB(const char* _pszDBName)
 #ifdef _DEBUG
 			LOG(INFO) << "The database [" << _pszDBName << "] was opened";
 #endif
-			strcpy(m_stSql[nAvailableIndex].szName, ::PathFindFileName(_pszDBName));
-//#ifdef NDEBUG
+			int nLastPos = strlen(_pszDBName);
+			for (int i = nLastPos; nLastPos >= 0; i--) {
+				if (_pszDBName[i] == '\\' ||
+					_pszDBName[i] == '/') {
+					nLastPos = i + 1;
+					break;
+				}
+			}
+			strcpy(m_stSql[nAvailableIndex].szName, &_pszDBName[nLastPos]);
+
 			if(nAvailableIndex == SQL_ITEMATTRIB)
 			{
-				DWORD dwPsw[2];
+				unsigned int dwPsw[2];
 				char* pWrt = (char*)dwPsw;
 				pWrt[5] = 0;
 				pWrt[4] = 'G';
@@ -834,13 +841,13 @@ unsigned int __stdcall DBThread::WorkThread(void* _pData)
 	return uRet;
 }
 
-void DBThread::LoadAndAddPlayerItemAttrib(ItemAttrib *_pItem, WORD _dwItemID, DWORD _dwUse, HeroObject *_pPlayer)
+void DBThread::LoadAndAddPlayerItemAttrib(ItemAttrib *_pItem, unsigned short _dwItemID, unsigned int _dwUse, HeroObject *_pPlayer)
 {
 	DBOperationParam* pParam = new DBOperationParam;
 	pParam->dwOperation = DO_QUERY_ITEMATTRIB;
-	pParam->dwParam[0] = (DWORD)_pItem;
+	pParam->dwParam[0] = (unsigned int)_pItem;
 	pParam->dwParam[1] = MAKELONG(_dwUse, _dwItemID);
-	pParam->dwParam[2] = (DWORD)_pPlayer;
+	pParam->dwParam[2] = (unsigned int)_pPlayer;
 	AsynExecute(pParam);
 }
 
@@ -1384,9 +1391,9 @@ bool DBThread::UpgradeAttrib(ItemAttrib* _pItem, int _index, int _value)
 
 		if(_pItem->level != 0)
 		{
-			BYTE bLow = LOBYTE(_pItem->level);
-			BYTE bHigh = HIBYTE(_pItem->level);
-			BYTE bKey = GetItemMakeMask(bHigh);
+			unsigned char bLow = LOBYTE(_pItem->level);
+			unsigned char bHigh = HIBYTE(_pItem->level);
+			unsigned char bKey = GetItemMakeMask(bHigh);
 			nValue = GetMakeMaskValue(bKey);
 			nPreAdd = bLow - nValue;
 		}
@@ -1633,8 +1640,8 @@ int DBCALLBACK DBThread::DBItemVerifyCallback(void* _pParam,int _nCount, char** 
 		}
 		else
 		{
-			BYTE bLow = LOBYTE(pCheckItem->level);
-			BYTE bHigh = HIBYTE(pCheckItem->level);
+			unsigned char bLow = LOBYTE(pCheckItem->level);
+			unsigned char bHigh = HIBYTE(pCheckItem->level);
 
 			if(bHigh == 0 &&
 				bLow == 0)
@@ -1670,17 +1677,17 @@ int DBCALLBACK DBThread::DBItemVerifyCallback(void* _pParam,int _nCount, char** 
 				{
 					//	1.153 has low level flag but has no high level flag, just recreate the level flag
 					int nRandom = rand() % 254 + 1;
-					BYTE bTag = nRandom;
-					BYTE bKey = GetItemMakeMask(bTag);
+					unsigned char bTag = nRandom;
+					unsigned char bKey = GetItemMakeMask(bTag);
 					int nValue = GetMakeMaskValue(bKey);
 					bLow += nValue;
-					WORD wLevel = MAKEWORD(bLow, bTag);
+					unsigned short wLevel = MAKEWORD(bLow, bTag);
 					pCheckItem->level = wLevel;
 				}
 			}
 			else
 			{
-				BYTE bKey = GetItemMakeMask(bHigh);
+				unsigned char bKey = GetItemMakeMask(bHigh);
 				int nValue = GetMakeMaskValue(bKey);
 				if((int)bLow - nValue < 0)
 				{
@@ -1884,8 +1891,8 @@ int DBCALLBACK DBThread::DBItemVerifySimpleCallback(void* _pParam,int _nCount, c
 		}
 		else
 		{
-			BYTE bLow = LOBYTE(pCheckItem->level);
-			BYTE bHigh = HIBYTE(pCheckItem->level);
+			unsigned char bLow = LOBYTE(pCheckItem->level);
+			unsigned char bHigh = HIBYTE(pCheckItem->level);
 
 			if(bHigh == 0 &&
 				bLow == 0)
@@ -1895,7 +1902,7 @@ int DBCALLBACK DBThread::DBItemVerifySimpleCallback(void* _pParam,int _nCount, c
 			}
 			else
 			{
-				BYTE bKey = GetItemMakeMask(bHigh);
+				unsigned char bKey = GetItemMakeMask(bHigh);
 				int nValue = GetMakeMaskValue(bKey);
 				if((int)bLow - nValue < 0)
 				{
@@ -2125,7 +2132,7 @@ int DBCALLBACK DBThread::DBDropItemExCallback(void* _pParam,int _nCount, char** 
 	}
 
 	float fProbMulti = 1.0f;
-	BYTE bMonsType = LOWORD(pParam->dwParam[3]);
+	unsigned char bMonsType = LOWORD(pParam->dwParam[3]);
 
 	if(bMonsType == 1)
 	{
@@ -2275,8 +2282,8 @@ int DBCALLBACK DBThread::DBDropItemExCallback(void* _pParam,int _nCount, char** 
 	int nPosY = 0;
 	bool bCanDrop = true;
 	int nWhileCounter = 0;
-	WORD wPosX = LOWORD(pParam->dwParam[1]);
-	WORD wPosY = HIWORD(pParam->dwParam[1]);
+	unsigned short wPosX = LOWORD(pParam->dwParam[1]);
+	unsigned short wPosY = HIWORD(pParam->dwParam[1]);
 	GameScene* pScene = GameSceneManager::GetInstance()->GetScene(HIWORD(pParam->dwParam[3]));
 
 	if(!pDropItems->empty())
@@ -2380,7 +2387,7 @@ int DBCALLBACK DBThread::DBDropItemExCallback_Lua(void* _pParam,int _nCount, cha
 	}
 
 	float fProbMulti = 1.0f;
-	BYTE bMonsType = LOWORD(pParam->dwParam[3]);
+	unsigned char bMonsType = LOWORD(pParam->dwParam[3]);
 
 	if(bMonsType == 1)
 	{
@@ -2446,8 +2453,8 @@ int DBCALLBACK DBThread::DBDropItemExCallback_Lua(void* _pParam,int _nCount, cha
 	bool bCanDrop = true;
 	int nWhileCounter = 0;
 	int nDropItemIndex = 0;
-	WORD wPosX = LOWORD(pParam->dwParam[1]);
-	WORD wPosY = HIWORD(pParam->dwParam[1]);
+	unsigned short wPosX = LOWORD(pParam->dwParam[1]);
+	unsigned short wPosY = HIWORD(pParam->dwParam[1]);
 	GameScene* pScene = GameSceneManager::GetInstance()->GetScene(HIWORD(pParam->dwParam[3]));
 
 	//	这里lua内保存了一份掉落表

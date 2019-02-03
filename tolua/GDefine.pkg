@@ -1,19 +1,12 @@
 struct UserData
 {
 	ItemAttrib stAttrib;
-	WORD wCoordX;
-	WORD wCoordY;
-	WORD wMapID;
+	unsigned short wCoordX;
+	unsigned short wCoordY;
+	unsigned short wMapID;
 	USER_STATE eServerState;
 	OBJECT_STATE eGameState;
 	int nDrt;
-
-	//	Timer
-	//DWORD dwLastWalkTime;
-	//DWORD dwWalkInterval;
-
-	//DWORD dwLastRunTime;
-	//DWORD dwRunInterval;
 };
 
 struct ItemAttrib

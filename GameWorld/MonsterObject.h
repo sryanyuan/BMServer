@@ -13,7 +13,7 @@ public:
 public:
 	virtual void DoWork(unsigned int _dwTick);
 	virtual void DoAction(unsigned int _dwTick);
-	virtual void UpdateStatus(DWORD _dwCurTick);
+	virtual void UpdateStatus(unsigned int _dwCurTick);
 
 	virtual int ReceiveDamage(GameObject* _pAttacker, bool _bMgcAtk, int _oriDC = 0, int _nDelay = 350, const ReceiveDamageInfo* _pInfo = NULL);
 	virtual void ReceiveHeroDamage(GameObject* _pAttacker, int _nDamage, int _delay);
@@ -51,7 +51,7 @@ public:
 
 	inline USHORT GetAttackInterval()
 	{
-		DWORD dwInterval = GetObject_MaxMC();
+		unsigned int dwInterval = GetObject_MaxMC();
 		if(IsFrozen())
 		{
 			dwInterval += 600;
@@ -60,7 +60,7 @@ public:
 	}
 	inline USHORT GetWalkInterval()
 	{
-		DWORD dwInterval = GetObject_MC();
+		unsigned int dwInterval = GetObject_MC();
 		if(IsFrozen())
 		{
 			dwInterval += 600;
@@ -84,10 +84,10 @@ public:
 	virtual int GetRandomAbility(ABILITY_TYPE _type);
 
 	//	If the monster has master, it can upgrade itself
-	inline void SetInitLevel(int _nLv)				{WORD wLo = LOBYTE(GetObject_MaxAC());SetObject_MaxAC(MAKEWORD(wLo, _nLv));}
+	inline void SetInitLevel(int _nLv)				{unsigned short wLo = LOBYTE(GetObject_MaxAC());SetObject_MaxAC(MAKEWORD(wLo, _nLv));}
 	inline int GetInitLevel()						{return HIBYTE(GetObject_MaxAC());}
 	inline int GetUpgradeLevel()					{return LOBYTE(GetObject_MaxAC());}
-	inline void SetUpgradeLevel(int _nLv)			{WORD wHg = HIBYTE(GetObject_MaxAC());SetObject_MaxAC(MAKEWORD(_nLv, wHg));}
+	inline void SetUpgradeLevel(int _nLv)			{unsigned short wHg = HIBYTE(GetObject_MaxAC());SetObject_MaxAC(MAKEWORD(_nLv, wHg));}
 	inline int GetSlaveExpr()						{return GetObject_MaxMAC();}
 	inline void SetSlaveExpr(int _nExpr)			{SetObject_MaxMAC(_nExpr);}
 	bool AddSlaveExpr(int _nExpr);
@@ -135,8 +135,8 @@ public:
 	void DropMonsterItems(HeroObject* _pHero);
 
 public:
-	virtual DWORD GetWalkCostTime();
-	virtual DWORD GetAttackCostTime();
+	virtual unsigned int GetWalkCostTime();
+	virtual unsigned int GetAttackCostTime();
 
 public:
 	//
@@ -156,8 +156,8 @@ protected:
 	//DWORD m_dwCurrentTime;
 	GameObject* m_pTarget;
 
-	DWORD m_dwAttackCost;
-	DWORD m_dwWalkCost;
+	unsigned int m_dwAttackCost;
+	unsigned int m_dwWalkCost;
 
 	GameObject* m_pMaster;
 
@@ -204,8 +204,8 @@ public:
 
 protected:
 	bool m_bInGround;
-	DWORD m_dwLastAppearTime;
-	DWORD m_dwLastGroundTime;
+	unsigned int m_dwLastAppearTime;
+	unsigned int m_dwLastGroundTime;
 };
 
 //	…Ò ﬁ
@@ -256,7 +256,7 @@ public:
 	virtual int GetRandomAbility(ABILITY_TYPE _type);
 
 private:
-	DWORD m_dwLastShowTime;
+	unsigned int m_dwLastShowTime;
 };
 
 //	Œ÷¬ÍΩÃ÷˜
@@ -271,8 +271,8 @@ public:
 	virtual bool AttackTarget();
 
 protected:
-	DWORD m_dwLastSummonTime;
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastSummonTime;
+	unsigned int m_dwLastFlyTime;
 	bool m_bUpdateAttrib;
 };
 
@@ -287,8 +287,8 @@ public:
 	virtual void MonsterLogic();
 
 protected:
-	DWORD m_dwLastSummonTime;
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastSummonTime;
+	unsigned int m_dwLastFlyTime;
 	bool m_bUpdateAttrib;
 };
 
@@ -327,7 +327,7 @@ public:
 
 private:
 	MonsterObject* m_pBoss;
-	DWORD m_dwLastSearchBossTime;
+	unsigned int m_dwLastSearchBossTime;
 };
 
 //	MoLong king
@@ -342,8 +342,8 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSummonTime;
-	DWORD m_dwFlyTime;
+	unsigned int m_dwLastSummonTime;
+	unsigned int m_dwFlyTime;
 	bool m_bUpdateAttrib;
 };
 
@@ -359,7 +359,7 @@ public:
 	virtual bool CanAttack();
 
 private:
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 };
 
 //	FlyStatueMonster
@@ -374,8 +374,8 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwLastActualAttackTime;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwLastActualAttackTime;
 	int m_nAttackMode;
 };
 
@@ -392,10 +392,10 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSpellTime1;
-	DWORD m_dwLastSpellTime2;
+	unsigned int m_dwLastSpellTime1;
+	unsigned int m_dwLastSpellTime2;
 	int m_nAttackMode;
-	DWORD m_dwLastActualAttackTime;
+	unsigned int m_dwLastActualAttackTime;
 };
 
 //	FlameDCMonster
@@ -411,7 +411,7 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 	int m_nAttackMode;
 };
 
@@ -428,7 +428,7 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 	int m_nAttackMode;
 };
 
@@ -443,7 +443,7 @@ public:
 	virtual bool AttackTarget();
 
 private:
-	DWORD m_dwLastSummonTime;
+	unsigned int m_dwLastSummonTime;
 };
 
 //	explode spider
@@ -484,7 +484,7 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 };
 
 //	Ice guard
@@ -495,7 +495,7 @@ public:
 	virtual ~IceGuardMonster();
 
 public:
-	virtual DWORD GetAttackCostTime();
+	virtual unsigned int GetAttackCostTime();
 	virtual bool CanAttack();
 	virtual void DoAction(unsigned int _dwTick);
 	virtual bool AttackTarget();
@@ -506,7 +506,7 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 };
 
 //	Ice King of war
@@ -528,9 +528,9 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwLastSpellTime2;
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime2;
+	unsigned int m_dwLastFlyTime;
 };
 
 //	Ice king
@@ -553,9 +553,9 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwLastSpellTime2;
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime2;
+	unsigned int m_dwLastFlyTime;
 };
 
 //	Ice Savage
@@ -577,8 +577,8 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwLastSpellTime2;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime2;
 };
 
 //	Ice Defender
@@ -599,7 +599,7 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 };
 
 //	Yama Watcher Monster
@@ -622,7 +622,7 @@ private:
 
 private:
 	int m_nAttackMode;
-	DWORD m_dwLastFlyTime;
+	unsigned int m_dwLastFlyTime;
 };
 
 //	Blue ghast monster
@@ -654,7 +654,7 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastSpellTime;
+	unsigned int m_dwLastSpellTime;
 };
 
 //	BehemothDevourerMonster
@@ -679,10 +679,10 @@ private:
 
 protected:
 	int m_nAttackMode;
-	DWORD m_dwLastActualAttackTime;
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwLastSpeAtk2;
-	DWORD m_dwLastSpeAtk3;
+	unsigned int m_dwLastActualAttackTime;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwLastSpeAtk2;
+	unsigned int m_dwLastSpeAtk3;
 };
 
 //	BowMan

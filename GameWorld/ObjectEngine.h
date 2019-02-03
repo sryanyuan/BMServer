@@ -1,7 +1,6 @@
 #ifndef _INC_OBJECTENGINE_
 #define _INC_OBJECTENGINE_
 //////////////////////////////////////////////////////////////////////////
-#include "../../CommonModule/osapi.h"
 #include "../../CommonModule/ByteBuffer.h"
 #include "../../CommonModule/GamePacket.h"
 #include "../../CommonModule/ObjectData.h"
@@ -16,6 +15,7 @@
 #include "../../CommonModule/ConsoleHelper.h"
 #include "../../CommonModule/RandGenerator.h"
 #include "../../CommonModule/StoveManager.h"
+#include "../../CommonModule/StateController.h"
 #include "FreeListManager.h"
 #include <google/protobuf/message.h>
 #include <mutex>
@@ -67,10 +67,10 @@ extern const int g_nMoveOft[16];
 #endif
 
 #define IMPLEMENT_RANDOM_ABILITY(NAME)\
-	WORD GetRandom##NAME()\
+	unsigned short GetRandom##NAME()\
 	{\
-		WORD wMin = m_stAbli.w##NAME;\
-		WORD wMax = m_stAbli.wMax##NAME;\
+		unsigned short wMin = m_stAbli.w##NAME;\
+		unsigned short wMax = m_stAbli.wMax##NAME;\
 		if(wMin > wMax)\
 		{\
 			std::swap(wMin, wMax);\
@@ -80,7 +80,7 @@ extern const int g_nMoveOft[16];
 		{\
 			return 0;\
 		}\
-		return (WORD)nVar;\
+		return (unsigned int)nVar;\
 	}
 
 template<typename T>
@@ -133,29 +133,21 @@ T GetRandomIn(T _x, T _y)
 #define PVP_FACTOR_NORMAL					4
 #define PVP_FACTOR_MAGIC					5
 //////////////////////////////////////////////////////////////////////////
-
-// enum USER_STATE
-// {
-// 	US_NOTHING,
-// 	US_LOGIN,
-// 	US_PLAY,
-// };
-//////////////////////////////////////////////////////////////////////////
 struct MagicInfo
 {
-	WORD wID;
-	WORD wLevel[7];
-	BYTE bJob;
-	BYTE bMultiple;
-	WORD wIncrease;
-	BYTE bBaseCost;
-	DWORD dwDelay;
+	unsigned int wID;
+	unsigned short wLevel[7];
+	unsigned char bJob;
+	unsigned char bMultiple;
+	unsigned short wIncrease;
+	unsigned char bBaseCost;
+	unsigned int dwDelay;
 };
 
 struct UserMagic
 {
 	const MagicInfo* pInfo;
-	BYTE bLevel;
+	unsigned char bLevel;
 };
 
 typedef std::vector<UserMagic> USERMAGICVECTOR;
@@ -235,8 +227,8 @@ public:
 	inline unsigned int GetID()						{return m_uID;}
 	inline SERVER_OBJECT_TYPE	GetType()					{return m_eType;}
 	inline ItemAttrib* GetAttrib()					{return &m_stData.stAttrib;}
-	inline WORD GetMapID()							{return m_stData.wMapID;}
-	inline void SetMapID(WORD _wMapID)				{m_stData.wMapID = _wMapID;}
+	inline unsigned short GetMapID()							{return m_stData.wMapID;}
+	inline void SetMapID(unsigned short _wMapID)				{m_stData.wMapID = _wMapID;}
 	inline UserData* GetUserData()					{return &m_stData;}
 	inline int GetAttribID()						{return GetObject_ID();}
 	inline int GetLevel()							{return GetObject_Level();}
@@ -244,13 +236,13 @@ public:
 	inline void SetStoneRestore(bool _b)			{m_bStoneRestore = _b;}
 	inline int GetState()							{return (int)m_stData.eGameState;}
 
-	inline void SetValidPositon(WORD _wX, WORD _wY)		{m_wLastValidPositionX = _wX;m_wLastValidPositionY = _wY;}
-	inline WORD GetValidPositionX()						{return m_wLastValidPositionX;}
-	inline WORD GetValidPositionY()						{return m_wLastValidPositionY;}
-	inline void SetDefectTime(DWORD _dwTime)							{m_dwDefectTime = _dwTime;}
+	inline void SetValidPositon(unsigned short _wX, unsigned short _wY)		{m_wLastValidPositionX = _wX;m_wLastValidPositionY = _wY;}
+	inline unsigned short GetValidPositionX()						{return m_wLastValidPositionX;}
+	inline unsigned short GetValidPositionY()						{return m_wLastValidPositionY;}
+	inline void SetDefectTime(unsigned int _dwTime)							{m_dwDefectTime = _dwTime;}
 
-	inline WORD GetCoordX()							{return m_stData.wCoordX;}
-	inline WORD GetCoordY()							{return m_stData.wCoordY;}
+	inline unsigned short GetCoordX()							{return m_stData.wCoordX;}
+	inline unsigned short GetCoordY()							{return m_stData.wCoordY;}
 
 	GameScene* GetLocateScene();
 
@@ -261,8 +253,8 @@ public:
 //	IMPLEMENT_RANDOM_ABILITY(SC);
 //	IMPLEMENT_RANDOM_ABILITY(MC);
 //	IMPLEMENT_RANDOM_ABILITY(MAC);
-	inline DWORD GetLastAttackTime()				{return m_dwLastAttackTime;}
-	inline void SetLastAttackTime(DWORD _dwTime)	{m_dwLastAttackTime = _dwTime;}
+	inline unsigned int GetLastAttackTime()				{return m_dwLastAttackTime;}
+	inline void SetLastAttackTime(unsigned int _dwTime)	{m_dwLastAttackTime = _dwTime;}
 
 	//	just export to lua
 	inline int GetCoordXInt()						{return (int)m_stData.wCoordX;}
@@ -280,10 +272,10 @@ public:
 	void ClearDelayAction();
 
 public:
-	bool IncHP(DWORD _dwHP);
-	bool DecHP(DWORD _dwHP);
-	bool IncMP(DWORD _dwMP);
-	bool DecMP(DWORD _dwMP);
+	bool IncHP(unsigned int _dwHP);
+	bool DecHP(unsigned int _dwHP);
+	bool IncMP(unsigned int _dwMP);
+	bool DecMP(unsigned int _dwMP);
 	void SyncHP(HeroObject* _pHero);
 	void SyncMP(HeroObject* _pHero);
 
@@ -347,9 +339,9 @@ public:
 	bool AddDrugState(int _total, int _type);
 	bool AddHealState(int _total);
 	bool AddEnergyShieldState(int _total, int _step);
-	virtual void UpdateStatus(DWORD _dwCurTick);
-	virtual void SetEffStatus(DWORD _effMask, DWORD _time, DWORD _param);
-	void ResetEffStatus(DWORD _effMask);
+	virtual void UpdateStatus(unsigned int _dwCurTick);
+	virtual void SetEffStatus(unsigned int _effMask, unsigned int _time, unsigned int _param);
+	void ResetEffStatus(unsigned int _effMask);
 
 	inline bool IsHide()								{return TEST_FLAG_BOOL(m_dwHumEffFlag, MMASK_HIDE);}
 	inline bool IsFrozen()								{return TEST_FLAG_BOOL(m_dwHumEffFlag, MMASK_ICE);}
@@ -358,8 +350,8 @@ public:
 	inline bool IsLeader()								{return TEST_FLAG_BOOL(GetObject_MaxExpr(), MAXEXPR_MASK_LEADER);}
 	inline bool IsBoss()								{return TEST_FLAG_BOOL(GetObject_MaxExpr(), MAXEXPR_MASK_BOSS);}
 
-	inline DWORD GetHumEffFlag()						{return m_dwHumEffFlag;}
-	inline DWORD GetHumEffTime(int _nIndex)
+	inline unsigned int GetHumEffFlag()						{return m_dwHumEffFlag;}
+	inline unsigned int GetHumEffTime(int _nIndex)
 	{
 		if(_nIndex < 0 ||
 			_nIndex >= MMASK_SERVER_TOTAL)
@@ -374,16 +366,16 @@ protected:
 	//	唯一ID
 	unsigned int m_uID;
 
-	DWORD m_dwLastExeTime;
-	DWORD m_dwTotalExeTime;
+	unsigned int m_dwLastExeTime;
+	unsigned int m_dwTotalExeTime;
 
 	SERVER_OBJECT_TYPE m_eType;
 	//ObjectAbility m_stAbli;
 
 	//	time counter
-	DWORD m_dwLastMoveTime;
-	DWORD m_dwLastAttackTime;
-	DWORD m_dwLastDeathTime;
+	unsigned int m_dwLastMoveTime;
+	unsigned int m_dwLastAttackTime;
+	unsigned int m_dwLastDeathTime;
 
 	UserData m_stData;
 
@@ -391,47 +383,47 @@ protected:
 	ByteBuffer m_xMsgQueue;
 
 	//	Timer counter
-	DWORD m_dwLastWalkTime;
-	DWORD m_dwWalkInterval;
+	unsigned int m_dwLastWalkTime;
+	unsigned int m_dwWalkInterval;
 	//DWORD m_dwLastAttackTime;
-	DWORD m_dwLastStruckTime;
-	DWORD m_dwLastDeadTime;
-	DWORD m_dwLastSearchTime;
+	unsigned int m_dwLastStruckTime;
+	unsigned int m_dwLastDeadTime;
+	unsigned int m_dwLastSearchTime;
 
-	DWORD m_dwLastRunTime;
-	DWORD m_dwRunInterval;
+	unsigned int m_dwLastRunTime;
+	unsigned int m_dwRunInterval;
 
-	DWORD m_dwCurrentTime;
+	unsigned int m_dwCurrentTime;
 
 
-	WORD m_wLastValidPositionX;
-	WORD m_wLastValidPositionY;
+	unsigned short m_wLastValidPositionX;
+	unsigned short m_wLastValidPositionY;
 
 	//	magic effect,such as poison
-	DWORD m_dwHumEffFlag;
-	DWORD m_dwHumEffTime[MMASK_SERVER_TOTAL];
+	unsigned int m_dwHumEffFlag;
+	unsigned int m_dwHumEffTime[MMASK_SERVER_TOTAL];
 
 	//	drug
 	//	supply
-	DWORD m_dwSupply[HP_SUPPLY_NUMBER + MP_SUPPLY_NUMBER];
-	DWORD m_dwHealSupply[HP_SUPPLY_NUMBER];
-	DWORD m_dwEnergyShieldSupply[HP_SUPPLY_NUMBER];
-	DWORD m_dwLastIncHPTime;
-	DWORD m_dwLastHealIncHPTime;
-	DWORD m_dwLastIncMPTime;
+	unsigned int m_dwSupply[HP_SUPPLY_NUMBER + MP_SUPPLY_NUMBER];
+	unsigned int m_dwHealSupply[HP_SUPPLY_NUMBER];
+	unsigned int m_dwEnergyShieldSupply[HP_SUPPLY_NUMBER];
+	unsigned int m_dwLastIncHPTime;
+	unsigned int m_dwLastHealIncHPTime;
+	unsigned int m_dwLastIncMPTime;
 	//	defence of the MEFF_CHARMAC skill
-	DWORD m_dwACInrease;
+	unsigned int m_dwACInrease;
 	//	poison per second damage
-	DWORD m_dwPoison;
-	DWORD m_dwLastUpdatePoisonTime;
+	unsigned int m_dwPoison;
+	unsigned int m_dwLastUpdatePoisonTime;
 	//	Auto add hp mp
-	DWORD m_dwLastAddHpMpTime;
+	unsigned int m_dwLastAddHpMpTime;
 	//	time to defect master
-	DWORD m_dwDefectTime;
+	unsigned int m_dwDefectTime;
 
 	//	IsValid?
 	ObjectValid* m_pValid;
-	DWORD m_dwLastCheckValidTime;
+	unsigned int m_dwLastCheckValidTime;
 
 	//
 	bool m_bStoneRestore;
@@ -441,14 +433,14 @@ protected:
 	//	State control
 	StateController m_xStates;
 
-	DWORD m_dwInvalidMsgQueueTimes;
+	unsigned int m_dwInvalidMsgQueueTimes;
 	bool m_bNetDataValid;
 
 	int m_nTotalRecvDamage;
 	//	中毒是否生效
 	bool m_bCanPosion;
 	//	恢复体力的时间间隔
-	DWORD m_dwHPRecoverInterval;
+	unsigned int m_dwHPRecoverInterval;
 
 	DelayActionList m_xDelayActions;
 };
@@ -498,7 +490,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 typedef std::vector<int> GiftItemIDVector;
-typedef std::map<int, DWORD> DrugUseTimeMap;
+typedef std::map<int, unsigned int> DrugUseTimeMap;
 
 #define MAX_SLAVE_SUM	3
 #define MAX_STORE_NUMBER	36
@@ -508,7 +500,7 @@ class HeroObject : public GameObject
 {
 public:
 	//	constructor and destructor
-	HeroObject(DWORD _dwID);
+	HeroObject(unsigned int _dwID);
 	virtual ~HeroObject();
 
 public:
@@ -537,7 +529,7 @@ public:
 	virtual void OnPlayerDressdItem(int _nTag);
 	virtual void OnPlayerLogin();
 
-	virtual void SetEffStatus(DWORD _effMask, DWORD _time, DWORD _param);
+	virtual void SetEffStatus(unsigned int _effMask, unsigned int _time, unsigned int _param);
 
 	virtual void ProcessDelayAction();
 
@@ -551,7 +543,7 @@ public:
 		return SendPlayerBuffer(g_xThreadBuffer);
 	}
 	//	user index
-	inline DWORD GetUserIndex()		{return m_dwIndex;}
+	inline unsigned int GetUserIndex()		{return m_dwIndex;}
 	bool AcceptLogin(bool _bNew);
 	void VerifyLogin();
 	bool WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _bHideIdentify = false, bool _bSaveCannotSaveItem = false);
@@ -562,7 +554,7 @@ public:
 	void CheckDoorEvent();
 
 	virtual int GetRandomAbility(ABILITY_TYPE _type);
-	virtual void UpdateStatus(DWORD _dwCurTick);
+	virtual void UpdateStatus(unsigned int _dwCurTick);
 
 	virtual void EncryptObject();
 
@@ -571,8 +563,8 @@ public:
 
 	void OnItemDataLoaded(ItemAttrib* _pItem);
 
-	inline DWORD GetLastRecvDataTime()						{return m_dwLastRecvDataTime;}
-	inline void SetLastRecvDataTime(DWORD _dwTime)			{m_dwLastRecvDataTime = _dwTime;}
+	inline unsigned int GetLastRecvDataTime()						{return m_dwLastRecvDataTime;}
+	inline void SetLastRecvDataTime(unsigned int _dwTime)			{m_dwLastRecvDataTime = _dwTime;}
 
 	void GetStatusInfo(PkgPlayerGStatusNtf& ntf);
 	void SendStatusInfo();
@@ -660,17 +652,17 @@ public:
 	}
 
 public:
-	ItemAttrib* GetItemByIndex(DWORD _dwIndex);
-	ItemAttrib* GetItemByTag(DWORD _dwTag);
+	ItemAttrib* GetItemByIndex(unsigned int _dwIndex);
+	ItemAttrib* GetItemByTag(unsigned int _dwTag);
 	ItemAttrib* Lua_GetItemByTag(int _nTag)				{return GetItemByTag(_nTag);}
 	ItemAttrib* Lua_GetItemByAttribID(int _nId);
 	ItemAttrib* GetEmptyItem();
 	bool AddBagItem(const ItemAttrib* _pItem);
-	bool AddBagItem(DWORD _dwIndex, const ItemAttrib* _pItem);
+	bool AddBagItem(unsigned int _dwIndex, const ItemAttrib* _pItem);
 	int GetBagEmptySum();
 	int GetAssistEmptySum();
 	int GetAllEmptySum();
-	BYTE CheckItemCanDress(ItemAttrib* _pItem);
+	unsigned char CheckItemCanDress(ItemAttrib* _pItem);
 	inline ItemAttrib* GetEquip(PLAYER_ITEM_TYPE _type)	{return &m_stEquip[_type];}
 	inline QuestContext* GetQuest()						{return &m_xQuest;}
 	int CountItem(int _nAttribID);
@@ -701,21 +693,21 @@ public:
 	inline int GetHeroJob()								{return m_stData.bJob;}
 	inline int GetHeroSex()								{return /*m_stData.stAttrib.sex;*/GetObject_Sex();}
 	inline GameScene* GetHomeScene();
-	inline DWORD GetHomeMapID()							{return m_dwLastCityMap;}
+	inline unsigned int GetHomeMapID()							{return m_dwLastCityMap;}
 
 	inline bool IsNewPlayer()							{return m_bIsNewHero;}
 	inline void SetNewPlayer()							{m_bIsNewHero = true;}
 
-	inline DWORD GetLoginMinutes()						{return m_dwLastLoginMinutes;}
-	void SetLoginMinutes(DWORD _dwMin)					{m_dwLastLoginMinutes = _dwMin;}
-	inline DWORD GetKilledMonsterCounter()				{return m_dwKilledMonsterCounter;}
-	void SetKilledMonsterCounter(DWORD _dwCnt)			{m_dwKilledMonsterCounter = _dwCnt;}
+	inline unsigned int GetLoginMinutes()						{return m_dwLastLoginMinutes;}
+	void SetLoginMinutes(unsigned int _dwMin)					{m_dwLastLoginMinutes = _dwMin;}
+	inline unsigned int GetKilledMonsterCounter()				{return m_dwKilledMonsterCounter;}
+	void SetKilledMonsterCounter(unsigned int _dwCnt)			{m_dwKilledMonsterCounter = _dwCnt;}
 
-	inline DWORD GetLSIndex()							{return m_dwLSIndex;}
-	inline void SetLSIndex(DWORD _dwIdx)				{m_dwLSIndex = _dwIdx;}
+	inline unsigned int GetLSIndex()							{return m_dwLSIndex;}
+	inline void SetLSIndex(unsigned int _dwIdx)				{m_dwLSIndex = _dwIdx;}
 
-	inline DWORD GetUID()								{return m_dwUID;}
-	inline void SetUID(DWORD _dwUID)					{m_dwUID = _dwUID;}
+	inline unsigned int GetUID()								{return m_dwUID;}
+	inline void SetUID(unsigned int _dwUID)					{m_dwUID = _dwUID;}
 
 	bool HaveSlave();
 
@@ -723,11 +715,11 @@ public:
 
 	int GetHeroWanLi();
 
-	static bool IsEquipItem(DWORD _dwType);
-	static bool IsAttackItem(DWORD _dwType);
-	static bool IsDefenceItem(DWORD _dwType);
-	static bool IsJewelryItem(DWORD _dwType);
-	static bool IsCostItem(DWORD _dwType);
+	static bool IsEquipItem(unsigned int _dwType);
+	static bool IsAttackItem(unsigned int _dwType);
+	static bool IsDefenceItem(unsigned int _dwType);
+	static bool IsJewelryItem(unsigned int _dwType);
+	static bool IsCostItem(unsigned int _dwType);
 
 	bool ShowQuestDlg(NPCObject* _pnpc, int _questid, int _step);
 	void HideQuestDlg();
@@ -833,7 +825,7 @@ public:
 	void AddMoney(int _nMoney);
 	void MinusMoney(int _nMoney);
 
-	bool SwitchScene(DWORD _dwMapID, WORD _wPosX, WORD _wPosY);
+	bool SwitchScene(unsigned int _dwMapID, unsigned short _wPosX, unsigned short _wPosY);
 	void GainExp(int _expr);
 
 	void RefleshAttrib();
@@ -842,15 +834,15 @@ public:
 	void UpdateSuitSameLevelAttrib();
 	void GetHeroAttrib(ItemAttrib* _pItem);
 
-	inline void SetCityMap(WORD _wmap)							{m_dwLastCityMap = _wmap;}
+	inline void SetCityMap(unsigned short _wmap)							{m_dwLastCityMap = _wmap;}
 	inline ItemAttrib* GetStoreBag()							{return m_stStore;}
 	bool AddStoreItem(ItemAttrib* _pItem);
-	bool IsStoreItemExist(DWORD _dwTag);
-	ItemAttrib* GetStoreItem(DWORD _dwTag);
-	ItemAttrib* GetStoreItemByIndex(DWORD _dwIndex)				{return &m_stStore[_dwIndex];}
+	bool IsStoreItemExist(unsigned int _dwTag);
+	ItemAttrib* GetStoreItem(unsigned int _dwTag);
+	ItemAttrib* GetStoreItemByIndex(unsigned int _dwIndex)				{return &m_stStore[_dwIndex];}
 
 	bool AddBigStoreItem(ItemAttrib* _pItem);
-	ItemAttrib* GetBigStoreItem(DWORD _dwTag);
+	ItemAttrib* GetBigStoreItem(unsigned int _dwTag);
 
 	USHORT GetHeroWalkInterval();
 	USHORT GetHeroRunInterval();
@@ -884,7 +876,7 @@ public:
 	//	Magic
 	bool DoSpell(const PkgUserActionReq& req);
 	bool HandleSpell(const PkgUserActionReq& req);
-	bool DoSpeHit(MonsterObject* _pMonster, HeroObject* _pHero, DWORD* _pHitStyle);
+	bool DoSpeHit(MonsterObject* _pMonster, HeroObject* _pHero, unsigned int* _pHitStyle);
 
 	bool CanAllowLongHit();
 	bool CanAllowWideHit();
@@ -894,8 +886,8 @@ public:
 
 	bool ReadBook(ItemAttrib* _pItem);
 
-	const UserMagic* GetUserMagic(DWORD _dwMgcID);
-	int GetMagicLevel(DWORD _dwMgcID)
+	const UserMagic* GetUserMagic(unsigned int _dwMgcID);
+	int GetMagicLevel(unsigned int _dwMgcID)
 	{
 		const UserMagic* pMgc = GetUserMagic(_dwMgcID);
 		if(NULL == pMgc)
@@ -911,8 +903,8 @@ public:
 	{
 		return &m_xMagics[_index];
 	}
-	bool AddUserMagic(DWORD _dwMgcID);
-	bool UpgradeUserMagic(DWORD _dwMgcID);
+	bool AddUserMagic(unsigned int _dwMgcID);
+	bool UpgradeUserMagic(unsigned int _dwMgcID);
 	int GetMagicDamage(const UserMagic* _pMgc, GameObject* _pAttacked);
 	int GetMagicDamageNoDefence(const UserMagic* _pMgc);
 	int GetMagicCost(const UserMagic* _pMgc);
@@ -924,14 +916,14 @@ public:
 	int GetSheildDefence(int _damage);
 	void ProcessSheild(int _defence);
 
-	bool IsEffectExist(DWORD _dwMgcID);
+	bool IsEffectExist(unsigned int _dwMgcID);
 	//bool ReceiveDamage(int _nDmg);
 
 	bool IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY);
 	void ForceDisconnectHero();
 
 private:
-	bool LearnMagic(DWORD _dwMgcID, BYTE _bBookLevel);
+	bool LearnMagic(unsigned int _dwMgcID, unsigned char _bBookLevel);
 
 
 public:
@@ -996,11 +988,11 @@ public:
 		}
 		return 0;
 	}
-	inline void ActiveDoubleDrop(DWORD _dwLastTime)
+	inline void ActiveDoubleDrop(unsigned int _dwLastTime)
 	{
 		m_dwDoubleDropExpireTime = GetTickCount() + _dwLastTime;
 	}
-	inline DWORD GetDoubleLastTime()
+	inline unsigned int GetDoubleLastTime()
 	{
 		if(m_dwDoubleDropExpireTime == 0)
 		{
@@ -1015,16 +1007,16 @@ public:
 	inline bool IsGmHide()				{return m_bGmHide;}
 
 	void IncWeaponGrow();
-	void IncWeaponGrowWithExp(DWORD _dwExp);
+	void IncWeaponGrowWithExp(unsigned int _dwExp);
 	//void GainExpExCheck(int _nExp);
 
 	//	wrap for drug use time
-	DWORD GetLastDrugUseTime(int _nItemID);
-	void SetLastDrugUseTime(int _nItemID, DWORD _dwTime);
-	bool CanUseCoolDownDrug(int _nItemID, DWORD _dwCoolDownTime);
+	unsigned int GetLastDrugUseTime(int _nItemID);
+	void SetLastDrugUseTime(int _nItemID, unsigned int _dwTime);
+	bool CanUseCoolDownDrug(int _nItemID, unsigned int _dwCoolDownTime);
 
 	void CheckServerNetDelay();
-	inline DWORD GetServerNetDelay()		{return m_dwServerNetDelaySec;}
+	inline unsigned int GetServerNetDelay()		{return m_dwServerNetDelaySec;}
 
 	//	time limit map
 	void SetEnterTimeLimitScene(GameScene* _pScene);
@@ -1036,8 +1028,8 @@ public:
 	inline bool IsNeedTransAni()			{return m_bNeedTransAni;}
 	inline void SetNeedTransAni(bool _bSet)	{m_bNeedTransAni = _bSet;}
 
-	inline BYTE GetDifficultyLevel()		{return m_byteDifficultyLevel;}
-	inline void SetDifficultyLevel(BYTE _bLevel)	{m_byteDifficultyLevel = _bLevel;}
+	inline unsigned char GetDifficultyLevel()		{return m_byteDifficultyLevel;}
+	inline void SetDifficultyLevel(unsigned char _bLevel)	{m_byteDifficultyLevel = _bLevel;}
 
 	inline void DisablePushLSLogoutEvent()	{m_bPushLSLogoutEvent  = false;}
 	inline bool GetPushLSLogoutEvent()		{return m_bPushLSLogoutEvent;}
@@ -1124,59 +1116,59 @@ protected:
 	//	Assist item sum
 	int m_nAssistItemSum;
 	//	
-	DWORD m_dwIndex;
+	unsigned int m_dwIndex;
 
 	//	the sheild defence
-	DWORD m_dwDefence;
+	unsigned int m_dwDefence;
 	USERMAGICVECTOR m_xMagics;
 
 	//	Last city map
-	WORD m_dwLastCityMap;
+	unsigned short m_dwLastCityMap;
 	//	Slaves
 	GameObject* m_pSlaves[MAX_SLAVE_SUM];
 
-	DWORD m_dwLastSpellTime;
-	DWORD m_dwTimeOut;
+	unsigned int m_dwLastSpellTime;
+	unsigned int m_dwTimeOut;
 
 	bool m_bIsNewHero;
-	DWORD m_dwLastReviveTime;
+	unsigned int m_dwLastReviveTime;
 	//	Save file version
 	USHORT m_uVersion;
 
-	DWORD m_dwLastCheckTime;
+	unsigned int m_dwLastCheckTime;
 	int m_nGainedExp;
 
 	//	move ring use time
-	DWORD m_dwLastUseMoveRingTime;
+	unsigned int m_dwLastUseMoveRingTime;
 
 	//	Team id
 	int m_nTeamID;
 
 	//	Last recv packet time
-	DWORD m_dwLastRecvDataTime;
+	unsigned int m_dwLastRecvDataTime;
 	//	Login time(In Minute)
-	DWORD m_dwLastLoginMinutes;
+	unsigned int m_dwLastLoginMinutes;
 	//	Killed monsters
-	DWORD m_dwKilledMonsterCounter;
+	unsigned int m_dwKilledMonsterCounter;
 
-	DWORD m_dwDoubleDropExpireTime;
+	unsigned int m_dwDoubleDropExpireTime;
 
-	DWORD m_dwReviveRingUseTime;
+	unsigned int m_dwReviveRingUseTime;
 
-	DWORD m_dwLSIndex;
+	unsigned int m_dwLSIndex;
 
-	DWORD m_dwUID;
+	unsigned int m_dwUID;
 
 	bool m_bGmHide;
 
-	DWORD m_dwLastPrivateChatTime;
-	DWORD m_dwLastTeamChatTime;
+	unsigned int m_dwLastPrivateChatTime;
+	unsigned int m_dwLastTeamChatTime;
 
-	DWORD m_dwLastReqOffSellItems;
-	DWORD m_dwLastReqOffTakeBack;
+	unsigned int m_dwLastReqOffSellItems;
+	unsigned int m_dwLastReqOffTakeBack;
 
 	//	jingang expire
-	DWORD m_dwJinGangExpireTime;
+	unsigned int m_dwJinGangExpireTime;
 
 	//	unuse
 	bool m_bUnUse;
@@ -1185,7 +1177,7 @@ protected:
 	int m_nAbnormalSpeedTimes;
 
 	//	login time
-	DWORD m_dwLoginTimeTick;
+	unsigned int m_dwLoginTimeTick;
 	bool m_bCheckSoldItems;
 
 	//	auto save counter
@@ -1203,8 +1195,8 @@ protected:
 	DrugUseTimeMap m_xDrugUseTime;
 
 	//	server net delay time
-	DWORD m_dwServerNetDelaySec;
-	DWORD m_dwLastCheckServerNetDelay;
+	unsigned int m_dwServerNetDelaySec;
+	unsigned int m_dwLastCheckServerNetDelay;
 	int m_nServerNetDelaySeq;
 
 	//	rand generator
@@ -1230,7 +1222,7 @@ protected:
 	bool m_bNeedTransAni;
 
 	//	difficulty level
-	BYTE m_byteDifficultyLevel;
+	unsigned char m_byteDifficultyLevel;
 
 	//	Pk模式
 	HeroPkType m_ePkType;

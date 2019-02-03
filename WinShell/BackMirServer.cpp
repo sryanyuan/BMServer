@@ -2,13 +2,13 @@
 //
 
 #include "stdafx.h"
-#include "common/glog.h"
+#include "../common/glog.h"
 
 #include "Helper.h"
 #include "BackMirServer.h"
 #include "MainFrm.h"
 
-#include "CMainServer/CMainServer.h"
+#include "../CMainServer/CMainServer.h"
 #include "serverdlg.h"
 #include "runarg.h"
 #include <direct.h>

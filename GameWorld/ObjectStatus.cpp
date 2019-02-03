@@ -64,7 +64,7 @@ bool DrugDelayManager::PushDrugStatus(int _nAttribID, int _nDelayTime)
 		if(g_xDrugDelayFreeList.empty())
 		{
 			pDelayItem = new DrugDelayItem;
-			ZeroMemory(pDelayItem, sizeof(DrugDelayItem));
+			memset(pDelayItem, 0, sizeof(DrugDelayItem));
 
 			pDelayItem->nDrugAttribID = _nAttribID;
 			pDelayItem->dwExpireTime = GetTickCount() + _nDelayTime;
@@ -95,7 +95,7 @@ void DrugDelayManager::Clear()
 	{
 		pDelayItem = begiter->second;
 
-		ZeroMemory(pDelayItem, sizeof(DrugDelayItem));
+		memset(pDelayItem, 0, sizeof(DrugDelayItem));
 		g_xDrugDelayFreeList.push(pDelayItem);
 	}
 
@@ -139,7 +139,7 @@ void ObjectStatusControl::Clear()
 	{
 		pStatusItem = begiter->second;
 
-		ZeroMemory(pStatusItem, sizeof(ObjectStatusItem));
+		memset(pStatusItem, 0, sizeof(ObjectStatusItem));
 		g_xObjectStatusFreeList.push(pStatusItem);
 	}
 
@@ -164,9 +164,9 @@ void ObjectStatusControl::Update()
 	{
 		pStatusItem = begiter->second;
 
-		if(GetTickCount() > (DWORD)pStatusItem->nExpireTime)
+		if(GetTickCount() > (unsigned int)pStatusItem->nExpireTime)
 		{
-			ZeroMemory(pStatusItem, sizeof(ObjectStatusItem));
+			memset(pStatusItem, 0, sizeof(ObjectStatusItem));
 			g_xObjectStatusFreeList.push(pStatusItem);
 
 			begiter = m_xObjectStatus.erase(begiter);
@@ -181,7 +181,7 @@ void ObjectStatusControl::Update()
 
 void ObjectStatusControl::CalcObjectStatus(ObjectStatusItem* _pStatusItem)
 {
-	DWORD dwTimeDelta = GetTickCount() - (DWORD)_pStatusItem->nLastUpdateTime;
+	unsigned int dwTimeDelta = GetTickCount() - (unsigned int)_pStatusItem->nLastUpdateTime;
 
 	PkgPlayerUpdateAttribNtf ntf;
 	ntf.uTargetId = m_pAttach->GetID();
@@ -238,7 +238,7 @@ void ObjectStatusControl::RemoveStatus(int _nStatusID)
 	if(fnditer != m_xObjectStatus.end())
 	{
 		pStatusItem = fnditer->second;
-		ZeroMemory(pStatusItem, sizeof(ObjectStatusItem));
+		memset(pStatusItem, 0, sizeof(ObjectStatusItem));
 		g_xObjectStatusFreeList.push(pStatusItem);
 
 		fnditer = m_xObjectStatus.erase(fnditer);
@@ -265,12 +265,12 @@ bool ObjectStatusControl::InsertStatus(int _nStatusID, int _nExpireTime, int _nE
 		{
 			pStatusItem = g_xObjectStatusFreeList.top();
 			g_xObjectStatusFreeList.pop();
-			ZeroMemory(pStatusItem, sizeof(ObjectStatusItem));
+			memset(pStatusItem, 0, sizeof(ObjectStatusItem));
 		}
 		else
 		{
 			pStatusItem = new ObjectStatusItem;
-			ZeroMemory(pStatusItem, sizeof(ObjectStatusItem));
+			memset(pStatusItem, 0, sizeof(ObjectStatusItem));
 		}
 
 		pStatusItem->nStatusID = _nStatusID;

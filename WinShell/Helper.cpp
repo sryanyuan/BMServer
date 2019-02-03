@@ -72,11 +72,11 @@ void GetRootPath(char* _pszBuf, unsigned int _sz)
 #endif
 }
 
-void UpdateDialogInfo(const ServerState* _pState)
+/*void UpdateDialogInfo(const ServerState* _pState)
 {
 	extern HWND g_hServerDlg;
 
 	static ServerState s_State;
 	memcpy(&s_State, _pState, sizeof(ServerState));
 	::PostMessage(g_hServerDlg, WM_UPDATE_INFO, WPARAM(&s_State), 0);
-}
+}*/

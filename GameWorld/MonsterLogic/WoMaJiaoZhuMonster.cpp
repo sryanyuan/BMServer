@@ -110,10 +110,10 @@ bool WoMaJiaoZhuMonster::AttackTarget()
 
 void WoMaJiaoZhuMonster::MonsterLogic()
 {
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 
 	bool bNeedFly = false;
-	DWORD dwInterval = 15000;
+	unsigned int dwInterval = 15000;
 	if(GetObject_HP() < 1000)
 	{
 		dwInterval = 10000;

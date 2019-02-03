@@ -7,9 +7,9 @@
 #include <afxwin.h>
 #include <string>
 #include <mutex>
-#include "Interface/ServerShell.h"
+#include "../Interface/ServerShell.h"
 #include "resource.h"
-#include "common/cmsg.h"
+#include "../common/cmsg.h"
 // CServerDlg 对话框
 class CMainServer;
 class HeroObject;
@@ -40,18 +40,16 @@ public:
 	virtual void OnCancel();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
-	// Override message board
+	// Override ServerShell
 	virtual void AddInformation(const char* _szText) {
 		m_xMsgBoardMu.lock();
 		m_xMsgBoardTextList.emplace_back(_szText);
 		m_xMsgBoardMu.unlock();
 	}
-	virtual void UpdateDistinctIPCount(int _nCnt) {
-		PostMessage(WM_DISTINCTIP, _nCnt, 0);
-	}
-	virtual void UpdateObjectCount(int _nHero, int _nMons) {
-		PostMessage(WM_PLAYERCOUNT, _nHero, _nMons);
-	}
+	virtual const char* GetConfig(const char* _pszKey);
+	virtual const char* GetRootPath();
+	virtual void UpdateServerState(const ServerState* _pState);
+	virtual const ServerBaseInfo* GetServerBaseInfo();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
@@ -88,7 +86,7 @@ private:
 	BOOL m_bInitNetwork;
 	BOOL m_bVersionOK;
 
-	DWORD m_dwServerStartTime;
+	unsigned int m_dwServerStartTime;
 
 	int m_nGameRoomServerID;
 	int m_nOnlinePlayerCount;
@@ -100,6 +98,8 @@ private:
 
 	MsgBoardTextList m_xMsgBoardTextList;
 	std::mutex m_xMsgBoardMu;
+
+	ServerBaseInfo m_stServerBaseInfo;
 
 public:
 	void OnRegisterGsResult(const char *_pData, size_t _uLen);

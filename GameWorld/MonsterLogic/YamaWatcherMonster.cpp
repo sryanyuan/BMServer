@@ -17,7 +17,7 @@ void YamaWatcherMonster::MonsterLogic()
 {
 	if(m_pTarget)
 	{
-		DWORD dwFlyInterval = 10000;
+		unsigned int dwFlyInterval = 10000;
 		if(GetObject_HP() < 6000)
 		{
 			dwFlyInterval = 6000;

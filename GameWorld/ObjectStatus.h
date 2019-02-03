@@ -79,7 +79,7 @@ public:
 struct DrugDelayItem
 {
 	int nDrugAttribID;
-	DWORD dwExpireTime;
+	unsigned int dwExpireTime;
 };
 
 typedef std::stack<DrugDelayItem*> DrugDelayFreeList;

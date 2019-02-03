@@ -2,7 +2,6 @@
 #include "../common/glog.h"
 #include "../../CommonModule/SaveFile.h"
 #include "../../CommonModule/ConsoleHelper.h"
-#include <Shlwapi.h>
 //////////////////////////////////////////////////////////////////////////
 extern ConsoleHelper g_xConsole;
 //////////////////////////////////////////////////////////////////////////
@@ -34,55 +33,6 @@ bool LuaServerEngine::ExecuteFile(const char* _pszFileName)
 {
 	return LoadFile(_pszFileName);
 }
-
-/*bool LuaServerEngine::LoadModule(const char* _pszModuleFile)
-{
-	if(m_xModulePath.empty())
-	{
-		return false;
-	}
-
-	char szLoadFullFileName[MAX_PATH];
-	strcpy(szLoadFullFileName, _pszModuleFile);
-
-	const char* pszLuaExtension = ".lua";
-
-#ifdef _DEBUG
-	//strcat(szLoadFullFileName, ".lua");
-#else
-#ifdef _LUAJIT_
-	//strcat(szLoadFullFileName, ".bjt");
-	pszLuaExtension = ".bjt";
-#else
-	//strcat(szLoadFullFileName, ".bbt");
-	pszLuaExtension = ".bbt";
-#endif
-#endif
-
-	strcat(szLoadFullFileName, pszLuaExtension);
-
-	if(LOADMODE_PATH == m_nLoadMode)
-	{
-		char szFullPath[MAX_PATH] = {0};
-		sprintf(szFullPath, "%s/%s", m_xModulePath.c_str(), szLoadFullFileName);
-		return LoadFile(szFullPath);
-	}
-	else if(LOADMODE_ZIP == m_nLoadMode)
-	{
-		//	check if need decrypt
-		if(0 == strcmp(".bjt", pszLuaExtension))
-		{
-			return LoadFileInZipEncrypt(m_xModulePath.c_str(), szLoadFullFileName, SaveFile::CalcInternalPassword());
-		}
-		else
-		{
-			return LoadFileInZip(m_xModulePath.c_str(), szLoadFullFileName, SaveFile::CalcInternalPassword());
-		}
-	}
-
-	return false;
-}*/
-
 
 int LuaServerEngine::OnDispatchEvent(const LuaDispatchEvent* _pEvent, LuaDispatchInfo* _pInfo)
 {

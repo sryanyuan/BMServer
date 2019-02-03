@@ -21,14 +21,14 @@ SceneDelayMsg* FreeListManager::GetFreeSceneDelayMsg()
 	if(m_xSceneDelayMsgStack.empty())
 	{
 		SceneDelayMsg* pMsg = new SceneDelayMsg;
-		ZeroMemory(pMsg, sizeof(SceneDelayMsg));
+		memset(pMsg, 0, sizeof(SceneDelayMsg));
 		return pMsg;
 	}
 	else
 	{
 		SceneDelayMsg* pMsg = m_xSceneDelayMsgStack.top();
 		m_xSceneDelayMsgStack.pop();
-		ZeroMemory(pMsg, sizeof(SceneDelayMsg));
+		memset(pMsg, 0, sizeof(SceneDelayMsg));
 		return pMsg;
 	}
 }
@@ -43,14 +43,14 @@ AttackMsg* FreeListManager::GetFreeAttackMsg()
 	if(m_xAttackMsgStack.empty())
 	{
 		AttackMsg* pMsg = new AttackMsg;
-		ZeroMemory(pMsg, sizeof(AttackMsg));
+		memset(pMsg, 0, sizeof(AttackMsg));
 		return pMsg;
 	}
 	else
 	{
 		AttackMsg* pMsg = m_xAttackMsgStack.top();
 		m_xAttackMsgStack.pop();
-		ZeroMemory(pMsg, sizeof(AttackMsg));
+		memset(pMsg, 0, sizeof(AttackMsg));
 		return pMsg;
 	}
 }

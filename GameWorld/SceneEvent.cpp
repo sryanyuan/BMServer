@@ -5,10 +5,10 @@
 //////////////////////////////////////////////////////////////////////////
 SceneEventExecutor::SceneEventExecutor()
 {
-	ZeroMemory(m_bExistCache, sizeof(m_bExistCache));
+	memset(m_bExistCache, 0, sizeof(m_bExistCache));
 }
 
-void SceneEventExecutor::AddSceneEvent(SceneEvent _eType, const char* _pszFuncName, DWORD _dwInterval)
+void SceneEventExecutor::AddSceneEvent(SceneEvent _eType, const char* _pszFuncName, unsigned int _dwInterval)
 {
 	if(NULL == _pszFuncName)
 	{
@@ -69,7 +69,7 @@ void SceneEventExecutor::RemoveAllSceneEvent()
 	}
 
 	m_xSceneEventList.clear();
-	ZeroMemory(m_bExistCache, sizeof(m_bExistCache));
+	memset(m_bExistCache, 0, sizeof(m_bExistCache));
 }
 
 bool SceneEventExecutor::IsEventExist(SceneEvent _eEvent)

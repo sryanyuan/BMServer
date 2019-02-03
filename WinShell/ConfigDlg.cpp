@@ -4,11 +4,11 @@
 #include "stdafx.h"
 #include "BackMirServer.h"
 #include "ConfigDlg.h"
-#include "../CommonModule/GDefine.h"
+#include "../../CommonModule/GDefine.h"
 #include "Helper.h"
-#include "GameWorld/GameWorld.h"
+#include "../GameWorld/GameWorld.h"
 #include "runarg.h"
-#include "common/cmsg.h"
+#include "../common/cmsg.h"
 
 // CConfigDlg ¶Ô»°¿ò
 

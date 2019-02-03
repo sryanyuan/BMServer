@@ -2,8 +2,8 @@
 #include "GameWorld.h"
 //////////////////////////////////////////////////////////////////////////
 //	global variables
-DWORD g_dwConnCode[MAX_CONNECTIONS + 1] = {0};
-DWORD g_dwConnSeed = 0;
+unsigned int g_dwConnCode[MAX_CONNECTIONS + 1] = {0};
+unsigned int g_dwConnSeed = 0;
 //////////////////////////////////////////////////////////////////////////
 unsigned int GetNewConnCode()
 {

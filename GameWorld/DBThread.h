@@ -36,8 +36,8 @@ int GetMakeMaskValue(BYTE _bMask);*/
 //////////////////////////////////////////////////////////////////////////
 struct DBOperationParam
 {
-	DWORD dwOperation;
-	DWORD dwParam[DBTHREAD_PARAM_MAX];
+	unsigned int dwOperation;
+	unsigned int dwParam[DBTHREAD_PARAM_MAX];
 
 	DBOperationParam()
 	{
@@ -129,7 +129,7 @@ public:
 	bool VerifyHeroItemSimple(HeroObject* _pHero);
 	void CheckUserItem(ItemAttrib* _pItem, ItemVerify* _pVerify);
 
-	void LoadAndAddPlayerItemAttrib(ItemAttrib* _pItem, WORD _dwItemID, DWORD _dwUse, HeroObject* _pPlayer);
+	void LoadAndAddPlayerItemAttrib(ItemAttrib* _pItem, unsigned short _dwItemID, unsigned int _dwUse, HeroObject* _pPlayer);
 
 	void UpgradeItems(ItemAttrib* _pItem, int _nProb);
 	bool UpgradeAttrib(ItemAttrib* _pItem, int _index, int _value);
@@ -153,9 +153,6 @@ public:
 	}
 	GroundItem* NewGroundItem()
 	{
-		//GroundItem* pItem = new GroundItem;
-		//ZeroMemory(pItem, sizeof(GroundItem));
-		//return pItem;
 		return NULL;
 	}
 	void DeleteGroundItem(GroundItem* _pItem)
@@ -210,9 +207,9 @@ private:
 	std::thread m_hThread;
 	//	Working process buffer
 	ByteBuffer m_xProcess;
-	DWORD m_dwUpdateCounter;
-	DWORD m_dwDeleteCounter;
-	DWORD m_dwInsertCounter;
+	unsigned int m_dwUpdateCounter;
+	unsigned int m_dwDeleteCounter;
+	unsigned int m_dwInsertCounter;
 	ByteBuffer m_xTransactionDelete;
 	ByteBuffer m_xTransactionUpdate;
 	ByteBuffer m_xTransactionInsert;

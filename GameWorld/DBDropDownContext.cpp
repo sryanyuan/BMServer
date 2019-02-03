@@ -34,7 +34,7 @@ float DBDropDownContext::GetDropMultiple()
 	}
 
 	float fProbMulti = 1.0f;
-	BYTE bMonsType = LOWORD(m_pParam->dwParam[3]);
+	unsigned char bMonsType = LOWORD(m_pParam->dwParam[3]);
 
 	if(bMonsType == 1)
 	{
@@ -66,7 +66,7 @@ float DBDropDownContext::GetDropMultiple()
 		}
 
 		//	礼花加成
-		DWORD dwBurstFireworkTime = GameWorld::GetInstance().GetBurstFireworkTime();
+		unsigned int dwBurstFireworkTime = GameWorld::GetInstance().GetBurstFireworkTime();
 		if(0 != dwBurstFireworkTime)
 		{
 			fProbMulti += 0.5f;
@@ -88,7 +88,7 @@ float DBDropDownContext::GetDropMultiple()
 		//	游戏难度
 		if(CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
 		{
-			WORD wDifficulty = GameWorld::GetInstance().GetDifficultyLevel();
+			unsigned short wDifficulty = GameWorld::GetInstance().GetDifficultyLevel();
 
 			if(kDifficultyEasy == wDifficulty)
 			{
@@ -116,7 +116,7 @@ int DBDropDownContext::GetMagicDropMultiple()
 		return 1;
 	}
 
-	BYTE bMonsType = LOWORD(m_pParam->dwParam[3]);
+	unsigned char bMonsType = LOWORD(m_pParam->dwParam[3]);
 	int nExtraProb = MAGIC_ITEM_BASE;
 
 	if(bMonsType == 1)
@@ -146,7 +146,7 @@ int DBDropDownContext::GetMagicDropMultiple()
 	//	游戏难度
 	if(CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
 	{
-		WORD wDifficulty = GameWorld::GetInstance().GetDifficultyLevel();
+		unsigned short wDifficulty = GameWorld::GetInstance().GetDifficultyLevel();
 
 		if(kDifficultyEasy == wDifficulty)
 		{
@@ -179,7 +179,7 @@ int DBDropDownContext::GetDropBasePosX()
 		return 0;
 	}
 
-	WORD wPosX = LOWORD(m_pParam->dwParam[1]);
+	unsigned short wPosX = LOWORD(m_pParam->dwParam[1]);
 	return wPosX;
 }
 
@@ -190,7 +190,7 @@ int DBDropDownContext::GetDropBasePosY()
 		return 0;
 	}
 
-	WORD wPosY = HIWORD(m_pParam->dwParam[1]);
+	unsigned short wPosY = HIWORD(m_pParam->dwParam[1]);
 	return wPosY;
 }
 
@@ -249,8 +249,8 @@ int DBDropDownContext::InitDropPosition(int _nItems)
 	int nWhileCounter = 0;
 	int nPosX = 0;
 	int nPosY = 0;
-	WORD wPosX = GetDropBasePosX();
-	WORD wPosY = GetDropBasePosY();
+	unsigned short wPosX = GetDropBasePosX();
+	unsigned short wPosY = GetDropBasePosY();
 	GameScene* pScene = GetDropScene();
 
 	if(NULL == pScene ||
@@ -314,7 +314,7 @@ int DBDropDownContext::InitDropPosition(int _nItems)
 GroundItem* DBDropDownContext::NewGroundItem(int _nItemID, int _nPosX, int _nPosY)
 {
 	GroundItem* pItem = new GroundItem;
-	ZeroMemory(pItem, sizeof(GroundItem));
+	memset(pItem, 0, sizeof(GroundItem));
 
 	pItem->wPosX = _nPosX;
 	pItem->wPosY = _nPosY;

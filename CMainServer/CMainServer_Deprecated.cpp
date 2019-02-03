@@ -6,16 +6,18 @@
 #include "../GameWorld/GameWorld.h"
 #include "../GameWorld/ExceptionHandler.h"
 #include "../GameWorld/ConnCode.h"
-#include "../Helper.h"
 #include "../../CommonModule/LoginExtendInfoParser.h"
 #include "../../CommonModule/version.h"
 #include "../GameWorld/GlobalAllocRecord.h"
 #include <zlib.h>
 
+static void AddInformation(const char* fmt, ...) {
+}
+
 /************************************************************************/
 /* 提前处理的数据包
 /************************************************************************/
-bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req)
+bool CMainServer::OnPreProcessPacket(unsigned int _dwIndex, unsigned int _dwLSIndex, unsigned int _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req)
 {
 	RECORD_FUNCNAME_SERVER;
 #ifdef _DEBUG
@@ -150,7 +152,7 @@ bool CMainServer::OnPreProcessPacket(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dw
 	else
 	{
 		const char* pData = &req.xData[0];
-		DWORD dwDataLen = req.xData.size();
+		unsigned int dwDataLen = req.xData.size();
 
 		static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
 		GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
@@ -402,10 +404,10 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -441,7 +443,7 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -455,8 +457,8 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -500,7 +502,7 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -520,7 +522,7 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -534,8 +536,8 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -556,7 +558,7 @@ bool CMainServer::LoadHumData116(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -606,10 +608,10 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -645,7 +647,7 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -659,8 +661,8 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -704,7 +706,7 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -724,7 +726,7 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -738,8 +740,8 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -764,7 +766,7 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -796,7 +798,7 @@ bool CMainServer::LoadHumData117(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	A dword reserve
-	DWORD dwReserve = 0;
+	unsigned int dwReserve = 0;
 	_xBuf >> dwReserve;
 
 #ifdef _DEBUG
@@ -826,10 +828,10 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -866,7 +868,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -880,8 +882,8 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -928,7 +930,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -951,7 +953,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -967,8 +969,8 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1010,7 +1012,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -1046,7 +1048,7 @@ bool CMainServer::LoadHumData201(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -1073,10 +1075,10 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -1112,7 +1114,7 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -1126,8 +1128,8 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -1174,7 +1176,7 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -1197,7 +1199,7 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -1213,8 +1215,8 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1256,7 +1258,7 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -1292,7 +1294,7 @@ bool CMainServer::LoadHumData202(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -1319,10 +1321,10 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -1358,7 +1360,7 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -1372,8 +1374,8 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -1420,7 +1422,7 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -1443,7 +1445,7 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -1459,8 +1461,8 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1502,7 +1504,7 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -1538,7 +1540,7 @@ bool CMainServer::LoadHumData203(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -1565,10 +1567,10 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -1605,7 +1607,7 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -1619,8 +1621,8 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -1667,7 +1669,7 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -1690,7 +1692,7 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -1706,8 +1708,8 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1749,7 +1751,7 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -1785,7 +1787,7 @@ bool CMainServer::LoadHumData204(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -1812,10 +1814,10 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -1851,7 +1853,7 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -1865,8 +1867,8 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -1913,7 +1915,7 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -1936,7 +1938,7 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -1952,8 +1954,8 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1995,7 +1997,7 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -2031,7 +2033,7 @@ bool CMainServer::LoadHumData205(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -2058,10 +2060,10 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -2097,7 +2099,7 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -2111,8 +2113,8 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -2159,7 +2161,7 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -2182,7 +2184,7 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -2198,8 +2200,8 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -2241,7 +2243,7 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -2277,7 +2279,7 @@ bool CMainServer::LoadHumData206(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -2304,10 +2306,10 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -2343,7 +2345,7 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -2357,8 +2359,8 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -2405,7 +2407,7 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -2428,7 +2430,7 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -2444,8 +2446,8 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -2487,7 +2489,7 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -2523,7 +2525,7 @@ bool CMainServer::LoadHumData207(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -2550,10 +2552,10 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -2589,7 +2591,7 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -2603,8 +2605,8 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -2651,7 +2653,7 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -2674,7 +2676,7 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -2690,8 +2692,8 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -2733,7 +2735,7 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -2769,7 +2771,7 @@ bool CMainServer::LoadHumData208(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() == 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -2796,10 +2798,10 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 		//g_xMainBuffer >> pUserData->stAttrib.name;
 		//g_xMainBuffer >> pUserData->stAttrib.sex;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -2835,7 +2837,7 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -2849,8 +2851,8 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -2897,7 +2899,7 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -2920,7 +2922,7 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -2936,8 +2938,8 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -2979,7 +2981,7 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -3015,7 +3017,7 @@ bool CMainServer::LoadHumData210(HeroObject* _pHero, ByteBuffer& _xBuf)
 	//	two dword reserve
 	if (_xBuf.GetLength() >= 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}

@@ -337,7 +337,7 @@ int __cdecl DBItemAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, 
 		return 0;
 	}
 	ItemAttrib item;
-	ZeroMemory(&item, sizeof(ItemAttrib));
+	memset(&item, 0, sizeof(ItemAttrib));
 	ItemAttrib* pItem = &item;
 
 	assert(_nCount == ITEMATTRIB_COL);
@@ -395,7 +395,7 @@ int __cdecl DBMonsAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, 
 		return 0;
 	}
 	ItemAttrib item;
-	ZeroMemory(&item, sizeof(ItemAttrib));
+	memset(&item, 0, sizeof(ItemAttrib));
 	ItemAttrib* pItem = &item;
 
 	assert(_nCount == ITEMATTRIB_COL);

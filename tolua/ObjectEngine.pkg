@@ -20,7 +20,7 @@ class GameObject  : public LockObject/*, public CUser*/
 	unsigned int GetID();
 	SERVER_OBJECT_TYPE	GetType();
 	ItemAttrib* GetAttrib();
-	WORD GetMapID();
+	unsigned short GetMapID();
 	UserData* GetUserData();
 	GameScene* GetLocateScene();
 	int GetAttribID();
@@ -29,13 +29,13 @@ class GameObject  : public LockObject/*, public CUser*/
 	
 	bool FlyToMap(int _x, int _y, int _nMapID);
 
-	bool IncHP(DWORD _dwHP);
-	bool DecHP(DWORD _dwHP);
-	bool IncMP(DWORD _dwMP);
-	bool DecMP(DWORD _dwMP);
+	bool IncHP(unsigned int _dwHP);
+	bool DecHP(unsigned int _dwHP);
+	bool IncMP(unsigned int _dwMP);
+	bool DecMP(unsigned int _dwMP);
 	
-	WORD GetCoordX();
-	WORD GetCoordY();
+	unsigned short GetCoordX();
+	unsigned short GetCoordY();
 	
 	int GetCoordXInt();
 	int GetCoordYInt();
@@ -52,12 +52,12 @@ class GameObject  : public LockObject/*, public CUser*/
 
 class HeroObject : public GameObject/*, public CUser*/
 {
-	ItemAttrib* GetItemByIndex(DWORD _dwIndex);
-	ItemAttrib* GetItemByTag(DWORD _dwTag);
+	ItemAttrib* GetItemByIndex(unsigned int _dwIndex);
+	ItemAttrib* GetItemByTag(unsigned int _dwTag);
 	ItemAttrib* Lua_GetItemByAttribID(int _nId);
 	ItemAttrib* Lua_GetItemByTag(int _nTag);
 	bool AddBagItem(const ItemAttrib* _pItem);
-	bool AddBagItem(DWORD _dwIndex, const ItemAttrib* _pItem);
+	bool AddBagItem(unsigned int _dwIndex, const ItemAttrib* _pItem);
 
 	void SendSystemMessage(const char* _pszMsg);
 	bool ShowQuestDlg(NPCObject* _pnpc, int _questid, int _step);

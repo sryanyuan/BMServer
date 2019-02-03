@@ -1,4 +1,3 @@
-#include "../stdafx.h"
 #include "ObjectEngine.h"
 #include "GameWorld.h"
 #include "GameSceneManager.h"
@@ -10,8 +9,6 @@
 #include <zlib.h>
 #include <algorithm>
 #include "ObjectStatus.h"
-#include "ExceptionHandler.h"
-#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "../../CommonModule/SettingLoader.h"
 #include "../../CommonModule/StatusDefine.h"
@@ -20,10 +17,11 @@
 #include "../../CommonModule/PotentialAttribHelper.h"
 #include "../../CommonModule/loginsvr.pb.h"
 #include "../../CommonModule/ProtoType.h"
-#include "../runarg.h"
 #include "GlobalAllocRecord.h"
 #include "../../CommonModule/version.h"
 #include "../common/view.h"
+//////////////////////////////////////////////////////////////////////////
+#define RECORD_FUNCNAME_WORLD
 //////////////////////////////////////////////////////////////////////////
 static const int s_nMoveOft[] =
 {
@@ -43,30 +41,24 @@ PkgPlayerInteractiveDialogContentNot HeroObject::s_xInteractiveDialogItemPkg;
 
 using namespace ioserver;
 //////////////////////////////////////////////////////////////////////////
-HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
+HeroObject::HeroObject(unsigned int _dwID) : m_xMagics(USER_MAGIC_NUM),
 	/*,m_xSendBuffer(OBJECT_BUFFER_SIZE)*/
 	m_xBag(HERO_BAG_SIZE_CUR)
 {
 	m_eType = SOT_HERO;
 	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
 	{
-		//m_xBag[i].id = INVALID_ITEM_ID;
-		//m_xBag[i].type = ITEM_NO;
-		//m_xBag[i].tag = 0;
-		ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
+		memset(&m_xBag[i], 0, sizeof(ItemAttrib));
 	}
 	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
 	{
-		//m_stEquip[i].id = 0;
-		//m_stEquip[i].type = ITEM_NO;
-		//m_stEquip[i].tag = 0;
-		ZeroMemory(&m_stEquip[i], sizeof(ItemAttrib));
+		memset(&m_stEquip[i], 0, sizeof(ItemAttrib));
 	}
 	for(int i = 0; i < HP_SUPPLY_NUMBER + MP_SUPPLY_NUMBER; ++i)
 	{
 		m_dwSupply[i] = 0;
 	}
-	ZeroMemory(m_dwHumEffTime, sizeof(m_dwHumEffTime));
+	memset(m_dwHumEffTime, 0, sizeof(m_dwHumEffTime));
 	m_dwDefence = 0;
 
 	m_dwLastIncHPTime = m_dwLastIncMPTime = 0;
@@ -78,11 +70,11 @@ HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 
 	m_stData.bJob = 0;
 	m_dwLastCityMap = 0;
-	ZeroMemory(m_pSlaves, sizeof(m_pSlaves));
+	memset(m_pSlaves, 0, sizeof(m_pSlaves));
 	
 
-	ZeroMemory(m_stStore, sizeof(m_stStore));
-	ZeroMemory(m_stBigStore, sizeof(m_stBigStore));
+	memset(m_stStore, 0, sizeof(m_stStore));
+	memset(m_stBigStore, 0, sizeof(m_stBigStore));
 	m_dwLastSpellTime = 0;
 
 	m_dwTimeOut = 0;
@@ -122,7 +114,7 @@ HeroObject::HeroObject(DWORD _dwID) : m_xMagics(USER_MAGIC_NUM),
 	m_nServerNetDelaySeq = 0;
 
 	//	initialize extend attribute
-	ZeroMemory(&m_stExtAttrib, sizeof(m_stExtAttrib));
+	memset(&m_stExtAttrib, 0, sizeof(m_stExtAttrib));
 
 	m_bLastAttackCritical = false;
 
@@ -234,7 +226,7 @@ void HeroObject::DoWork(unsigned int _dwTick)
 					}
 					if(bKick && !GetKicked())
 					{
-						CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+						CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
 						SetKicked();
 					}
 				}
@@ -301,7 +293,7 @@ void HeroObject::DoAction(unsigned int _dwTick)
 {
 	RECORD_FUNCNAME_WORLD;
 	//	Check drug state
-	DWORD dwCurTime = GetTickCount();
+	unsigned int dwCurTime = GetTickCount();
 	UpdateStatus(dwCurTime);
 
 	//	Offline?
@@ -316,7 +308,7 @@ void HeroObject::DoAction(unsigned int _dwTick)
 				ObjectValid::GetItemName(&GetUserData()->stAttrib, szName);
 				LOG(INFO) << "Connection cut [" << GetID() << "] " << szName;
 				if (!GetKicked()) {
-					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+					CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
 					SetKicked();
 				}
 
@@ -361,7 +353,7 @@ void HeroObject::DoAction(unsigned int _dwTick)
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-void HeroObject::UpdateStatus(DWORD _dwCurTick)
+void HeroObject::UpdateStatus(unsigned int _dwCurTick)
 {
 	RECORD_FUNCNAME_WORLD;
 	//	Check status
@@ -1113,15 +1105,15 @@ int HeroObject::ReceiveDamage(GameObject* _pAttacker, bool _bMgcAtk, int _oriDC 
 
 				if (NULL != pItem)
 				{
-					WORD wMaxDura = LOWORD(GETITEMATB(pItem, MaxHP));
-					WORD wCurDura = HIWORD(GETITEMATB(pItem, MaxHP));
+					unsigned short wMaxDura = LOWORD(GETITEMATB(pItem, MaxHP));
+					unsigned short wCurDura = HIWORD(GETITEMATB(pItem, MaxHP));
 
-					WORD wDuraCost = 1000;
+					unsigned short wDuraCost = 1000;
 					if (wDuraCost >= wMaxDura)
 					{
 						// clean item
 						int nTag = pItem->tag;
-						ZeroMemory(pItem, sizeof(ItemAttrib));
+						memset(pItem, 0, sizeof(ItemAttrib));
 						ObjectValid::EncryptAttrib(pItem);
 
 						PkgPlayerLostItemAck pplia;
@@ -1133,7 +1125,7 @@ int HeroObject::ReceiveDamage(GameObject* _pAttacker, bool _bMgcAtk, int _oriDC 
 					}
 					else
 					{
-						WORD wLeftDura = wMaxDura - wDuraCost;
+						unsigned short wLeftDura = wMaxDura - wDuraCost;
 						if (wCurDura > wLeftDura)
 						{
 							wCurDura = wLeftDura;
@@ -1179,7 +1171,7 @@ int HeroObject::ReceiveDamage(GameObject* _pAttacker, bool _bMgcAtk, int _oriDC 
 					nRandom = rand() % 100;
 					if(nRandom <= pMonster->GetStoneProb())
 					{
-						DWORD dwStoneTime = pMonster->GetStoneTime();
+						unsigned int dwStoneTime = pMonster->GetStoneTime();
 						SetEffStatus(MMASK_STONE, dwStoneTime, 0);
 						SetStoneRestore(false);
 						PkgPlayerSetEffectAck ack;
@@ -1530,14 +1522,14 @@ bool HeroObject::AcceptLogin(bool _bNew)
 	g_xThreadBuffer << (USHORT)pScene->GetMapResID();
 	//g_xThreadBuffer << (USHORT)GetMapID();
 	//	current pos
-	g_xThreadBuffer << (WORD)GetUserData()->wCoordX;
-	g_xThreadBuffer << (WORD)GetUserData()->wCoordY;
+	g_xThreadBuffer << (unsigned short)GetUserData()->wCoordX;
+	g_xThreadBuffer << (unsigned short)GetUserData()->wCoordY;
 	//	HP MP
-	g_xThreadBuffer << (DWORD)MAKELONG(pAttrib->HP, pAttrib->maxHP);
-	g_xThreadBuffer << (DWORD)MAKELONG(pAttrib->MP, pAttrib->maxMP);
+	g_xThreadBuffer << (unsigned int)MAKELONG(pAttrib->HP, pAttrib->maxHP);
+	g_xThreadBuffer << (unsigned int)MAKELONG(pAttrib->MP, pAttrib->maxMP);
 	//	Exp
-	g_xThreadBuffer << (DWORD)pAttrib->EXPR;
-	g_xThreadBuffer << (DWORD)pAttrib->maxEXPR;
+	g_xThreadBuffer << (unsigned int)pAttrib->EXPR;
+	g_xThreadBuffer << (unsigned int)pAttrib->maxEXPR;
 	//	Money
 #ifdef _DEBUG
 	if(_bNew)
@@ -1547,18 +1539,18 @@ bool HeroObject::AcceptLogin(bool _bNew)
 	}
 	else
 	{
-		g_xThreadBuffer << (DWORD)GetMoney();
+		g_xThreadBuffer << (unsigned int)GetMoney();
 	}
 #else
-	g_xThreadBuffer << (DWORD)GetMoney();
+	g_xThreadBuffer << (unsigned int)GetMoney();
 #endif
 
 	if(_bNew)
 	{
 		//	new player
 		//	bag items and items on body are all zero
-		g_xThreadBuffer << (BYTE)0;
-		g_xThreadBuffer << (BYTE)0;
+		g_xThreadBuffer << (unsigned char)0;
+		g_xThreadBuffer << (unsigned char)0;
 		SetNewPlayer();
 	}
 	else
@@ -1573,7 +1565,7 @@ bool HeroObject::AcceptLogin(bool _bNew)
 				++nCounter;
 			}
 		}
-		g_xThreadBuffer << (BYTE)nCounter;
+		g_xThreadBuffer << (unsigned char)nCounter;
 		for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
 		{
 			if(GetItemByIndex(i)->type != ITEM_NO)
@@ -1591,12 +1583,12 @@ bool HeroObject::AcceptLogin(bool _bNew)
 				++nCounter;
 			}
 		}
-		g_xThreadBuffer << (BYTE)nCounter;
+		g_xThreadBuffer << (unsigned char)nCounter;
 		for(int i = PLAYER_ITEM_WEAPON; i < PLAYER_ITEM_TOTAL; ++i)
 		{
 			if(GetEquip((PLAYER_ITEM_TYPE)i)->type != ITEM_NO)
 			{
-				g_xThreadBuffer << (BYTE)i;
+				g_xThreadBuffer << (unsigned char)i;
 				g_xThreadBuffer << *GetEquip((PLAYER_ITEM_TYPE)i);
 			}
 		}
@@ -1609,7 +1601,7 @@ bool HeroObject::AcceptLogin(bool _bNew)
 				++nCounter;
 			}
 		}
-		g_xThreadBuffer << (BYTE)nCounter;
+		g_xThreadBuffer << (unsigned char)nCounter;
 		const UserMagic* pMagic = NULL;
 		for(int i = 0; i < USER_MAGIC_NUM; ++i)
 		{
@@ -1618,15 +1610,15 @@ bool HeroObject::AcceptLogin(bool _bNew)
 			{
 				if(GetHeroJob() == 0)
 				{
-					g_xThreadBuffer << (WORD)(i + MEFF_DC_BEGIN + 1) << (BYTE)pMagic->bLevel;
+					g_xThreadBuffer << (unsigned short)(i + MEFF_DC_BEGIN + 1) << (unsigned char)pMagic->bLevel;
 				}
 				else if(GetHeroJob() == 1)
 				{
-					g_xThreadBuffer << (WORD)(i + MEFF_MC_BEGIN + 1) << (BYTE)pMagic->bLevel;
+					g_xThreadBuffer << (unsigned short)(i + MEFF_MC_BEGIN + 1) << (unsigned char)pMagic->bLevel;
 				}
 				else if(GetHeroJob() == 2)
 				{
-					g_xThreadBuffer << (WORD)(i + MEFF_SC_BEGIN + 1) << (BYTE)pMagic->bLevel;
+					g_xThreadBuffer << (unsigned short)(i + MEFF_SC_BEGIN + 1) << (unsigned char)pMagic->bLevel;
 				}
 			}
 		}
@@ -1718,7 +1710,7 @@ void HeroObject::VerifyLogin()
 }
 
 //////////////////////////////////////////////////////////////////////////
-ItemAttrib* HeroObject::GetItemByTag(DWORD _dwTag)
+ItemAttrib* HeroObject::GetItemByTag(unsigned int _dwTag)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -1744,7 +1736,7 @@ ItemAttrib* HeroObject::Lua_GetItemByAttribID(int _nId)
 	return NULL;
 }
 
-ItemAttrib* HeroObject::GetItemByIndex(DWORD _dwIndex)
+ItemAttrib* HeroObject::GetItemByIndex(unsigned int _dwIndex)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -1837,7 +1829,7 @@ bool HeroObject::AddBagItem(const ItemAttrib* _pItem)
 	return false;
 }
 
-bool HeroObject::AddBagItem(DWORD _dwIndex, const ItemAttrib* _pItem)
+bool HeroObject::AddBagItem(unsigned int _dwIndex, const ItemAttrib* _pItem)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -1861,11 +1853,11 @@ bool HeroObject::AddBagItem(DWORD _dwIndex, const ItemAttrib* _pItem)
 	return true;
 }
 
-BYTE HeroObject::CheckItemCanDress(ItemAttrib* _pItem)
+unsigned char HeroObject::CheckItemCanDress(ItemAttrib* _pItem)
 {
 	RECORD_FUNCNAME_WORLD;
 
-	BYTE bRet = 0;
+	unsigned char bRet = 0;
 
 	switch(GETITEMATB(_pItem, ReqType))
 	{
@@ -1910,7 +1902,7 @@ BYTE HeroObject::CheckItemCanDress(ItemAttrib* _pItem)
 	return bRet;
 }
 
-bool HeroObject::IsCostItem(DWORD _dwType)
+bool HeroObject::IsCostItem(unsigned int _dwType)
 {
 	/*if(_dwType == ITEM_YAO_SPE ||
 		_dwType == ITEM_YAP ||
@@ -1923,7 +1915,7 @@ bool HeroObject::IsCostItem(DWORD _dwType)
 	return false;
 }
 
-bool HeroObject::IsEquipItem(DWORD _dwType)
+bool HeroObject::IsEquipItem(unsigned int _dwType)
 {
 	if(_dwType == ITEM_WEAPON ||
 		_dwType == ITEM_CLOTH ||
@@ -1943,7 +1935,7 @@ bool HeroObject::IsEquipItem(DWORD _dwType)
 	return false;
 }
 
-bool HeroObject::IsJewelryItem(DWORD _dwType)
+bool HeroObject::IsJewelryItem(unsigned int _dwType)
 {
 	if(_dwType == ITEM_NECKLACE ||
 		_dwType == ITEM_RING ||
@@ -1956,7 +1948,7 @@ bool HeroObject::IsJewelryItem(DWORD _dwType)
 	return false;
 }
 
-bool HeroObject::IsDefenceItem(DWORD _dwType)
+bool HeroObject::IsDefenceItem(unsigned int _dwType)
 {
 	if(_dwType == ITEM_CLOTH ||
 		_dwType == ITEM_HELMET ||
@@ -1970,7 +1962,7 @@ bool HeroObject::IsDefenceItem(DWORD _dwType)
 	return false;
 }
 
-bool HeroObject::IsAttackItem(DWORD _dwType)
+bool HeroObject::IsAttackItem(unsigned int _dwType)
 {
 	if(_dwType == ITEM_WEAPON)
 	{
@@ -1983,7 +1975,7 @@ bool HeroObject::IsAttackItem(DWORD _dwType)
 void HeroObject::GetHeroAttrib(ItemAttrib* _pItem)
 {
 	ItemAttrib item;
-	ZeroMemory(&item, sizeof(ItemAttrib));
+	memset(&item, 0, sizeof(ItemAttrib));
 
 	for(int i = PLAYER_ITEM_WEAPON; i < PLAYER_ITEM_TOTAL; ++i)
 	{
@@ -2267,8 +2259,8 @@ void HeroObject::RefleshAttrib()
 {
 	ItemAttrib item;
 	ItemAttrib itemdecrypt;
-	ZeroMemory(&item, sizeof(ItemAttrib));
-	ZeroMemory(&itemdecrypt, sizeof(ItemAttrib));
+	memset(&item, 0, sizeof(ItemAttrib));
+	memset(&itemdecrypt, 0, sizeof(ItemAttrib));
 	m_xStates.ClearForever();
 
 	bool bEncrypt = TEST_FLAG_BOOL(m_stData.stAttrib.extra, EXTRA_MASK_ENCRYPT);
@@ -2855,7 +2847,7 @@ void HeroObject::UpdateSuitAttrib()
 	//m_xStates.ClearForever();
 
 	ItemAttrib suitAttrib;
-	ZeroMemory(&suitAttrib, sizeof(ItemAttrib));
+	memset(&suitAttrib, 0, sizeof(ItemAttrib));
 
 	std::list<const ItemExtraAttribList*> xSuitAttribInfoList;
 	std::list<const ItemExtraAttribList*>::const_iterator begIter;
@@ -2914,7 +2906,7 @@ void HeroObject::UpdateSuitAttrib()
 			++begIter)
 		{
 			pCurAttribList = *begIter;
-			ZeroMemory(bActivePos, sizeof(bActivePos));
+			memset(bActivePos, 0, sizeof(bActivePos));
 			nActiveNumber = 0;
 
 			if(NULL != pCurAttribList)
@@ -2949,7 +2941,7 @@ void HeroObject::UpdateSuitAttrib()
 				if(nActiveNumber != 0)
 				{
 					//	Activate some suit attrib,then update the player's attrib
-					ZeroMemory(&suitAttrib, sizeof(ItemAttrib));
+					memset(&suitAttrib, 0, sizeof(ItemAttrib));
 
 					for(int i = 0; i < MAX_EXTRAATTIRB; ++i)
 					{
@@ -3160,16 +3152,6 @@ void HeroObject::UpdateSuitSameLevelAttrib()
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-/*
-void HeroObject::ResetSupply()
-{
-	/ *for(int i = 0; i < HP_SUPPLY_NUMBER + MP_SUPPLY_NUMBER; ++i)
-	{
-		m_dwSupply[i] = 0;
-	}* /
-	ZeroMemory(m_dwSupply, sizeof(m_dwSupply));
-}*/
-//////////////////////////////////////////////////////////////////////////
 int HeroObject::GetBagEmptySum()
 {
 	int nCounter = 0;
@@ -3244,7 +3226,7 @@ bool HeroObject::UseDrugItem(ItemAttrib* _pItem)
 		GETITEMATB(_pItem, Curse) == 0)
 	{
 		//	First check if the drug is in cool status
-		DWORD dwCoolTime = GETITEMATB(_pItem, Hide) * 1000;
+		unsigned int dwCoolTime = GETITEMATB(_pItem, Hide) * 1000;
 		int nItemID = GETITEMATB(_pItem, ID);
 
 		//	大补丸全部映射到一个ID上去
@@ -3279,7 +3261,7 @@ bool HeroObject::UseDrugItem(ItemAttrib* _pItem)
 			ntf.bSelfUse = true;
 			SendPacket(ntf);
 
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 
 			return true;
@@ -3392,7 +3374,7 @@ bool HeroObject::UseDrugItem(ItemAttrib* _pItem)
 
 		if(nLeftSum == 0)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3497,7 +3479,7 @@ bool HeroObject::UseSummonItem(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3546,7 +3528,7 @@ bool HeroObject::UseSummonItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3570,7 +3552,7 @@ bool HeroObject::UseLotteryItem(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3624,7 +3606,7 @@ bool HeroObject::UseLotteryItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3654,7 +3636,7 @@ bool HeroObject::UseFireworkItem(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3714,8 +3696,8 @@ bool HeroObject::UseFireworkItem(ItemAttrib* _pItem)
 
 		for(int i = 0; i < 8; ++i)
 		{
-			WORD wX = GetUserData()->wCoordX + g_nMoveOft[i * 2] * 4;
-			WORD wY = GetUserData()->wCoordY + g_nMoveOft[i * 2 + 1] * 4;
+			unsigned short wX = GetUserData()->wCoordX + g_nMoveOft[i * 2] * 4;
+			unsigned short wY = GetUserData()->wCoordY + g_nMoveOft[i * 2 + 1] * 4;
 			ack.xPos.push_back(MAKELONG(wX, wY));
 		}
 
@@ -3739,7 +3721,7 @@ bool HeroObject::UseFireworkItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3763,7 +3745,7 @@ bool HeroObject::UseWeaponStyleResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3800,7 +3782,7 @@ bool HeroObject::UseWeaponStyleResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3824,7 +3806,7 @@ bool HeroObject::UseWeaponStyleCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3926,7 +3908,7 @@ bool HeroObject::UseWeaponStyleCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0,sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -3950,7 +3932,7 @@ bool HeroObject::UseClothStyleResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -3987,7 +3969,7 @@ bool HeroObject::UseClothStyleResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4011,7 +3993,7 @@ bool HeroObject::UseNameFrameCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4157,7 +4139,7 @@ bool HeroObject::UseNameFrameCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4181,7 +4163,7 @@ bool HeroObject::UseNameFrameResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4218,7 +4200,7 @@ bool HeroObject::UseNameFrameResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0,sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4242,7 +4224,7 @@ bool HeroObject::UseChatFrameCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4331,7 +4313,7 @@ bool HeroObject::UseChatFrameCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4355,7 +4337,7 @@ bool HeroObject::UseChatFrameResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4392,7 +4374,7 @@ bool HeroObject::UseChatFrameResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4416,7 +4398,7 @@ bool HeroObject::UseChestKey(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4484,7 +4466,7 @@ bool HeroObject::UseChestKey(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4508,7 +4490,7 @@ bool HeroObject::UseClothStyleCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4583,7 +4565,7 @@ bool HeroObject::UseClothStyleCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4607,7 +4589,7 @@ bool HeroObject::UseWingStyleResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4644,7 +4626,7 @@ bool HeroObject::UseWingStyleResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4668,7 +4650,7 @@ bool HeroObject::UseWingStyleCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4723,7 +4705,7 @@ bool HeroObject::UseWingStyleCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4747,7 +4729,7 @@ bool HeroObject::UsePackItem(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4816,7 +4798,7 @@ bool HeroObject::UsePackItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4840,7 +4822,7 @@ bool HeroObject::UseHairStyleResetCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4877,7 +4859,7 @@ bool HeroObject::UseHairStyleResetCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4901,7 +4883,7 @@ bool HeroObject::UseHairStyleCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -4966,7 +4948,7 @@ bool HeroObject::UseHairStyleCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -4990,7 +4972,7 @@ bool HeroObject::UseChatColorCard(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -5081,7 +5063,7 @@ bool HeroObject::UseChatColorCard(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -5105,7 +5087,7 @@ bool HeroObject::UseMoneyItem(ItemAttrib* _pItem)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 
 		return true;
@@ -5143,7 +5125,7 @@ bool HeroObject::UseMoneyItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -5240,7 +5222,7 @@ bool HeroObject::UseTreasureMap(ItemAttrib* _pItem)
 
 						if(0 == nLeftSum)
 						{
-							ZeroMemory(_pItem, sizeof(ItemAttrib));
+							memset(_pItem, 0, sizeof(ItemAttrib));
 							ObjectValid::EncryptAttrib(_pItem);
 						}
 						else
@@ -5284,7 +5266,7 @@ bool HeroObject::UseTreasureMap(ItemAttrib* _pItem)
 
 				if(0 == nLeftSum)
 				{
-					ZeroMemory(_pItem, sizeof(ItemAttrib));
+					memset(_pItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(_pItem);
 				}
 				else
@@ -5476,7 +5458,7 @@ bool HeroObject::UseBaleItem(ItemAttrib* _pItem)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::LearnMagic(DWORD _dwMgcID, BYTE _bBookLevel)
+bool HeroObject::LearnMagic(unsigned int _dwMgcID, unsigned char _bBookLevel)
 {
 	const UserMagic* pMgc = NULL;
 	pMgc = GetUserMagic(_dwMgcID);
@@ -5614,7 +5596,7 @@ bool HeroObject::ReadBook(ItemAttrib* _pItem)
 {
 	UserMagic* pMgc = NULL;
 	bool bUsed = false;
-	DWORD dwMagic = MEFF_NONE;
+	unsigned int dwMagic = MEFF_NONE;
 
 	switch(GETITEMATB(_pItem, ID))
 	{
@@ -5940,7 +5922,7 @@ bool HeroObject::ReadBook(ItemAttrib* _pItem)
 		g_xThreadBuffer << uantf;
 		SendPlayerBuffer(g_xThreadBuffer);
 
-		ZeroMemory(_pItem, sizeof(ItemAttrib));
+		memset(_pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(_pItem);
 	}
 	return bUsed;
@@ -5971,7 +5953,7 @@ bool HeroObject::UseScrollItem(ItemAttrib* _pItem)
 				return false;
 			}
 			//	
-			DWORD dwPos = 0;
+			unsigned int dwPos = 0;
 			if(GetLocateScene()->GetRandomPosition(&dwPos))
 			{
 				/*WORD wPosX = LOWORD(dwPos);
@@ -6010,8 +5992,8 @@ bool HeroObject::UseScrollItem(ItemAttrib* _pItem)
 			GameScene* pScene = GetHomeScene();
 			if(NULL != pScene)
 			{
-				WORD wPosX = pScene->GetCityCenterX();
-				WORD wPosY = pScene->GetCityCenterY();
+				unsigned short wPosX = pScene->GetCityCenterX();
+				unsigned short wPosY = pScene->GetCityCenterY();
 
 				if(pScene->GetMapID() != GetLocateScene()->GetMapID())
 				{
@@ -6118,9 +6100,9 @@ bool HeroObject::UseScrollItem(ItemAttrib* _pItem)
 			GameScene* pScene = GameSceneManager::GetInstance()->GetScene(GETITEMATB(_pItem, Hide));
 			if(NULL != pScene)
 			{
-				WORD wPosX = 0;
-				WORD wPosY = 0;
-				DWORD dwPos = 0;
+				unsigned short wPosX = 0;
+				unsigned short wPosY = 0;
+				unsigned int dwPos = 0;
 
 				if(pScene->GetRandomPosition(&dwPos))
 				{
@@ -6180,7 +6162,7 @@ bool HeroObject::UseScrollItem(ItemAttrib* _pItem)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0,sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(_pItem);
 		}
 		else
@@ -6592,8 +6574,8 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 		return false;
 	}
 
-	DWORD dwCurTick = GetTickCount();
-	DWORD dwInterval = dwCurTick - m_dwLastSpellTime;
+	unsigned int dwCurTick = GetTickCount();
+	unsigned int dwInterval = dwCurTick - m_dwLastSpellTime;
 	if(dwInterval < GetHeroSpellInterval() - 200)
 	{
 		++m_dwTimeOut;
@@ -6601,7 +6583,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	}
 
 	bool bCanCross = true;
-	DWORD dwTargetPos = 0;
+	unsigned int dwTargetPos = 0;
 
 	bool bBroadcast = false;
 	const UserMagic* pMagic = NULL;
@@ -6652,7 +6634,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	int nPreMP = GetUserData()->stAttrib.MP;
 	//////////////////////////////////////////////////////////////////////////
 
-	DWORD dwMgcID = LOWORD(req.uParam1);
+	unsigned int dwMgcID = LOWORD(req.uParam1);
 	SetLastUseMagicID(dwMgcID);
 
 	PkgPlayerEnableSkillNot ppesn;
@@ -7858,7 +7840,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 												nInsertIndex != -1)
 											{
 												pMonster->SetMaster(this);
-												DWORD dwDefectTime = GetTickCount() + 45 * 60 * 1000 + nAbl * 30 * 1000;
+												unsigned int dwDefectTime = GetTickCount() + 45 * 60 * 1000 + nAbl * 30 * 1000;
 												dwDefectTime = 0xFFFFFFFF;
 												pMonster->SetDefectTime(dwDefectTime);
 												m_pSlaves[nInsertIndex] = pMonster;
@@ -8313,7 +8295,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	return true;
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::DoSpeHit(MonsterObject* _pMonster, HeroObject* _pHero, DWORD* _pHitStyle)
+bool HeroObject::DoSpeHit(MonsterObject* _pMonster, HeroObject* _pHero, unsigned int* _pHitStyle)
 {
 	//WORD wPosX = _pMonster->GetUserData()->wCoordX;
 	//WORD wPosY = _pMonster->GetUserData()->wCoordY;
@@ -9072,7 +9054,7 @@ bool HeroObject::ShowShopDlg(NPCObject* _pnpc, int _type)
 		ack.uTargetId = GetID();
 		g_xThreadBuffer.Reset();
 
-		BYTE bSize = 0;
+		unsigned char bSize = 0;
 		for(int i = 0; i < MAX_STORE_NUMBER; ++i)
 		{
 			if(GETITEMATB(&m_stStore[i], Type) != ITEM_NO)
@@ -9123,7 +9105,7 @@ bool HeroObject::ShowShopDlg(NPCObject* _pnpc, int _type)
 		ack.uTargetId = GetID();
 		g_xThreadBuffer.Reset();
 
-		BYTE bSize = 0;
+		unsigned char bSize = 0;
 		for(int i = 0; i < sizeof(m_stBigStore) / sizeof(m_stBigStore[0]); ++i)
 		{
 			if(GETITEMATB(&m_stBigStore[i], Type) != ITEM_NO)
@@ -9484,7 +9466,7 @@ void HeroObject::ClearItem(int _nAttribID, int _number)
 
 						if(ppucn.nNumber == 0)
 						{
-							ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
+							memset(&m_xBag[i], 0, sizeof(ItemAttrib));
 							ObjectValid::EncryptAttrib(&m_xBag[i]);
 						}
 
@@ -9496,7 +9478,7 @@ void HeroObject::ClearItem(int _nAttribID, int _number)
 						ppucn.dwTag = m_xBag[i].tag;
 						nCounter += nLeft;
 
-						ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
+						memset(&m_xBag[i], 0, sizeof(ItemAttrib));
 						ObjectValid::EncryptAttrib(&m_xBag[i]);
 						SendPacket(ppucn);
 					}
@@ -9514,7 +9496,7 @@ void HeroObject::ClearItem(int _nAttribID, int _number)
 					g_xThreadBuffer.Reset();
 					g_xThreadBuffer << ntf;
 					SendPlayerBuffer(g_xThreadBuffer);
-					ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
+					memset(&m_xBag[i], 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(&m_xBag[i]);
 					++nCounter;
 					if(nCounter == _number)
@@ -9532,7 +9514,7 @@ bool HeroObject::AddItem_GM(int _nAttribID)
 //#ifdef _DEBUG
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -9671,7 +9653,7 @@ bool HeroObject::AddItemSuper_GM(int _nAttribID, int _nValue)
 	//#ifdef _DEBUG
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -9814,7 +9796,7 @@ bool HeroObject::AddItem(int _nAttribID)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -9936,7 +9918,7 @@ bool HeroObject::AddSuperItem(int _nAttribID, int _nExt)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -10079,7 +10061,7 @@ int HeroObject::AddItemReturnTag(int _nAttribID)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	int nRet = 0;
 
@@ -10201,7 +10183,7 @@ bool HeroObject::AddItemNoBind(int _nAttribID)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -10323,7 +10305,7 @@ int HeroObject::AddItemNoBindReturnTag(int _nAttribID)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 	int nRet = 0;
@@ -10449,7 +10431,7 @@ bool HeroObject::AddBatchItem(int _nAttribID, int _nSum)
 {
 	//	1. cost items
 	ItemAttrib destItem;
-	ZeroMemory(&destItem, sizeof(ItemAttrib));
+	memset(&destItem, 0, sizeof(ItemAttrib));
 	ItemAttrib* pBagItem = NULL;
 	bool bRet = false;
 
@@ -10571,7 +10553,7 @@ bool HeroObject::AddCostItem(int _nAttribID)
 			DBOperationParam* pParam = new DBOperationParam;
 			pParam->dwOperation = DO_QUERY_ITEMATTRIB;
 			pParam->dwParam[1] = MAKELONG(GetMapID(), _nAttribID);
-			pParam->dwParam[0] = (DWORD)&m_xBag[i];
+			pParam->dwParam[0] = (unsigned int)&m_xBag[i];
 			pParam->dwParam[2] = MAKELONG(IE_ADDPLAYERITEM, GetID());
 			m_xBag[i].tag = ITEMTAG_INQUERY;
 			//m_xBag[i].type = ITEM_INQUERY;
@@ -10669,7 +10651,7 @@ void HeroObject::MinusMoney(int _nMoney)
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::AddUserMagic(DWORD _dwMgcID)
+bool HeroObject::AddUserMagic(unsigned int _dwMgcID)
 {
 	if(m_stData.bJob > 2)
 	{
@@ -10708,7 +10690,7 @@ bool HeroObject::AddUserMagic(DWORD _dwMgcID)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-const UserMagic* HeroObject::GetUserMagic(DWORD _dwMgcID)
+const UserMagic* HeroObject::GetUserMagic(unsigned int _dwMgcID)
 {
 	int nIndex = 0;
 	if(m_stData.bJob == 0)
@@ -10738,7 +10720,7 @@ const UserMagic* HeroObject::GetUserMagic(DWORD _dwMgcID)
 	return NULL;
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::UpgradeUserMagic(DWORD _dwMgcID)
+bool HeroObject::UpgradeUserMagic(unsigned int _dwMgcID)
 {
 	const UserMagic* pMgc = GetUserMagic(_dwMgcID);
 	if(NULL == pMgc)
@@ -10772,7 +10754,7 @@ bool HeroObject::HaveSlave()
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::SwitchScene(DWORD _dwMapID, WORD _wPosX, WORD _wPosY)
+bool HeroObject::SwitchScene(unsigned int _dwMapID, unsigned short _wPosX, unsigned short _wPosY)
 {
 	GameScene* pNextScene = GameSceneManager::GetInstance()->GetScene(_dwMapID);
 	GameScene* pCurScene = GetLocateScene();
@@ -10993,7 +10975,7 @@ bool HeroObject::MakeSlave(int _slaveid)
 			pMons->GetUserData()->stAttrib.id = _slaveid;
 			pMons->GetUserData()->wCoordX = nMakeX;
 			pMons->GetUserData()->wCoordY = nMakeY;
-			pMons->GetUserData()->wMapID = (WORD)m_stData.wMapID;
+			pMons->GetUserData()->wMapID = (unsigned short)m_stData.wMapID;
 			m_pSlaves[nNextSlaveIndex] = pMons;
 
 			int nCurSlaveCount = GetSlaveCount();
@@ -11013,7 +10995,7 @@ bool HeroObject::MakeSlave(int _slaveid)
 							//pMons->SetObject_DC(pMons->GetObject_DC() + nDcIncrease);
 							pMons->SetObject_MaxDC(pMons->GetObject_MaxDC() + nDcIncrease);
 
-							DWORD dwDCGap = pMons->GetObject_MaxMC();
+							unsigned int dwDCGap = pMons->GetObject_MaxMC();
 							if(dwDCGap > 1000)
 							{
 								dwDCGap -= 500;
@@ -11063,7 +11045,7 @@ bool HeroObject::MakeSlave(int _slaveid)
 #else
 			DBOperationParam* pParam = new DBOperationParam;
 			pParam->dwOperation = DO_QUERY_MONSATTRIB;
-			pParam->dwParam[0] = (DWORD)pMons;
+			pParam->dwParam[0] = (unsigned int)pMons;
 			pParam->dwParam[1] = pMons->GetUserData()->stAttrib.id;
 			pParam->dwParam[2] = ME_MAKESLAVE;
 			DBThread::GetInstance()->AsynExecute(pParam);
@@ -11277,7 +11259,7 @@ int HeroObject::GetSheildDefence(int _damage)
 	return nDefence;
 }
 //////////////////////////////////////////////////////////////////////////
-bool HeroObject::IsEffectExist(DWORD _dwMgcID)
+bool HeroObject::IsEffectExist(unsigned int _dwMgcID)
 {
 	if(_dwMgcID == MEFF_SHIELD)
 	{
@@ -11348,7 +11330,7 @@ bool HeroObject::AddBigStoreItem(ItemAttrib* _pItem)
 	return false;
 }
 
-ItemAttrib* HeroObject::GetBigStoreItem(DWORD _dwTag)
+ItemAttrib* HeroObject::GetBigStoreItem(unsigned int _dwTag)
 {
 	for(int i = 0; i < sizeof(m_stBigStore) / sizeof(m_stBigStore[0]); ++i)
 	{
@@ -11387,7 +11369,7 @@ bool HeroObject::AddStoreItem(ItemAttrib* _pItem)
 	return false;
 }
 
-bool HeroObject::IsStoreItemExist(DWORD _dwTag)
+bool HeroObject::IsStoreItemExist(unsigned int _dwTag)
 {
 	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
 	{
@@ -11400,7 +11382,7 @@ bool HeroObject::IsStoreItemExist(DWORD _dwTag)
 	return false;
 }
 
-ItemAttrib* HeroObject::GetStoreItem(DWORD _dwTag)
+ItemAttrib* HeroObject::GetStoreItem(unsigned int _dwTag)
 {
 	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
 	{
@@ -11420,7 +11402,7 @@ USHORT HeroObject::GetHeroWalkInterval()
 
 USHORT HeroObject::GetHeroSpellInterval()
 {
-	DWORD dwInterval = 80 * 6 + 300;
+	unsigned int dwInterval = 80 * 6 + 300;
 
 	int nExtraInterval = 300 - 37 * GetObject_AtkSpeed();
 #ifdef _DEBUG
@@ -11447,7 +11429,7 @@ USHORT HeroObject::GetHeroAttackInterval()
 	}
 	return fAtkInterval * 1000 * 6;*/
 
-	DWORD dwInterval = 80 * 6 + 300;
+	unsigned int dwInterval = 80 * 6 + 300;
 	int nExtraInterval = 300 - 37 * GetObject_AtkSpeed();
 #ifdef _DEBUG
 	//nExtraInterval = 0;
@@ -11626,7 +11608,7 @@ bool HeroObject::RemoveItem(int _nTag)
 	ItemAttrib* pItem = GetItemByTag(_nTag);
 	if(NULL != pItem)
 	{
-		ZeroMemory(pItem, sizeof(ItemAttrib));
+		memset(pItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(pItem);
 
 		PkgPlayerLostItemAck ack;
@@ -11687,7 +11669,7 @@ void HeroObject::OnItemDataLoaded(ItemAttrib* _pItem)
 
 		if(_pItem->type == ITEM_BALE)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 		}
 		else if(_pItem->type == ITEM_COST &&
 			_pItem->atkSpeed == 0)
@@ -11696,7 +11678,7 @@ void HeroObject::OnItemDataLoaded(ItemAttrib* _pItem)
 		}
 
 		//	Error item's name
-		ZeroMemory(_pItem->name, sizeof(_pItem->name));
+		memset(_pItem->name, 0, sizeof(_pItem->name));
 		strcpy(_pItem->name, item.name);
 	}
 
@@ -11718,7 +11700,7 @@ void HeroObject::OnItemDataLoaded(ItemAttrib* _pItem)
 			_pItem->id == 171 ||
 			_pItem->id == 521)
 		{
-			ZeroMemory(_pItem, sizeof(ItemAttrib));
+			memset(_pItem, 0, sizeof(ItemAttrib));
 		}
 	}
 
@@ -11785,7 +11767,7 @@ void HeroObject::ClearAllItem()
 		//m_xBag[i].id = INVALID_ITEM_ID;
 		//m_xBag[i].type = ITEM_NO;
 		//m_xBag[i].tag = 0;
-		ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
+		memset(&m_xBag[i], 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(&m_xBag[i]);
 	}
 	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
@@ -11793,17 +11775,17 @@ void HeroObject::ClearAllItem()
 		//m_stEquip[i].id = 0;
 		//m_stEquip[i].type = ITEM_NO;
 		//m_stEquip[i].tag = 0;
-		ZeroMemory(&m_stEquip[i], sizeof(ItemAttrib));
+		memset(&m_stEquip[i], 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(&m_stEquip[i]);
 	}
 
-	ZeroMemory(m_stStore, sizeof(m_stStore));
+	memset(m_stStore, 0, sizeof(m_stStore));
 	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
 	{
 		ObjectValid::EncryptAttrib(&m_stStore[i]);
 	}
 
-	ZeroMemory(m_stBigStore, sizeof(m_stBigStore));
+	memset(m_stBigStore, 0, sizeof(m_stBigStore));
 	for(int i = 0; i < sizeof(m_stBigStore) / sizeof(m_stBigStore[0]); ++i)
 	{
 		ObjectValid::EncryptAttrib(&m_stBigStore[i]);
@@ -11820,8 +11802,8 @@ void HeroObject::FlyToHome()
 	GameScene* pScene = GetHomeScene();
 	if(NULL != pScene)
 	{
-		WORD wPosX = pScene->GetCityCenterX();
-		WORD wPosY = pScene->GetCityCenterY();
+		unsigned short wPosX = pScene->GetCityCenterX();
+		unsigned short wPosY = pScene->GetCityCenterY();
 
 		if(pScene->GetMapID() != GetLocateScene()->GetMapID())
 		{
@@ -12155,7 +12137,7 @@ void HeroObject::SendHumDataV2(bool _bSendToClient, bool _bSendToLogin)
 		// get player name
 		char szName[20];
 		ObjectValid::GetItemName(&GetUserData()->stAttrib, szName);
-		DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+		unsigned int dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
 
 		if (GetProtoType() == ProtoType_ByteBuffer)
 		{
@@ -12168,7 +12150,7 @@ void HeroObject::SendHumDataV2(bool _bSendToClient, bool _bSendToLogin)
 			g_xThreadBuffer.Write(szName, strlen(szName));
 			g_xThreadBuffer << (short)GetObject_Level();
 			g_xThreadBuffer << xHumData;
-			DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			unsigned int dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
 			g_xConsole.CPrint("LS Index: %d User LS Index: %d", dwLSIndex, GetLSIndex());
 			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
 		}
@@ -12233,288 +12215,6 @@ void HeroObject::SendHumDataV2(bool _bSendToClient, bool _bSendToLogin)
 #endif
 }
 
-/*void HeroObject::SendHumData(bool _bSendToClient, bool _bSendToLogin)
-{
-	//	can save??
-	bool bCanSave = true;
-
-#ifdef _DEBUG
-	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
-	{
-		if(GETITEMATB(&m_xBag[i], Type) != ITEM_NO)
-		{
-			if(TEST_FLAG_BOOL(GETITEMATB(&m_xBag[i], Expr), EXPR_MASK_NOSAVE))
-			{
-				if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-				{
-					ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
-					ObjectValid::EncryptAttrib(&m_xBag[i]);
-				}
-				bCanSave = false;
-			}
-		}
-	}
-	if(bCanSave)
-	{
-		for(int i = 0; i < MAX_STORE_NUMBER; ++i)
-		{
-			if(GETITEMATB(&m_stStore[i], Type) != ITEM_NO)
-			{
-				if(TEST_FLAG_BOOL(GETITEMATB(&m_stStore[i], Expr), EXPR_MASK_NOSAVE))
-				{
-					if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-					{
-						ZeroMemory(&m_stStore[i], sizeof(ItemAttrib));
-						ObjectValid::EncryptAttrib(&m_stStore[i]);
-					}
-					bCanSave = false;
-				}
-			}
-		}
-	}
-#else
-	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
-	{
-		if(GETITEMATB(&m_xBag[i], Type) != ITEM_NO)
-		{
-			if(TEST_FLAG_BOOL(GETITEMATB(&m_xBag[i], Expr), EXPR_MASK_NOSAVE))
-			{
-				if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-				{
-					ZeroMemory(&m_xBag[i], sizeof(ItemAttrib));
-					ObjectValid::EncryptAttrib(&m_xBag[i]);
-				}
-				bCanSave = false;
-				if(!bCanSave)
-				{
-					if(CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
-					{
-						break;
-					}
-				}
-			}
-		}
-	}
-	if(bCanSave)
-	{
-		for(int i = 0; i < MAX_STORE_NUMBER; ++i)
-		{
-			if(GETITEMATB(&m_stStore[i], Type) != ITEM_NO)
-			{
-				if(TEST_FLAG_BOOL(GETITEMATB(&m_stStore[i], Expr), EXPR_MASK_NOSAVE))
-				{
-					if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-					{
-						ZeroMemory(&m_stStore[i], sizeof(ItemAttrib));
-						ObjectValid::EncryptAttrib(&m_stStore[i]);
-					}
-					bCanSave = false;
-					if(!bCanSave)
-					{
-						if(CMainServer::GetInstance()->GetServerMode() == GM_NORMAL)
-						{
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-#endif
-	if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-	{
-		bCanSave = true;
-	}
-	if(!bCanSave)
-	{
-		PkgSystemUserDataAck ack;
-		SendPacket(ack);
-		return;
-	}
-	//	request the player's data and save to local save file
-#define MAX_DATA_SIZE 20480
-	//ByteBuffer xBuf(MAX_DATA_SIZE);
-	//xBuf.Reset();
-	g_xThreadBuffer.Reset();
-	//	First is version
-	//g_xThreadBuffer << (USHORT)BACKMIR_VERSION111;
-	//g_xThreadBuffer << (USHORT)BACKMIR_VERSION112;
-	g_xThreadBuffer << (USHORT)BACKMIR_VERSION;
-	//	level
-	g_xThreadBuffer << (USHORT)GetObject_Level();
-	//	Job
-	g_xThreadBuffer << (BYTE)m_stData.bJob;
-	//	Name
-	//g_xThreadBuffer << m_stData.stAttrib.name;
-	//	Sex
-	//g_xThreadBuffer << m_stData.stAttrib.sex;
-	//	Current map?
-	g_xThreadBuffer << (USHORT)m_stData.wMapID;
-	//	Last city map
-	g_xThreadBuffer << (WORD)m_dwLastCityMap;
-	//	Current pos?
-	g_xThreadBuffer << (DWORD)(MAKELONG(m_stData.wCoordX, m_stData.wCoordY));
-	//	HP MP
-	g_xThreadBuffer << (DWORD)MAKELONG(GetObject_HP(), GetObject_MP());
-	//	EXPR
-	g_xThreadBuffer << (DWORD)GetObject_Expr();
-	//	quest?
-	g_xThreadBuffer << m_xQuest;
-	//	money
-	g_xThreadBuffer << (DWORD)GetMoney();
-	//	bag items
-	int nCounter = 0;
-
-	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
-	{
-		ObjectValid::DecryptAttrib(&m_xBag[i]);
-		if(GETITEMATB(&m_xBag[i], Type) != ITEM_NO)
-		{
-			//m_xBag[i].atkPois = 1;
-			SET_FLAG(m_xBag[i].atkPois, POIS_MASK_BIND);
-			++nCounter;
-		}
-	}
-	g_xThreadBuffer << (BYTE)nCounter;
-	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
-	{
-		if(m_xBag[i].type != ITEM_NO)
-		{
-			g_xThreadBuffer << m_xBag[i];
-		}
-		ObjectValid::EncryptAttrib(&m_xBag[i]);
-	}
-	//	on body
-	nCounter = 0;
-	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
-	{
-		ObjectValid::DecryptAttrib(&m_stEquip[i]);
-		if(GETITEMATB(&m_stEquip[i], Type) != ITEM_NO)
-		{
-			++nCounter;
-			//m_stEquip[i].atkPois = 1;
-			SET_FLAG(m_stEquip[i].atkPois, POIS_MASK_BIND);
-		}
-	}
-	g_xThreadBuffer << (BYTE)nCounter;
-	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
-	{
-		if(m_stEquip[i].type != ITEM_NO)
-		{
-			g_xThreadBuffer << (BYTE)i;
-			g_xThreadBuffer << m_stEquip[(PLAYER_ITEM_TYPE)i];
-		}
-		ObjectValid::EncryptAttrib(&m_stEquip[(PLAYER_ITEM_TYPE)i]);
-	}
-	//	Magic
-	nCounter = 0;
-	for(int i = 0; i < USER_MAGIC_NUM; ++i)
-	{
-		if(m_xMagics[i].bLevel != 0)
-		{
-			++nCounter;
-		}
-	}
-	g_xThreadBuffer << (BYTE)nCounter;
-	for(int i = 0; i < USER_MAGIC_NUM; ++i)
-	{
-		if(m_xMagics[i].bLevel != 0)
-		{
-			if(m_stData.bJob == 0)
-			{
-				g_xThreadBuffer << (WORD)(i + MEFF_DC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
-			}
-			else if(m_stData.bJob == 1)
-			{
-				g_xThreadBuffer << (WORD)(i + MEFF_MC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
-			}
-			else if(m_stData.bJob == 2)
-			{
-				g_xThreadBuffer << (WORD)(i + MEFF_SC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
-			}
-		}
-	}
-	//	Storage
-	nCounter = 0;
-	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
-	{
-		ObjectValid::DecryptAttrib(&m_stStore[i]);
-		if(GETITEMATB(&m_stStore[i], Type) != ITEM_NO)
-		{
-			++nCounter;
-			//m_stStore[i].atkPois = 1;
-			SET_FLAG(m_stStore[i].atkPois, POIS_MASK_BIND);
-		}
-	}
-	g_xThreadBuffer << (BYTE)nCounter;
-	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
-	{
-		if(m_stStore[i].type != ITEM_NO)
-		{
-			g_xThreadBuffer << m_stStore[i];
-		}
-		ObjectValid::EncryptAttrib(&m_stStore[i]);
-	}
-
-	//	117	Add	reserve
-	g_xThreadBuffer << (DWORD)0;
-
-	//	220 Add reserver
-	g_xThreadBuffer << (DWORD)0;
-	
-	//	Now compress it
-	static char* s_pData = new char[MAX_DATA_SIZE];
-	uLongf cmpsize = MAX_DATA_SIZE;
-	uLongf srcsize = g_xThreadBuffer.GetLength();
-
-	int nRet = compress((Bytef*)s_pData, &cmpsize, (const Bytef*)g_xThreadBuffer.GetBuffer(), srcsize);
-
-	PkgSystemUserDataAck ack;
-	if(nRet == Z_OK)
-	{
-		s_pData[cmpsize] = 0;
-		//ack.xData = pData;
-		ack.xData.clear();
-		ack.xData.resize(cmpsize);
-
-		memcpy((char*)(&ack.xData[0]), s_pData, cmpsize);
-	}
-	g_xThreadBuffer.Reset();
-	if(_bSendToClient)
-	{
-		g_xThreadBuffer << ack;
-		SendPlayerBuffer(g_xThreadBuffer);
-	}
-
-	//	发给登陆服务器
-	if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
-		_bSendToLogin)
-	{
-		g_xThreadBuffer.Reset();
-		g_xThreadBuffer << (int)0;
-		g_xThreadBuffer << (int)PKG_LOGIN_ROLEDATAFROMGS_NOT;
-		g_xThreadBuffer << GetLSIndex();
-		g_xThreadBuffer << GetUID();
-		char szName[20];
-		ObjectValid::GetItemName(&GetUserData()->stAttrib, szName);
-		g_xThreadBuffer << (char)strlen(szName);
-		g_xThreadBuffer.Write(szName, strlen(szName));
-		g_xThreadBuffer << (short)GetObject_Level();
-		g_xThreadBuffer << ack.xData;
-		DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
-		g_xConsole.CPrint("LS Index: %d User LS Index: %d", dwLSIndex, GetLSIndex());
-		SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
-	}
-
-#ifdef _DEBUG
-	char szName[20];
-	ObjectValid::GetItemName(&GetUserData()->stAttrib, szName);
-	LOG(INFO) << szName << " Request user data" << (ack.xData.empty() ? " fail" : " success");
-#endif
-
-	//delete[] pData;
-}*/
-
 //////////////////////////////////////////////////////////////////////////
 void HeroObject::GetStatusInfo(PkgPlayerGStatusNtf& ntf)
 {
@@ -12522,7 +12222,7 @@ void HeroObject::GetStatusInfo(PkgPlayerGStatusNtf& ntf)
 
 	statusNtf.uTargetId = GetID();
 
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 
 	//	charm ac
 	if(TEST_FLAG(m_dwHumEffFlag, MMASK_CHARMAC))
@@ -12598,7 +12298,7 @@ void HeroObject::SendStatusInfo()
 	PkgPlayerGStatusNtf statusNtf;
 	statusNtf.uTargetId = GetID();
 	GetStatusInfo(statusNtf);
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 
 	/*
 	//	charm ac
@@ -12758,9 +12458,9 @@ void HeroObject::IncWeaponGrow()
 	{
 		int nPreHP = GETITEMATB(pItem, HP);
 #ifdef _DEBUG
-		DWORD dwData = GetIncGrowDWORD((DWORD)nPreHP, 300);
+		unsigned int dwData = GetIncGrowDWORD((unsigned int)nPreHP, 300);
 #else
-		DWORD dwData = GetIncGrowDWORD((DWORD)nPreHP, 1);
+		unsigned int dwData = GetIncGrowDWORD((unsigned int)nPreHP, 1);
 #endif
 		SETITEMATB(pItem, HP, dwData);
 
@@ -12780,7 +12480,7 @@ void HeroObject::IncWeaponGrow()
 	}
 }
 
-void HeroObject::IncWeaponGrowWithExp(DWORD _dwExp)
+void HeroObject::IncWeaponGrowWithExp(unsigned int _dwExp)
 {
 	ItemAttrib* pItem = GetEquip(PLAYER_ITEM_WEAPON);
 
@@ -12791,9 +12491,9 @@ void HeroObject::IncWeaponGrowWithExp(DWORD _dwExp)
 
 		int nGroupNumber = GetIncNumberFromExpr(_dwExp);
 #ifdef _DEBUG
-		DWORD dwData = GetIncGrowDWORD((DWORD)nPreHP, nGroupNumber * 100);
+		unsigned int dwData = GetIncGrowDWORD((unsigned int)nPreHP, nGroupNumber * 100);
 #else
-		DWORD dwData = GetIncGrowDWORD((DWORD)nPreHP, nGroupNumber);
+		unsigned int dwData = GetIncGrowDWORD((unsigned int)nPreHP, nGroupNumber);
 #endif
 		SETITEMATB(pItem, HP, dwData);
 
@@ -12873,7 +12573,7 @@ bool HeroObject::UseChallengeItem(int _nClgID)
 		ntf.nNumber = 0;
 		SendPacket(ntf);
 
-		ZeroMemory(pClgItem, sizeof(ItemAttrib));
+		memset(pClgItem, 0, sizeof(ItemAttrib));
 		ObjectValid::EncryptAttrib(pClgItem);
 
 		return false;
@@ -12894,7 +12594,7 @@ bool HeroObject::UseChallengeItem(int _nClgID)
 
 		if(0 == nLeftSum)
 		{
-			ZeroMemory(pClgItem, sizeof(ItemAttrib));
+			memset(pClgItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(pClgItem);
 		}
 		else
@@ -13004,7 +12704,7 @@ bool HeroObject::WriteHumBigStoreDataToBuffer(std::vector<char>& _refCharVector,
 			}
 		}
 	}
-	g_xThreadBuffer << (BYTE)nCounter;
+	g_xThreadBuffer << (unsigned char)nCounter;
 	for(int i = 0; i < sizeof(m_stBigStore) / sizeof(m_stBigStore[0]); ++i)
 	{
 		item = m_stBigStore[i];
@@ -13052,7 +12752,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 	//	request the player's data and save to local save file
 #define MAX_DATA_SIZE 20480
 	ItemAttrib item;
-	ZeroMemory(&item, sizeof(ItemAttrib));
+	memset(&item, 0, sizeof(ItemAttrib));
 	//ByteBuffer xBuf(MAX_DATA_SIZE);
 	//xBuf.Reset();
 	g_xThreadBuffer.Reset();
@@ -13061,7 +12761,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 	//	level
 	g_xThreadBuffer << (USHORT)GetObject_Level();
 	//	Job
-	g_xThreadBuffer << (BYTE)m_stData.bJob;
+	g_xThreadBuffer << (unsigned char)m_stData.bJob;
 	//	Name
 	//g_xThreadBuffer << m_stData.stAttrib.name;
 	//	Sex
@@ -13069,17 +12769,17 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 	//	Current map?
 	g_xThreadBuffer << (USHORT)m_stData.wMapID;
 	//	Last city map
-	g_xThreadBuffer << (WORD)m_dwLastCityMap;
+	g_xThreadBuffer << (unsigned short)m_dwLastCityMap;
 	//	Current pos?
-	g_xThreadBuffer << (DWORD)(MAKELONG(m_stData.wCoordX, m_stData.wCoordY));
+	g_xThreadBuffer << (unsigned int)(MAKELONG(m_stData.wCoordX, m_stData.wCoordY));
 	//	HP MP
-	g_xThreadBuffer << (DWORD)MAKELONG(GetObject_HP(), GetObject_MP());
+	g_xThreadBuffer << (unsigned int)MAKELONG(GetObject_HP(), GetObject_MP());
 	//	EXPR
-	g_xThreadBuffer << (DWORD)GetObject_Expr();
+	g_xThreadBuffer << (unsigned int)GetObject_Expr();
 	//	quest?
 	g_xThreadBuffer << m_xQuest;
 	//	money
-	g_xThreadBuffer << (DWORD)GetMoney();
+	g_xThreadBuffer << (unsigned int)GetMoney();
 	//	bag items
 	int nCounter = 0;
 
@@ -13096,7 +12796,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 			}
 		}
 	}
-	g_xThreadBuffer << (BYTE)nCounter;
+	g_xThreadBuffer << (unsigned char)nCounter;
 	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
 	{
 		item = m_xBag[i];
@@ -13131,7 +12831,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 			}
 		}
 	}
-	g_xThreadBuffer << (BYTE)nCounter;
+	g_xThreadBuffer << (unsigned char)nCounter;
 	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
 	{
 		item = m_stEquip[i];
@@ -13141,7 +12841,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 		{
 			if(!TEST_FLAG_BOOL(item.EXPR, EXPR_MASK_NOSAVE) || _bSaveCannotSaveItem)
 			{
-				g_xThreadBuffer << (BYTE)i;
+				g_xThreadBuffer << (unsigned char)i;
 
 				if(_bHideIdentify &&
 					IsEquipItem(item.type))
@@ -13163,22 +12863,22 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 			++nCounter;
 		}
 	}
-	g_xThreadBuffer << (BYTE)nCounter;
+	g_xThreadBuffer << (unsigned char)nCounter;
 	for(int i = 0; i < USER_MAGIC_NUM; ++i)
 	{
 		if(m_xMagics[i].bLevel != 0)
 		{
 			if(m_stData.bJob == 0)
 			{
-				g_xThreadBuffer << (WORD)(i + MEFF_DC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
+				g_xThreadBuffer << (unsigned short)(i + MEFF_DC_BEGIN + 1) << (unsigned char)m_xMagics[i].bLevel;
 			}
 			else if(m_stData.bJob == 1)
 			{
-				g_xThreadBuffer << (WORD)(i + MEFF_MC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
+				g_xThreadBuffer << (unsigned short)(i + MEFF_MC_BEGIN + 1) << (unsigned char)m_xMagics[i].bLevel;
 			}
 			else if(m_stData.bJob == 2)
 			{
-				g_xThreadBuffer << (WORD)(i + MEFF_SC_BEGIN + 1) << (BYTE)m_xMagics[i].bLevel;
+				g_xThreadBuffer << (unsigned short)(i + MEFF_SC_BEGIN + 1) << (unsigned char)m_xMagics[i].bLevel;
 			}
 		}
 	}
@@ -13197,7 +12897,7 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 			}
 		}
 	}
-	g_xThreadBuffer << (BYTE)nCounter;
+	g_xThreadBuffer << (unsigned char)nCounter;
 	for(int i = 0; i < MAX_STORE_NUMBER; ++i)
 	{
 		item = m_stStore[i];
@@ -13219,10 +12919,10 @@ bool HeroObject::WriteHumDataToBuffer(std::vector<char>& _refCharVector, bool _b
 	}
 
 	//	117	Add	reserve
-	g_xThreadBuffer << (DWORD)0;
+	g_xThreadBuffer << (unsigned int)0;
 
 	//	220 Add reserver
-	g_xThreadBuffer << (DWORD)0;
+	g_xThreadBuffer << (unsigned int)0;
 
 	//	2.10.00 save extend bytes
 	{
@@ -13324,7 +13024,7 @@ bool HeroObject::ReceiveGift(int _nGiftID)
 	return false;
 }
 
-DWORD HeroObject::GetLastDrugUseTime(int _nItemID)
+unsigned int HeroObject::GetLastDrugUseTime(int _nItemID)
 {
 	DrugUseTimeMap::const_iterator fndIter = m_xDrugUseTime.find(_nItemID);
 	if(fndIter == m_xDrugUseTime.end())
@@ -13337,7 +13037,7 @@ DWORD HeroObject::GetLastDrugUseTime(int _nItemID)
 	}
 }
 
-void HeroObject::SetLastDrugUseTime(int _nItemID, DWORD _dwTime)
+void HeroObject::SetLastDrugUseTime(int _nItemID, unsigned int _dwTime)
 {
 	DrugUseTimeMap::iterator fndIter = m_xDrugUseTime.find(_nItemID);
 	if(fndIter == m_xDrugUseTime.end())
@@ -13350,9 +13050,9 @@ void HeroObject::SetLastDrugUseTime(int _nItemID, DWORD _dwTime)
 	}
 }
 
-bool HeroObject::CanUseCoolDownDrug(int _nItemID, DWORD _dwCoolDownTime)
+bool HeroObject::CanUseCoolDownDrug(int _nItemID, unsigned int _dwCoolDownTime)
 {
-	DWORD dwLastUseTime = GetLastDrugUseTime(_nItemID);
+	unsigned int dwLastUseTime = GetLastDrugUseTime(_nItemID);
 
 	if(GetTickCount() > dwLastUseTime + _dwCoolDownTime)
 	{
@@ -13368,7 +13068,7 @@ void HeroObject::CheckServerNetDelay()
 		return;
 	}
 
-	DWORD dwCurrentTick = GetTickCount();
+	unsigned int dwCurrentTick = GetTickCount();
 	if(dwCurrentTick - m_dwLastCheckServerNetDelay > 20 * 1000)
 	{
 		m_dwLastCheckServerNetDelay = dwCurrentTick;
@@ -13400,7 +13100,7 @@ void HeroObject::LoginSvr_UpdatePlayerRank()
 		return;
 	}
 
-	DWORD dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
+	unsigned int dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
 	if(dwLsIndex == 0)
 	{
 		return;
@@ -13469,7 +13169,7 @@ void HeroObject::LoginSvr_UpdatePlayerRank()
 		req.set_job(GetUserData()->bJob);
 		req.set_level(GetObject_Level());
 		req.set_name(GetName());
-		req.set_serverid(GetServerID());
+		req.set_serverid(CMainServer::GetInstance()->GetServerID());
 
 		switch(GetUserData()->bJob)
 		{
@@ -14083,7 +13783,7 @@ void HeroObject::SetItemBind(ItemAttrib* _pItem, bool _bBind)
 	SETITEMATB(_pItem, AtkPois, uAtkPois);
 }
 
-void HeroObject::SetEffStatus(DWORD _effMask, DWORD _time, DWORD _param)
+void HeroObject::SetEffStatus(unsigned int _effMask, unsigned int _time, unsigned int _param)
 {
 	int nEffTime = _time;
 
@@ -14195,7 +13895,7 @@ bool HeroObject::CanPkPlayer(HeroObject* _pHero)
 
 void HeroObject::ProcessDelayAction()
 {
-	DWORD dwTick = GetTickCount();
+	unsigned int dwTick = GetTickCount();
 	DelayActionList::iterator it = m_xDelayActions.begin();
 
 	for(it;
@@ -14465,8 +14165,8 @@ int HeroObject::GetHeroWanLi() {
 void HeroObject::Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv)
 {
 	UINT uItemData = GETITEMATB(_pItem, MaxHP);
-	WORD wItemID = 0;
-	WORD wItemLv = 0;
+	unsigned short wItemID = 0;
+	unsigned short wItemLv = 0;
 
 	if (0 != uItemData)
 	{
@@ -14485,7 +14185,7 @@ void HeroObject::Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv
 	}
 
 	int nTag = _pItem->tag;
-	ZeroMemory(_pItem, sizeof(ItemAttrib));
+	memset(_pItem, 0, sizeof(ItemAttrib));
 	ObjectValid::EncryptAttrib(_pItem);
 
 	PkgPlayerLostItemAck ack;

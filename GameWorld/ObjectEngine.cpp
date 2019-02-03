@@ -93,9 +93,9 @@ GameObject::GameObject(/*DWORD _dwID*/) : m_xMsgQueue(OBJECT_MSGQUEUE_SIZE)
 	{
 		m_dwSupply[i] = 0;
 	}
-	ZeroMemory(m_dwHealSupply, sizeof(m_dwHealSupply));
-	ZeroMemory(m_dwHumEffTime, sizeof(m_dwHumEffTime));
-	ZeroMemory(m_dwEnergyShieldSupply, sizeof(m_dwEnergyShieldSupply));
+	memset(m_dwHealSupply, 0, sizeof(m_dwHealSupply));
+	memset(m_dwHumEffTime, 0, sizeof(m_dwHumEffTime));
+	memset(m_dwEnergyShieldSupply, 0, sizeof(m_dwEnergyShieldSupply));
 	m_dwLastIncHPTime = m_dwLastIncMPTime = 0;
 	m_dwLastHealIncHPTime = 0;
 	m_dwHumEffFlag = 0;
@@ -130,7 +130,7 @@ GameObject::~GameObject()
 /************************************************************************/
 void GameObject::AddProcess(const PacketHeader* _pPkt)
 {
-	DWORD dwLength = _pPkt->uLen;
+	unsigned int dwLength = _pPkt->uLen;
 	if(0 == m_xMsgQueue.Write(_pPkt, dwLength))
 	{
 		LOG(FATAL) << "Can't write pkg to MsgQueue!";
@@ -311,7 +311,7 @@ GameScene* GameObject::GetLocateScene()
 }
 
 //////////////////////////////////////////////////////////////////////////
-bool GameObject::IncHP(DWORD _dwHP)
+bool GameObject::IncHP(unsigned int _dwHP)
 {
 	if(GetObject_HP() + _dwHP > GetObject_MaxHP())
 	{
@@ -325,7 +325,7 @@ bool GameObject::IncHP(DWORD _dwHP)
 	}
 }
 
-bool GameObject::IncMP(DWORD _dwMP)
+bool GameObject::IncMP(unsigned int _dwMP)
 {
 	if(GetObject_MP() + _dwMP > GetObject_MaxMP())
 	{
@@ -339,7 +339,7 @@ bool GameObject::IncMP(DWORD _dwMP)
 	}
 }
 
-bool GameObject::DecHP(DWORD _dwHP)
+bool GameObject::DecHP(unsigned int _dwHP)
 {
 	if(_dwHP >= GetObject_HP())
 	{
@@ -353,7 +353,7 @@ bool GameObject::DecHP(DWORD _dwHP)
 	}
 }
 
-bool GameObject::DecMP(DWORD _dwMP)
+bool GameObject::DecMP(unsigned int _dwMP)
 {
 	if(_dwMP > GetObject_MP())
 	{
@@ -391,13 +391,9 @@ void GameObject::SyncMP(HeroObject *_pHero)
 //////////////////////////////////////////////////////////////////////////
 void GameObject::ResetSupply()
 {
-	/*for(int i = 0; i < HP_SUPPLY_NUMBER + MP_SUPPLY_NUMBER; ++i)
-	{
-		m_dwSupply[i] = 0;
-	}*/
-	ZeroMemory(m_dwSupply, sizeof(m_dwSupply));
-	ZeroMemory(m_dwHealSupply, sizeof(m_dwHealSupply));
-	ZeroMemory(m_dwEnergyShieldSupply, sizeof(m_dwEnergyShieldSupply));
+	memset(m_dwSupply, 0, sizeof(m_dwSupply));
+	memset(m_dwHealSupply, 0, sizeof(m_dwHealSupply));
+	memset(m_dwEnergyShieldSupply, 0, sizeof(m_dwEnergyShieldSupply));
 }
 //////////////////////////////////////////////////////////////////////////
 bool GameObject::AddDrugState(int _total, int _type)
@@ -455,12 +451,12 @@ bool GameObject::AddEnergyShieldState(int _total, int _step)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-void GameObject::UpdateStatus(DWORD _dwCurTick)
+void GameObject::UpdateStatus(unsigned int _dwCurTick)
 {
 	PkgPlayerUpdateAttribNtf ntf;
 	ntf.uTargetId = GetID();
 	GameScene* pScene = GameSceneManager::GetInstance()->GetScene(m_stData.wMapID);
-	DWORD dwAddInterval = 0;
+	unsigned int dwAddInterval = 0;
 
 	m_pStatusCtrl->Update();
 	m_xStates.Update();
@@ -472,7 +468,7 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 		ResetEffStatus(MMASK_SHIELD);
 		ResetEffStatus(MMASK_LVDU);
 		ResetEffStatus(MMASK_CHARMAC);
-		ZeroMemory(m_dwHumEffTime, sizeof(m_dwHumEffTime));
+		memset(m_dwHumEffTime, 0, sizeof(m_dwHumEffTime));
 		return;
 	}
 
@@ -481,9 +477,9 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 	{
 		if(m_dwSupply[i] != 0)
 		{
-			WORD wStep = HIWORD(m_dwSupply[i]);
-			WORD wLeft = LOWORD(m_dwSupply[i]);
-			WORD wChg = 0;
+			unsigned short wStep = HIWORD(m_dwSupply[i]);
+			unsigned short wLeft = LOWORD(m_dwSupply[i]);
+			unsigned short wChg = 0;
 			bool bIsHP = (i >= HP_SUPPLY_NUMBER ? false : true);
 
 			if(wStep > 0 &&
@@ -597,9 +593,9 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 	{
 		if(m_dwHealSupply[i] != 0)
 		{
-			WORD wStep = HIWORD(m_dwHealSupply[i]);
-			WORD wLeft = LOWORD(m_dwHealSupply[i]);
-			WORD wChg = 0;
+			unsigned short wStep = HIWORD(m_dwHealSupply[i]);
+			unsigned short wLeft = LOWORD(m_dwHealSupply[i]);
+			unsigned short wChg = 0;
 
 			if(wStep > 0 &&
 				wLeft > 0)
@@ -663,9 +659,9 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 	{
 		if(m_dwEnergyShieldSupply[i] != 0)
 		{
-			WORD wStep = HIWORD(m_dwEnergyShieldSupply[i]);
-			WORD wLeft = LOWORD(m_dwEnergyShieldSupply[i]);
-			WORD wChg = 0;
+			unsigned short wStep = HIWORD(m_dwEnergyShieldSupply[i]);
+			unsigned short wLeft = LOWORD(m_dwEnergyShieldSupply[i]);
+			unsigned short wChg = 0;
 
 			if(wStep > 0 &&
 				wLeft > 0)
@@ -728,8 +724,8 @@ void GameObject::UpdateStatus(DWORD _dwCurTick)
 	//	if hp is full
 	if(GetObject_HP() >= GetObject_MaxHP())
 	{
-		ZeroMemory(m_dwHealSupply, sizeof(m_dwHealSupply));
-		ZeroMemory(m_dwEnergyShieldSupply, sizeof(m_dwEnergyShieldSupply));
+		memset(m_dwHealSupply, 0, sizeof(m_dwHealSupply));
+		memset(m_dwEnergyShieldSupply, 0, sizeof(m_dwEnergyShieldSupply));
 		for(int i = 0; i < HP_SUPPLY_NUMBER; ++i)
 		{
 			m_dwSupply[i] = 0;
@@ -1000,7 +996,7 @@ int GameObject::GetRandomAbility(ABILITY_TYPE _type)
 	return nValue;
 }
 //////////////////////////////////////////////////////////////////////////
-void GameObject::SetEffStatus(DWORD _effMask, DWORD _time, DWORD _param)
+void GameObject::SetEffStatus(unsigned int _effMask, unsigned int _time, unsigned int _param)
 {
 	char szBuf[MAX_PATH];
 	if(_effMask == MMASK_CHARMAC)
@@ -1057,7 +1053,7 @@ void GameObject::SetEffStatus(DWORD _effMask, DWORD _time, DWORD _param)
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-void GameObject::ResetEffStatus(DWORD _effMask)
+void GameObject::ResetEffStatus(unsigned int _effMask)
 {
 	if(_effMask == MMASK_HIDE)
 	{

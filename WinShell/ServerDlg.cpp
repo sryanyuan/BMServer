@@ -4,23 +4,22 @@
 #include "BackMirServer.h"
 #include "ServerDlg.h"
 #include "RegisterGameRoomDlg.h"
-#include "IOServer/IOServer.h"
-#include "CMainServer/CMainServer.h"
+#include "../CMainServer/CMainServer.h"
 #include "Helper.h"
-#include "common/glog.h"
+#include "../common/glog.h"
 #include <Shlwapi.h>
-#include "./GameWorld/struct.h"
-#include "./GameWorld/GameWorld.h"
-#include "./GameWorld/ObjectEngine.h"
-#include "./GameWorld/ExceptionHandler.h"
+#include "../GameWorld/struct.h"
+#include "../GameWorld/GameWorld.h"
+#include "../GameWorld/ObjectEngine.h"
+#include "../GameWorld/ExceptionHandler.h"
 #include "SettingDlg.h"
-#include "../CommonModule/CommandLineHelper.h"
-#include "../CommonModule/SimpleIni.h"
-#include "../CommonModule/BMHttpManager.h"
-#include "../CommonModule/cJSON.h"
+#include "../../CommonModule/CommandLineHelper.h"
+#include "../../CommonModule/SimpleIni.h"
+#include "../../CommonModule/BMHttpManager.h"
+#include "../../CommonModule/cJSON.h"
 #include "ConfigDlg.h"
 #include "runarg.h"
-#include "../CommonModule/version.h"
+#include "../../CommonModule/version.h"
 
 using std::string;
 //////////////////////////////////////////////////////////////////////////
@@ -142,6 +141,20 @@ BOOL CServerDlg::OnInitDialog()
 	SetTimer(TIMER_MSGBOARD, 50, NULL);
 
 	SetRandomTitle(GetSafeHwnd());
+
+	// Setup server base info
+	const char* pszServerName = GetRunArg("servername");
+	if (nullptr != pszServerName) {
+		strcpy(m_stServerBaseInfo.strServerName, pszServerName);
+	}
+	const char* pszServerID = GetRunArg("serverid");
+	if (nullptr != pszServerID) {
+		m_stServerBaseInfo.nServerID = atoi(pszServerID);
+	}
+	const char* pszServeIP = GetRunArg("outerip");
+	if (nullptr != pszServeIP) {
+		strcpy(m_stServerBaseInfo.szServeIP, pszServerID);
+	}
 
 #ifndef _DEBUG
 	GetDlgItem(IDC_BUTTON4)->EnableWindow(FALSE);
@@ -266,7 +279,7 @@ void CServerDlg::OnBnStartClicked()
 		LOG(WARNING) << "配置文件IP读取值为空";
 		return;
 	}
-	WORD wPort = 0;
+	unsigned short wPort = 0;
 	wPort = ::GetPrivateProfileInt("SERVER", "PORT", 0, szCfgFile);
 	if(wPort == 0)
 	{
@@ -339,7 +352,7 @@ void CServerDlg::AutoRun()
 			char szIP[16];
 			char szBuf[16];
 			szIP[15] = 0;
-			WORD wPort = 0;
+			unsigned short wPort = 0;
 			int nPortPos = 0;
 			for(int i = 0; i < 16; ++i)
 			{
@@ -366,7 +379,7 @@ void CServerDlg::AutoRun()
 				}
 				szBuf[i - nPortPos] = pszValue[i];
 			}
-			wPort = (WORD)atoi(szBuf);
+			wPort = (unsigned short)atoi(szBuf);
 
 			LOG(INFO) << "IP:" << szIP << ", Port:" << wPort;
 
@@ -401,14 +414,10 @@ LRESULT CServerDlg::OnUpdateDialogInfo(WPARAM wParam, LPARAM lParam)
 {
 	extern const char* g_szMode[2];
 
-	ServerState* pState = (ServerState*)wParam;
 	char szOutput[MAX_PATH];
-	/*sprintf(szOutput, "在线人数: %d",
-		pState->wOnline);
-	GetDlgItem(IDC_USERSUM)->SetWindowText(szOutput);*/
 
 	sprintf(szOutput, "运行状态: %s",
-		g_szMode[pState->bMode]);
+		g_szMode[wParam]);
 	GetDlgItem(IDC_MODE)->SetWindowText(szOutput);
 
 	return S_OK;
@@ -503,7 +512,7 @@ void CServerDlg::OnTimer(UINT_PTR nIDEvent)
 	}
 	else if(nIDEvent == TIMER_UPDATERUNNINGTIME)
 	{
-		DWORD dwMs = GetTickCount() - m_dwServerStartTime;
+		unsigned int dwMs = GetTickCount() - m_dwServerStartTime;
 		int nSec = dwMs / 1000;
 
 		char szMsg[50] = {0};
@@ -591,7 +600,7 @@ LRESULT CServerDlg::OnUserMessage(WPARAM _wParam, LPARAM _lParam)
 LRESULT CServerDlg::OnCloseConnection(WPARAM _wParam, LPARAM _lParam)
 {
 	LOG(INFO) << "Force close connection[" << _wParam << "]";
-	m_pxMainServer->GetIOServer()->CloseUserConnection(_wParam);
+	m_pxMainServer->ForceCloseConnection(_wParam);
 	return 1;
 }
 
@@ -871,4 +880,53 @@ void CServerDlg::OnBnClickedButton7()
 	{
 
 	}
+}
+
+const char* CServerDlg::GetConfig(const char* _pszKey) {
+	return GetRunArg(_pszKey);
+}
+
+static void GetRootPath(char* _pszBuf, unsigned int _sz)
+{
+	GetModuleFileName(NULL, _pszBuf, _sz);
+	PathRemoveFileSpec(_pszBuf);
+#ifdef _BIN_PATH
+	// remove current path
+	size_t uStrlen = strlen(_pszBuf);
+	if (0 == uStrlen)
+	{
+		return;
+	}
+	for (size_t i = uStrlen - 1; i >= 0; --i)
+	{
+		if (_pszBuf[i] == '\\' ||
+			_pszBuf[i] == '/')
+		{
+			// done
+			break;
+		}
+		_pszBuf[i] = '\0';
+	}
+#endif
+}
+
+const char* CServerDlg::GetRootPath() {
+	static char s_szRootPath[MAX_PATH] = { 0 };
+
+	if (s_szRootPath[0] == 0)
+	{
+		::GetRootPath(s_szRootPath, MAX_PATH);
+	}
+
+	return s_szRootPath;
+}
+
+void CServerDlg::UpdateServerState(const ServerState* _pState) {
+	PostMessage(WM_DISTINCTIP, _pState->uDistinctIPCount, 0);
+	PostMessage(WM_PLAYERCOUNT, _pState->uHeroCount, _pState->uHeroCount);
+	PostMessage(WM_UPDATE_INFO, _pState->bMode, 0);
+}
+
+const ServerBaseInfo* CServerDlg::GetServerBaseInfo() {
+	return &m_stServerBaseInfo;
 }

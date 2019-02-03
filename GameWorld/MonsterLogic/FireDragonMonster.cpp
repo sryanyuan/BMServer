@@ -200,8 +200,8 @@ bool FireDragonMonster::NormalAttack()
 		m_dwLastAttackTime = m_dwCurrentTime;
 
 		//m_pTarget->ReceiveDamage(this, IsMagicAttackMode());
-		DWORD dwTargetX = m_pTarget->GetCoordX();
-		DWORD dwTargetY = m_pTarget->GetCoordY();
+		unsigned int dwTargetX = m_pTarget->GetCoordX();
+		unsigned int dwTargetY = m_pTarget->GetCoordY();
 		m_pTarget->ReceiveDamage(this, IsMagicAttackMode(), GetRandomAbility(AT_DC) * 1.3f);
 
 		//	释放持续性魔法

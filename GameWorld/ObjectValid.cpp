@@ -2,40 +2,40 @@
 #include "ObjectEngine.h"
 #include "GameWorld.h"
 //////////////////////////////////////////////////////////////////////////
-DWORD EAI_ID_MASK = 0;
-BYTE EAI_LUCKY_MASK = 0;
-BYTE EAI_CURSE_MASK = 0;
-BYTE EAI_HIDE_MASK = 0;
-BYTE EAI_ACCURACY_MASK = 0;
-BYTE EAI_ATKSPEED_MASK = 0;
-BYTE EAI_ATKPALSY_MASK = 0;
-BYTE EAI_ATKPOIS_MASK = 0;
-BYTE EAI_MOVESPEED_MASK = 0;
-BYTE EAI_WEIGHT_MASK = 0;
-WORD EAI_MAXDC_MASK = 0;
-WORD EAI_DC_MASK = 0;
-WORD EAI_MAXAC_MASK = 0;
-WORD EAI_AC_MASK = 0;
-WORD EAI_MAXMAC_MASK = 0;
-WORD EAI_MAC_MASK = 0;
-WORD EAI_MAXSC_MASK = 0;
-WORD EAI_SC_MASK = 0;
-WORD EAI_MAXMC_MASK = 0;
-WORD EAI_MC_MASK = 0;
-WORD EAI_MAXHP_MASK = 0;
-WORD EAI_HP_MASK = 0;
-WORD EAI_MAXMP_MASK = 0;
-WORD EAI_MP_MASK = 0;
-DWORD EAI_MAXEXPR_MASK = 0;
-DWORD EAI_EXPR_MASK = 0;
-WORD EAI_LEVEL_MASK = 0;
-BYTE EAI_REQVALUE_MASK = 0;
-BYTE EAI_REQTYPE_MASK = 0;
-BYTE EAI_SEX_MASK = 0;
-BYTE EAI_TYPE_MASK = 0;
-WORD EAI_TEX_MASK = 0;
-DWORD EAI_MONEY_MASK = 0;
-DWORD EAI_CRYSTAL_MASK = 0;
+unsigned int EAI_ID_MASK = 0;
+unsigned char EAI_LUCKY_MASK = 0;
+unsigned char EAI_CURSE_MASK = 0;
+unsigned char EAI_HIDE_MASK = 0;
+unsigned char EAI_ACCURACY_MASK = 0;
+unsigned char EAI_ATKSPEED_MASK = 0;
+unsigned char EAI_ATKPALSY_MASK = 0;
+unsigned char EAI_ATKPOIS_MASK = 0;
+unsigned char EAI_MOVESPEED_MASK = 0;
+unsigned char EAI_WEIGHT_MASK = 0;
+unsigned short EAI_MAXDC_MASK = 0;
+unsigned short EAI_DC_MASK = 0;
+unsigned short EAI_MAXAC_MASK = 0;
+unsigned short EAI_AC_MASK = 0;
+unsigned short EAI_MAXMAC_MASK = 0;
+unsigned short EAI_MAC_MASK = 0;
+unsigned short EAI_MAXSC_MASK = 0;
+unsigned short EAI_SC_MASK = 0;
+unsigned short EAI_MAXMC_MASK = 0;
+unsigned short EAI_MC_MASK = 0;
+unsigned short EAI_MAXHP_MASK = 0;
+unsigned short EAI_HP_MASK = 0;
+unsigned short EAI_MAXMP_MASK = 0;
+unsigned short EAI_MP_MASK = 0;
+unsigned int EAI_MAXEXPR_MASK = 0;
+unsigned int EAI_EXPR_MASK = 0;
+unsigned short EAI_LEVEL_MASK = 0;
+unsigned char EAI_REQVALUE_MASK = 0;
+unsigned char EAI_REQTYPE_MASK = 0;
+unsigned char EAI_SEX_MASK = 0;
+unsigned char EAI_TYPE_MASK = 0;
+unsigned short EAI_TEX_MASK = 0;
+unsigned int EAI_MONEY_MASK = 0;
+unsigned int EAI_CRYSTAL_MASK = 0;
 
 enum ENCRYPT_ATTRIB_INDEX
 {
@@ -393,9 +393,9 @@ void ObjectValid::DecEXP(int _exp)
 
 
 //////////////////////////////////////////////////////////////////////////
-static BYTE s_bStringTable[] = {0xEA, 0x33, 0x1B, 0x77, 0xA3, 0x79};
+static unsigned char s_bStringTable[] = {0xEA, 0x33, 0x1B, 0x77, 0xA3, 0x79};
 
-UINT ObjectValid::GetItemID(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemID(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(ID, _pItem->id);
 }
@@ -412,299 +412,299 @@ void ObjectValid::GetItemName(ItemAttrib* _pItem, char* _pBuf)
 		_pBuf[i] = _pBuf[i] ^ s_bStringTable[i % nStringTableSize];
 	}
 }
-UINT ObjectValid::GetItemLucky(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemLucky(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(LUCKY, _pItem->lucky);
 }
-UINT ObjectValid::GetItemCurse(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemCurse(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(CURSE, _pItem->curse);
 }
-UINT ObjectValid::GetItemHide(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemHide(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(HIDE, _pItem->hide);
 }
-UINT ObjectValid::GetItemAccuracy(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemAccuracy(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(ACCURACY, _pItem->accuracy);
 }
-UINT ObjectValid::GetItemAtkSpeed(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemAtkSpeed(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(ATKSPEED, _pItem->atkSpeed);
 }
-UINT ObjectValid::GetItemAtkPalsy(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemAtkPalsy(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(ATKPALSY, _pItem->atkPalsy);
 }
-UINT ObjectValid::GetItemAtkPois(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemAtkPois(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(ATKPOIS, _pItem->atkPois);
 }
-UINT ObjectValid::GetItemMoveSpeed(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMoveSpeed(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MOVESPEED, _pItem->moveSpeed);
 }
-UINT ObjectValid::GetItemWeight(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemWeight(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(WEIGHT, _pItem->weight);
 }
-UINT ObjectValid::GetItemReqType(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemReqType(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(REQTYPE, _pItem->reqType);
 }
-UINT ObjectValid::GetItemReqValue(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemReqValue(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(REQVALUE, _pItem->reqValue);
 }
-UINT ObjectValid::GetItemSex(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemSex(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(SEX, _pItem->sex);
 }
-UINT ObjectValid::GetItemType(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemType(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(TYPE, _pItem->type);
 }
-UINT ObjectValid::GetItemMaxDC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxDC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXDC, _pItem->maxDC);
 }
-UINT ObjectValid::GetItemDC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemDC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(DC, _pItem->DC);
 }
-UINT ObjectValid::GetItemMaxAC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxAC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXAC, _pItem->maxAC);
 }
-UINT ObjectValid::GetItemAC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemAC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(AC, _pItem->AC);
 }
-UINT ObjectValid::GetItemMaxMAC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxMAC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXMAC, _pItem->maxMAC);
 }
-UINT ObjectValid::GetItemMAC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMAC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAC, _pItem->MAC);
 }
-UINT ObjectValid::GetItemMaxSC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxSC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXSC, _pItem->maxSC);
 }
-UINT ObjectValid::GetItemSC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemSC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(SC, _pItem->SC);
 }
-UINT ObjectValid::GetItemMaxMC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxMC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXMC, _pItem->maxMC);
 }
-UINT ObjectValid::GetItemMC(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMC(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MC, _pItem->MC);
 }
-UINT ObjectValid::GetItemMaxHP(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxHP(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXHP, _pItem->maxHP);
 }
-UINT ObjectValid::GetItemHP(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemHP(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(HP, _pItem->HP);
 }
-UINT ObjectValid::GetItemMaxMP(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxMP(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXMP, _pItem->maxMP);
 }
-UINT ObjectValid::GetItemMP(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMP(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MP, _pItem->MP);
 }
-UINT ObjectValid::GetItemMaxExpr(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemMaxExpr(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(MAXEXPR, _pItem->maxEXPR);
 }
-UINT ObjectValid::GetItemExpr(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemExpr(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(EXPR, _pItem->EXPR);
 }
-UINT ObjectValid::GetItemLevel(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemLevel(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(LEVEL, _pItem->level);
 }
-UINT ObjectValid::GetItemTex(ItemAttrib* _pItem)
+unsigned int ObjectValid::GetItemTex(ItemAttrib* _pItem)
 {
 	return ATB_DECRYPT(TEX, _pItem->tex);
 }
-//static UINT GetMoney(ItemAttrib* _pItem);
+//static unsigned int GetMoney(ItemAttrib* _pItem);
 
 
-void ObjectValid::SetItemID(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemID(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(ID, _value);
+	unsigned int uValue = ATB_ENCRYPT(ID, _value);
 	_pItem->id = uValue;
 }
 void ObjectValid::SetItemName(ItemAttrib* _pItem, const char* _pszName)
 {
 
 }
-void ObjectValid::SetItemLucky(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemLucky(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(LUCKY, _value);
+	unsigned int uValue = ATB_ENCRYPT(LUCKY, _value);
 	_pItem->lucky = uValue;
 }
-void ObjectValid::SetItemCurse(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemCurse(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(CURSE, _value);
+	unsigned int uValue = ATB_ENCRYPT(CURSE, _value);
 	_pItem->curse = uValue;
 }
-void ObjectValid::SetItemHide(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemHide(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(HIDE, _value);
+	unsigned int uValue = ATB_ENCRYPT(HIDE, _value);
 	_pItem->hide = uValue;
 }
-void ObjectValid::SetItemAccuracy(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemAccuracy(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(ACCURACY, _value);
+	unsigned int uValue = ATB_ENCRYPT(ACCURACY, _value);
 	_pItem->accuracy = uValue;
 }
-void ObjectValid::SetItemAtkSpeed(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemAtkSpeed(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(ATKSPEED, _value);
+	unsigned int uValue = ATB_ENCRYPT(ATKSPEED, _value);
 	_pItem->atkSpeed = uValue;
 }
-void ObjectValid::SetItemAtkPalsy(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemAtkPalsy(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(ATKPALSY, _value);
+	unsigned int uValue = ATB_ENCRYPT(ATKPALSY, _value);
 	_pItem->atkPalsy = uValue;
 }
-void ObjectValid::SetItemAtkPois(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemAtkPois(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(ATKPOIS, _value);
+	unsigned int uValue = ATB_ENCRYPT(ATKPOIS, _value);
 	_pItem->atkPois = uValue;
 }
-void ObjectValid::SetItemMoveSpeed(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMoveSpeed(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MOVESPEED, _value);
+	unsigned int uValue = ATB_ENCRYPT(MOVESPEED, _value);
 	_pItem->moveSpeed = uValue;
 }
-void ObjectValid::SetItemWeight(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemWeight(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(WEIGHT, _value);
+	unsigned int uValue = ATB_ENCRYPT(WEIGHT, _value);
 	_pItem->weight = uValue;
 }
-void ObjectValid::SetItemReqType(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemReqType(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(REQTYPE, _value);
+	unsigned int uValue = ATB_ENCRYPT(REQTYPE, _value);
 	_pItem->reqType = uValue;
 }
-void ObjectValid::SetItemReqValue(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemReqValue(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(REQVALUE, _value);
+	unsigned int uValue = ATB_ENCRYPT(REQVALUE, _value);
 	_pItem->reqValue = uValue;
 }
-void ObjectValid::SetItemSex(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemSex(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(SEX, _value);
+	unsigned int uValue = ATB_ENCRYPT(SEX, _value);
 	_pItem->sex = uValue;
 }
-void ObjectValid::SetItemType(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemType(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(TYPE, _value);
+	unsigned int uValue = ATB_ENCRYPT(TYPE, _value);
 	_pItem->type = uValue;
 }
-void ObjectValid::SetItemMaxDC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxDC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXDC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXDC, _value);
 	_pItem->maxDC = uValue;
 }
-void ObjectValid::SetItemDC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemDC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(DC, _value);
+	unsigned int uValue = ATB_ENCRYPT(DC, _value);
 	_pItem->DC = uValue;
 }
-void ObjectValid::SetItemMaxAC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxAC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXAC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXAC, _value);
 	_pItem->maxAC = uValue;
 }
-void ObjectValid::SetItemAC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemAC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(AC, _value);
+	unsigned int uValue = ATB_ENCRYPT(AC, _value);
 	_pItem->AC = uValue;
 }
-void ObjectValid::SetItemMaxMAC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxMAC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXMAC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXMAC, _value);
 	_pItem->maxMAC = uValue;
 }
-void ObjectValid::SetItemMAC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMAC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAC, _value);
 	_pItem->MAC = uValue;
 }
-void ObjectValid::SetItemMaxSC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxSC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXSC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXSC, _value);
 	_pItem->maxSC = uValue;
 }
-void ObjectValid::SetItemSC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemSC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(SC, _value);
+	unsigned int uValue = ATB_ENCRYPT(SC, _value);
 	_pItem->SC = uValue;
 }
-void ObjectValid::SetItemMaxMC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxMC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXMC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXMC, _value);
 	_pItem->maxMC = uValue;
 }
-void ObjectValid::SetItemMC(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMC(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MC, _value);
+	unsigned int uValue = ATB_ENCRYPT(MC, _value);
 	_pItem->MC = uValue;
 }
-void ObjectValid::SetItemMaxHP(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxHP(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXHP, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXHP, _value);
 	_pItem->maxHP = uValue;
 }
-void ObjectValid::SetItemHP(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemHP(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(HP, _value);
+	unsigned int uValue = ATB_ENCRYPT(HP, _value);
 	_pItem->HP = uValue;
 }
-void ObjectValid::SetItemMaxMP(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxMP(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXMP, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXMP, _value);
 	_pItem->maxMP = uValue;
 }
-void ObjectValid::SetItemMP(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMP(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MP, _value);
+	unsigned int uValue = ATB_ENCRYPT(MP, _value);
 	_pItem->MP = uValue;
 }
-void ObjectValid::SetItemMaxExpr(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemMaxExpr(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(MAXEXPR, _value);
+	unsigned int uValue = ATB_ENCRYPT(MAXEXPR, _value);
 	_pItem->maxEXPR = uValue;
 }
-void ObjectValid::SetItemExpr(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemExpr(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(EXPR, _value);
+	unsigned int uValue = ATB_ENCRYPT(EXPR, _value);
 	_pItem->EXPR = uValue;
 }
-void ObjectValid::SetItemLevel(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemLevel(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(LEVEL, _value);
+	unsigned int uValue = ATB_ENCRYPT(LEVEL, _value);
 	_pItem->level = uValue;
 }
-void ObjectValid::SetItemTex(ItemAttrib* _pItem, UINT _value)
+void ObjectValid::SetItemTex(ItemAttrib* _pItem, unsigned int _value)
 {
-	UINT uValue = ATB_ENCRYPT(TEX, _value);
+	unsigned int uValue = ATB_ENCRYPT(TEX, _value);
 	_pItem->tex = uValue;
 }
 
-UINT EncryptValue(UINT _mask, UINT _value)
+unsigned int EncryptValue(unsigned int _mask, unsigned int _value)
 {
 	_value = _value ^ _mask;
 	bool bZero = false;
@@ -780,7 +780,7 @@ UINT EncryptValue(UINT _mask, UINT _value)
 	return _value;
 }
 
-UINT DecryptValue(UINT _mask, UINT _value)
+unsigned int DecryptValue(unsigned int _mask, unsigned int _value)
 {
 	bool bZero = false;
 
@@ -1043,13 +1043,13 @@ void ObjectValid::GenerateEncryptTable()
 #endif
 }
 
-BYTE GetRandomMask(BYTE _bVar)
+unsigned char GetRandomMask(unsigned char _bVar)
 {
-	BYTE bVar = 1 + rand() % 0xFF;
+	unsigned char bVar = 1 + rand() % 0xFF;
 	return bVar;
 }
 
-WORD GetRandomMask(WORD _wVar)
+unsigned short GetRandomMask(unsigned short _wVar)
 {
 	/*DWORD dwRand = rand();
 
@@ -1057,14 +1057,14 @@ WORD GetRandomMask(WORD _wVar)
 	BYTE bLow = dwRand % 0x7FFF;
 	WORD wVar = bHigh << 4 + bLow;*/
 	//WORD wVar = ((WORD)(rand() % 9)) << 12 + rand() % 0x7FFF;
-	WORD wHign = rand() % 9;
+	unsigned short wHign = rand() % 9;
 	wHign = wHign << 12;
 	wHign += rand() % 0x7FFF;
 
 	return wHign;
 }
 
-DWORD GetRandomMask(DWORD _dwVar)
+unsigned int GetRandomMask(unsigned int _dwVar)
 {
 	//DWORD dwRand = rand();
 
@@ -1073,16 +1073,16 @@ DWORD GetRandomMask(DWORD _dwVar)
 	//DWORD dwVar = ((DWORD)(((WORD)(rand() % 9)) << 12 + rand() % 0x7FFF)) << 16 + ((WORD)(rand() % 9)) << 12 + rand() % 0x7FFF;
 	//DWORD dwVar = dwHigh + wLow;
 
-	DWORD dwHigh = rand() % 9;
+	unsigned int dwHigh = rand() % 9;
 	dwHigh = dwHigh << 12;
 	dwHigh += rand() % 0x7FFF;
 	dwHigh = dwHigh << 16;
 
-	WORD wLow = rand() % 9;
+	unsigned short wLow = rand() % 9;
 	wLow = wLow << 12;
 	wLow += rand() % 0x7FFF;
 
-	DWORD dwVar = dwHigh + wLow;
+	unsigned int dwVar = dwHigh + wLow;
 
 	return dwVar;
 }

@@ -5,7 +5,6 @@
 #include <io.h>
 #include <direct.h>
 #include <Shlwapi.h>
-#include "../Helper.h"
 //////////////////////////////////////////////////////////////////////////
 const char* g_pszExecuteFunc_WorldThread = NULL;
 const char* g_pszExecuteFunc_ServerThread = NULL;
@@ -22,8 +21,27 @@ LONG WINAPI BM_UnhandledExceptionFilter(_EXCEPTION_POINTERS* pExceptionInfo)
 	CMainServer::GetInstance()->SetAppException();
 
 	char szBuf[MAX_PATH];
-	sprintf(szBuf, "%s\\Dump",
-		GetRootPath());
+	GetModuleFileName(NULL, szBuf, MAX_PATH);
+	PathRemoveFileSpec(szBuf);
+#ifdef _BIN_PATH
+	// remove current path
+	size_t uStrlen = strlen(szBuf);
+	if (0 == uStrlen)
+	{
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
+	for (size_t i = uStrlen - 1; i >= 0; --i)
+	{
+		if (szBuf[i] == '\\' ||
+			szBuf[i] == '/')
+		{
+			// done
+			break;
+		}
+		szBuf[i] = '\0';
+	}
+#endif
+	strcat(szBuf, "\\Dump");
 
 	if(!PathFileExists(szBuf))
 	{
@@ -32,8 +50,10 @@ LONG WINAPI BM_UnhandledExceptionFilter(_EXCEPTION_POINTERS* pExceptionInfo)
 
 	SYSTEMTIME st;
 	GetLocalTime(&st);
-	sprintf(szBuf, "%s\\Dump\\%02d-%02d-%02d-%02d-%02d.dmp",
-		GetRootPath(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute);
+	char szDumpFileName[50];
+	sprintf(szDumpFileName, "\\%02d-%02d-%02d-%02d-%02d.dmp",
+		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute);
+	strcat(szBuf, szDumpFileName);
 
 	HANDLE hFile = ::CreateFile(  
 		szBuf,   

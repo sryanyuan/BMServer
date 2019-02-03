@@ -130,15 +130,15 @@
     <ClCompile Include="..\CommonModule\BMHttpManager.cpp" />
     <ClCompile Include="..\CommonModule\ByteBuffer.cpp" />
     <ClCompile Include="..\CommonModule\cJSON.c" />
+    <ClCompile Include="..\CommonModule\CollDownController.cpp" />
     <ClCompile Include="..\CommonModule\CommandLineHelper.cpp" />
     <ClCompile Include="..\CommonModule\ConsoleHelper.cpp" />
     <ClCompile Include="..\CommonModule\ConvertUTF.c" />
-    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCCalc.cpp" />
-    <ClCompile Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.cpp" />
     <ClCompile Include="..\CommonModule\cron\ccronexpr.cpp" />
     <ClCompile Include="..\CommonModule\cron\CronSchedule.cpp" />
     <ClCompile Include="..\CommonModule\DataEncryptor.cpp" />
     <ClCompile Include="..\CommonModule\DataParser.cpp" />
+    <ClCompile Include="..\CommonModule\fileopt.cpp" />
     <ClCompile Include="..\CommonModule\GamePacket.cpp" />
     <ClCompile Include="..\CommonModule\GameStructSerialize.cpp" />
     <ClCompile Include="..\CommonModule\HideAttribHelper.cpp" />
@@ -162,20 +162,16 @@
     <ClCompile Include="..\CommonModule\ProtoType.cpp" />
     <ClCompile Include="..\CommonModule\QuestContext.cpp" />
     <ClCompile Include="..\CommonModule\SaveFile.cpp" />
-    <ClCompile Include="..\CommonModule\ScriptEngine.cpp" />
     <ClCompile Include="..\CommonModule\ShareData.cpp" />
     <ClCompile Include="..\CommonModule\SKnl3Helper.cpp" />
     <ClCompile Include="..\CommonModule\StackWalker\StackWalker.cpp" />
+    <ClCompile Include="..\CommonModule\StateController.cpp" />
     <ClCompile Include="..\CommonModule\StoveManager.cpp" />
     <ClCompile Include="..\CommonModule\utils.cpp" />
     <ClCompile Include="..\CommonModule\xxtea.cpp" />
     <ClCompile Include="..\CommonModule\ZipDataReader.cpp" />
-    <ClCompile Include="BackMirServer.cpp" />
-    <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="CMainServer\CMainServer.cpp" />
     <ClCompile Include="CMainServer\CMainServer_Deprecated.cpp" />
-    <ClCompile Include="ConfigDlg.cpp" />
-    <ClCompile Include="CpuQueryDlg.cpp" />
     <ClCompile Include="GameWorld\ConnCode.cpp" />
     <ClCompile Include="GameWorld\DamagePool.cpp" />
     <ClCompile Include="GameWorld\DBDropDownContext.cpp" />
@@ -245,43 +241,41 @@
     <ClCompile Include="GameWorld\SceneEvent.cpp" />
     <ClCompile Include="GameWorld\Struct.cpp" />
     <ClCompile Include="GameWorld\TeammateControl.cpp" />
-    <ClCompile Include="GameWorld\WatcherThread.cpp" />
     <ClCompile Include="GameWorld\WeightCalc.cpp" />
     <ClCompile Include="GameWorld\WorldEventDispatcher.cpp" />
-    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Import\ImportModule.cpp" />
     <ClCompile Include="IOServer\IndexManager.cpp" />
     <ClCompile Include="IOServer\IOConn.cpp" />
     <ClCompile Include="IOServer\IOServer.cpp" />
-    <ClCompile Include="MainFrm.cpp" />
-    <ClCompile Include="RegisterGameRoomDlg.cpp" />
-    <ClCompile Include="runarg.cpp" />
-    <ClCompile Include="ServerDlg.cpp" />
-    <ClCompile Include="SettingDlg.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="tolua\luaServer.cpp" />
+    <ClCompile Include="WinShell\BackMirServer.cpp" />
+    <ClCompile Include="WinShell\ChildView.cpp" />
+    <ClCompile Include="WinShell\ConfigDlg.cpp" />
+    <ClCompile Include="WinShell\CpuQueryDlg.cpp" />
+    <ClCompile Include="WinShell\Helper.cpp" />
+    <ClCompile Include="WinShell\MainFrm.cpp" />
+    <ClCompile Include="WinShell\RegisterGameRoomDlg.cpp" />
+    <ClCompile Include="WinShell\runarg.cpp" />
+    <ClCompile Include="WinShell\ServerDlg.cpp" />
+    <ClCompile Include="WinShell\SettingDlg.cpp" />
+    <ClCompile Include="WinShell\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\CommonModule\bitop.h" />
     <ClInclude Include="..\CommonModule\BlockingQueue.h" />
     <ClInclude Include="..\CommonModule\BMHttpManager.h" />
     <ClInclude Include="..\CommonModule\ByteBuffer.h" />
     <ClInclude Include="..\CommonModule\cJSON.h" />
+    <ClInclude Include="..\CommonModule\CollDownController.h" />
     <ClInclude Include="..\CommonModule\CommandLineHelper.h" />
     <ClInclude Include="..\CommonModule\ConsoleHelper.h" />
     <ClInclude Include="..\CommonModule\ConvertUTF.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\AntiRE.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCCalc.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\CRCVerifyThread.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\MacroHelper.h" />
-    <ClInclude Include="..\CommonModule\CRCVerifyThread\ThreadRunnerWin.h" />
     <ClInclude Include="..\CommonModule\cron\ccronexpr.h" />
     <ClInclude Include="..\CommonModule\cron\CronSchedule.h" />
     <ClInclude Include="..\CommonModule\DataEncryptor.h" />
     <ClInclude Include="..\CommonModule\DataParser.h" />
     <ClInclude Include="..\CommonModule\EnumUtils.h" />
+    <ClInclude Include="..\CommonModule\fileopt.h" />
     <ClInclude Include="..\CommonModule\GamePacket.h" />
     <ClInclude Include="..\CommonModule\GameStructSerialize.h" />
     <ClInclude Include="..\CommonModule\GDefine.h" />
@@ -307,21 +301,20 @@
     <ClInclude Include="..\CommonModule\ProtoType.h" />
     <ClInclude Include="..\CommonModule\QuestContext.h" />
     <ClInclude Include="..\CommonModule\SaveFile.h" />
-    <ClInclude Include="..\CommonModule\ScriptEngine.h" />
     <ClInclude Include="..\CommonModule\SettingLoader.h" />
     <ClInclude Include="..\CommonModule\ShareData.h" />
     <ClInclude Include="..\CommonModule\SimpleActionHelper.h" />
     <ClInclude Include="..\CommonModule\SimpleIni.h" />
     <ClInclude Include="..\CommonModule\SKnl3Helper.h" />
     <ClInclude Include="..\CommonModule\StackWalker\StackWalker.h" />
+    <ClInclude Include="..\CommonModule\StateController.h" />
     <ClInclude Include="..\CommonModule\StoveManager.h" />
     <ClInclude Include="..\CommonModule\stove_def.h" />
     <ClInclude Include="..\CommonModule\ThreadRunner.h" />
     <ClInclude Include="..\CommonModule\utils.h" />
+    <ClInclude Include="..\CommonModule\SWilFile.h" />
     <ClInclude Include="..\CommonModule\xxtea.h" />
     <ClInclude Include="..\CommonModule\ZipDataReader.h" />
-    <ClInclude Include="BackMirServer.h" />
-    <ClInclude Include="ChildView.h" />
     <ClInclude Include="CMainServer\CMainServer.h" />
     <ClInclude Include="CMainServer\CMainServerMacros.h" />
     <ClInclude Include="common\cmsg.h" />
@@ -329,8 +322,6 @@
     <ClInclude Include="common\memleak.h" />
     <ClInclude Include="common\shared.h" />
     <ClInclude Include="common\view.h" />
-    <ClInclude Include="ConfigDlg.h" />
-    <ClInclude Include="CpuQueryDlg.h" />
     <ClInclude Include="GameWorld\ConnCode.h" />
     <ClInclude Include="GameWorld\DamagePool.h" />
     <ClInclude Include="GameWorld\DBDropDownContext.h" />
@@ -355,10 +346,8 @@
     <ClInclude Include="GameWorld\SceneEvent.h" />
     <ClInclude Include="GameWorld\struct.h" />
     <ClInclude Include="GameWorld\TeammateControl.h" />
-    <ClInclude Include="GameWorld\WatcherThread.h" />
     <ClInclude Include="GameWorld\WeightCalc.h" />
     <ClInclude Include="GameWorld\WorldEventDispatcher.h" />
-    <ClInclude Include="Helper.h" />
     <ClInclude Include="Interface\ServerShell.h" />
     <ClInclude Include="IOServer\Def.h" />
     <ClInclude Include="IOServer\IndexManager.h" />
@@ -367,29 +356,33 @@
     <ClInclude Include="IOServer\IOConn.h" />
     <ClInclude Include="IOServer\IOServer.h" />
     <ClInclude Include="IOServer\namespace.h" />
-    <ClInclude Include="MainFrm.h" />
-    <ClInclude Include="Net\Packet.h" />
-    <ClInclude Include="RegisterGameRoomDlg.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="runarg.h" />
-    <ClInclude Include="ServerDlg.h" />
-    <ClInclude Include="SettingDlg.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\BackMirServer.ico" />
-    <Image Include="res\Toolbar.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="BackMirServer.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\BackMirServer.rc2" />
+    <ClInclude Include="WinShell\BackMirServer.h" />
+    <ClInclude Include="WinShell\ChildView.h" />
+    <ClInclude Include="WinShell\ConfigDlg.h" />
+    <ClInclude Include="WinShell\CpuQueryDlg.h" />
+    <ClInclude Include="WinShell\Helper.h" />
+    <ClInclude Include="WinShell\MainFrm.h" />
+    <ClInclude Include="WinShell\RegisterGameRoomDlg.h" />
+    <ClInclude Include="WinShell\resource.h" />
+    <ClInclude Include="WinShell\runarg.h" />
+    <ClInclude Include="WinShell\ServerDlg.h" />
+    <ClInclude Include="WinShell\SettingDlg.h" />
+    <ClInclude Include="WinShell\stdafx.h" />
+    <ClInclude Include="WinShell\targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CommonModule\Doc\ItemAttrib_field.txt" />
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WinShell\BackMirServer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="WinShell\res\BackMirServer.ico" />
+    <Image Include="WinShell\res\Toolbar.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WinShell\res\BackMirServer.rc2" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -14,10 +14,10 @@ MoonWarLordMonster::MoonWarLordMonster()
 	//AddLogicItem(3, ACTION_EXT4, 20, 300);
 }
 
-DWORD MoonWarLordMonster::GetAttackCostTime()
+unsigned int MoonWarLordMonster::GetAttackCostTime()
 {
 	int nAtkFrame = 10;
-	DWORD dwCost = MAX_ATTACK_INTERVAL;
+	unsigned int dwCost = MAX_ATTACK_INTERVAL;
 	dwCost = (MAX_ATTACK_INTERVAL - GetObject_AtkSpeed() * 5) * (nAtkFrame + 2) + 50;
 	if(dwCost > MAX_ATTACK_INTERVAL)
 	{
@@ -552,7 +552,7 @@ bool MoonWarLordMonster::LogicAttackTarget(const MonsLogicItem* _pLogic)
 				}
 			}
 
-			DWORD dwLastTime = 20 * 1000;
+			unsigned int dwLastTime = 20 * 1000;
 			m_dwLastDefenceTime = GetTickCount() + dwLastTime;
 			PkgPlayerPlayAniAck aniack;
 			aniack.uTargetId = GetID();

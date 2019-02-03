@@ -1,7 +1,6 @@
 #ifndef _INC_OBJECTVALID_
 #define _INC_OBJECTVALID_
 //////////////////////////////////////////////////////////////////////////
-//#include "ObjectEngine.h"
 #include "../../CommonModule/GDefine.h"
 #include "../../CommonModule/ByteBuffer.h"
 class GameObject;
@@ -49,8 +48,8 @@ class GameObject;
 
 //////////////////////////////////////////////////////////////////////////
 //	Encryptor and decryptor
-inline UINT EncryptValue(UINT _mask, UINT _value);
-inline UINT DecryptValue(UINT _mask, UINT _value);
+inline unsigned int EncryptValue(unsigned int _mask, unsigned int _value);
+inline unsigned int DecryptValue(unsigned int _mask, unsigned int _value);
 
 //////////////////////////////////////////////////////////////////////////
 //	Using extended encryption
@@ -75,9 +74,9 @@ inline UINT DecryptValue(UINT _mask, UINT _value);
 
 //////////////////////////////////////////////////////////////////////////
 //	Encrypt mask generator
-BYTE GetRandomMask(BYTE _bVar);
-WORD GetRandomMask(WORD _wVar);
-DWORD GetRandomMask(DWORD _dwVar);
+unsigned char GetRandomMask(unsigned char _bVar);
+unsigned short GetRandomMask(unsigned short _wVar);
+unsigned int GetRandomMask(unsigned int _dwVar);
 
 //////////////////////////////////////////////////////////////////////////
 //	Define of GENERATE_MASK
@@ -85,7 +84,7 @@ DWORD GetRandomMask(DWORD _dwVar);
 
 #define GENERATE_MASK(MASK)\
 	MASK = GetRandomMask(MASK);\
-	LOG(INFO) << #MASK << " IS\t" << (UINT)MASK;
+	LOG(INFO) << #MASK << " IS\t" << (unsigned int)MASK;
 #else
 
 #define GENERATE_MASK(MASK)\
@@ -95,7 +94,7 @@ DWORD GetRandomMask(DWORD _dwVar);
 
 //////////////////////////////////////////////////////////////////////////
 //	Define of get/set attribute
-#define GET_OBJECT_ATBE(var, NAME)	inline UINT GetObject_##NAME()\
+#define GET_OBJECT_ATBE(var, NAME)	inline unsigned int GetObject_##NAME()\
 									{\
 										if(IsEncrypt())\
 										{\
@@ -106,7 +105,7 @@ DWORD GetRandomMask(DWORD _dwVar);
 											return m_stData.stAttrib.var;\
 										}\
 									}
-#define SET_OBJECT_ATBE(var, NAME)		inline void SetObject_##NAME(UINT _var)\
+#define SET_OBJECT_ATBE(var, NAME)		inline void SetObject_##NAME(unsigned int _var)\
 										{\
 											if(IsEncrypt())\
 											{\
@@ -117,11 +116,11 @@ DWORD GetRandomMask(DWORD _dwVar);
 												m_stData.stAttrib.var = _var;\
 											}\
 										}
-#define GET_OBJECT_ATBN(var, NAME)	inline UINT GetObject_##NAME()\
+#define GET_OBJECT_ATBN(var, NAME)	inline unsigned int GetObject_##NAME()\
 									{\
 										return m_stData.stAttrib.var;\
 									}
-#define SET_OBJECT_ATBN(var, NAME)	inline void SetObject_##NAME(UINT _var)\
+#define SET_OBJECT_ATBN(var, NAME)	inline void SetObject_##NAME(unsigned int _var)\
 									{\
 										m_stData.stAttrib.var = _var;\
 									}
@@ -129,7 +128,7 @@ DWORD GetRandomMask(DWORD _dwVar);
 #define SETGET_OBJECT_ATBN(var, NAME)	GET_OBJECT_ATBN(var, NAME);SET_OBJECT_ATBN(var, NAME);
 #define SETGET_OBJECT_ATBE(var, NAME)	GET_OBJECT_ATBE(var, NAME);SET_OBJECT_ATBE(var, NAME);
 
-#define GET_ITEM_ATBE(var, NAME)		static UINT GetItem_##NAME(ItemAttrib* ITEM)\
+#define GET_ITEM_ATBE(var, NAME)		static unsigned int GetItem_##NAME(ItemAttrib* ITEM)\
 										{\
 											if(TEST_FLAG_BOOL(ITEM->extra, EXTRA_MASK_ENCRYPT))\
 											{\
@@ -140,7 +139,7 @@ DWORD GetRandomMask(DWORD _dwVar);
 												return ITEM->var;\
 											}\
 										}
-#define SET_ITEM_ATBE(var, NAME)		static void SetItem_##NAME(ItemAttrib* ITEM, UINT _var)\
+#define SET_ITEM_ATBE(var, NAME)		static void SetItem_##NAME(ItemAttrib* ITEM, unsigned int _var)\
 										{\
 											if(TEST_FLAG_BOOL(ITEM->extra, EXTRA_MASK_ENCRYPT))\
 											{\
@@ -151,11 +150,11 @@ DWORD GetRandomMask(DWORD _dwVar);
 												ITEM->var = _var;\
 											}\
 										}
-#define GET_ITEM_ATBN(var, NAME)		static UINT GetItem_##NAME(ItemAttrib* ITEM)\
+#define GET_ITEM_ATBN(var, NAME)		static unsigned int GetItem_##NAME(ItemAttrib* ITEM)\
 										{\
 											return ITEM->var;\
 										}
-#define SET_ITEM_ATBN(var, NAME)		static void SetItem_##NAME(ItemAttrib* ITEM, UINT _var)\
+#define SET_ITEM_ATBN(var, NAME)		static void SetItem_##NAME(ItemAttrib* ITEM, unsigned int _var)\
 										{\
 											ITEM->var = _var;\
 										}
@@ -208,73 +207,73 @@ public:
 
 	static void GenerateEncryptTable();
 
-	static UINT GetItemID(ItemAttrib* _pItem);
+	static unsigned int GetItemID(ItemAttrib* _pItem);
 	static void GetItemName(ItemAttrib* _pItem, char* _pBuf);
-	static UINT GetItemLucky(ItemAttrib* _pItem);
-	static UINT GetItemCurse(ItemAttrib* _pItem);
-	static UINT GetItemHide(ItemAttrib* _pItem);
-	static UINT GetItemAccuracy(ItemAttrib* _pItem);
-	static UINT GetItemAtkSpeed(ItemAttrib* _pItem);
-	static UINT GetItemAtkPalsy(ItemAttrib* _pItem);
-	static UINT GetItemAtkPois(ItemAttrib* _pItem);
-	static UINT GetItemMoveSpeed(ItemAttrib* _pItem);
-	static UINT GetItemWeight(ItemAttrib* _pItem);
-	static UINT GetItemReqType(ItemAttrib* _pItem);
-	static UINT GetItemReqValue(ItemAttrib* _pItem);
-	static UINT GetItemSex(ItemAttrib* _pItem);
-	static UINT GetItemType(ItemAttrib* _pItem);
-	static UINT GetItemMaxDC(ItemAttrib* _pItem);
-	static UINT GetItemDC(ItemAttrib* _pItem);
-	static UINT GetItemMaxAC(ItemAttrib* _pItem);
-	static UINT GetItemAC(ItemAttrib* _pItem);
-	static UINT GetItemMaxMAC(ItemAttrib* _pItem);
-	static UINT GetItemMAC(ItemAttrib* _pItem);
-	static UINT GetItemMaxSC(ItemAttrib* _pItem);
-	static UINT GetItemSC(ItemAttrib* _pItem);
-	static UINT GetItemMaxMC(ItemAttrib* _pItem);
-	static UINT GetItemMC(ItemAttrib* _pItem);
-	static UINT GetItemMaxHP(ItemAttrib* _pItem);
-	static UINT GetItemHP(ItemAttrib* _pItem);
-	static UINT GetItemMaxMP(ItemAttrib* _pItem);
-	static UINT GetItemMP(ItemAttrib* _pItem);
-	static UINT GetItemMaxExpr(ItemAttrib* _pItem);
-	static UINT GetItemExpr(ItemAttrib* _pItem);
-	static UINT GetItemLevel(ItemAttrib* _pItem);
-	static UINT GetItemTex(ItemAttrib* _pItem);
+	static unsigned int GetItemLucky(ItemAttrib* _pItem);
+	static unsigned int GetItemCurse(ItemAttrib* _pItem);
+	static unsigned int GetItemHide(ItemAttrib* _pItem);
+	static unsigned int GetItemAccuracy(ItemAttrib* _pItem);
+	static unsigned int GetItemAtkSpeed(ItemAttrib* _pItem);
+	static unsigned int GetItemAtkPalsy(ItemAttrib* _pItem);
+	static unsigned int GetItemAtkPois(ItemAttrib* _pItem);
+	static unsigned int GetItemMoveSpeed(ItemAttrib* _pItem);
+	static unsigned int GetItemWeight(ItemAttrib* _pItem);
+	static unsigned int GetItemReqType(ItemAttrib* _pItem);
+	static unsigned int GetItemReqValue(ItemAttrib* _pItem);
+	static unsigned int GetItemSex(ItemAttrib* _pItem);
+	static unsigned int GetItemType(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxDC(ItemAttrib* _pItem);
+	static unsigned int GetItemDC(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxAC(ItemAttrib* _pItem);
+	static unsigned int GetItemAC(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxMAC(ItemAttrib* _pItem);
+	static unsigned int GetItemMAC(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxSC(ItemAttrib* _pItem);
+	static unsigned int GetItemSC(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxMC(ItemAttrib* _pItem);
+	static unsigned int GetItemMC(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxHP(ItemAttrib* _pItem);
+	static unsigned int GetItemHP(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxMP(ItemAttrib* _pItem);
+	static unsigned int GetItemMP(ItemAttrib* _pItem);
+	static unsigned int GetItemMaxExpr(ItemAttrib* _pItem);
+	static unsigned int GetItemExpr(ItemAttrib* _pItem);
+	static unsigned int GetItemLevel(ItemAttrib* _pItem);
+	static unsigned int GetItemTex(ItemAttrib* _pItem);
 
-	static void SetItemID(ItemAttrib* _pItem, UINT _value);
+	static void SetItemID(ItemAttrib* _pItem, unsigned int _value);
 	static void SetItemName(ItemAttrib* _pItem, const char* _pszName);
-	static void SetItemLucky(ItemAttrib* _pItem, UINT _value);
-	static void SetItemCurse(ItemAttrib* _pItem, UINT _value);
-	static void SetItemHide(ItemAttrib* _pItem, UINT _value);
-	static void SetItemAccuracy(ItemAttrib* _pItem, UINT _value);
-	static void SetItemAtkSpeed(ItemAttrib* _pItem, UINT _value);
-	static void SetItemAtkPalsy(ItemAttrib* _pItem, UINT _value);
-	static void SetItemAtkPois(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMoveSpeed(ItemAttrib* _pItem, UINT _value);
-	static void SetItemWeight(ItemAttrib* _pItem, UINT _value);
-	static void SetItemReqType(ItemAttrib* _pItem, UINT _value);
-	static void SetItemReqValue(ItemAttrib* _pItem, UINT _value);
-	static void SetItemSex(ItemAttrib* _pItem, UINT _value);
-	static void SetItemType(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxDC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemDC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxAC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemAC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxMAC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMAC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxSC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemSC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxMC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMC(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxHP(ItemAttrib* _pItem, UINT _value);
-	static void SetItemHP(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxMP(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMP(ItemAttrib* _pItem, UINT _value);
-	static void SetItemMaxExpr(ItemAttrib* _pItem, UINT _value);
-	static void SetItemExpr(ItemAttrib* _pItem, UINT _value);
-	static void SetItemLevel(ItemAttrib* _pItem, UINT _value);
-	static void SetItemTex(ItemAttrib* _pItem, UINT _value);
+	static void SetItemLucky(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemCurse(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemHide(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemAccuracy(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemAtkSpeed(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemAtkPalsy(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemAtkPois(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMoveSpeed(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemWeight(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemReqType(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemReqValue(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemSex(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemType(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxDC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemDC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxAC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemAC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxMAC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMAC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxSC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemSC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxMC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMC(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxHP(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemHP(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxMP(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMP(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemMaxExpr(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemExpr(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemLevel(ItemAttrib* _pItem, unsigned int _value);
+	static void SetItemTex(ItemAttrib* _pItem, unsigned int _value);
 
 	SETGET_ITEM_ATBE(id, ID);
 	SETGET_ITEM_ATBE(lucky, Lucky);

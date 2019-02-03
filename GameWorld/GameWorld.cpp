@@ -1,12 +1,9 @@
-#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "GameWorld.h"
 #include "GameSceneManager.h"
 #include "MonsterObject.h"
 #include "ObjectValid.h"
-#include "../Helper.h"
 #include <process.h>
-#include <Shlwapi.h>
 #include <io.h>
 #include <zlib.h>
 #include <sstream>
@@ -18,7 +15,6 @@
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/StoveManager.h"
 #include "../common/cmsg.h"
-#include "../runarg.h"
 #include <thread>
 //////////////////////////////////////////////////////////////////////////
 //	For glog
@@ -322,9 +318,9 @@ unsigned int GameWorld::WorldRun()
 		DispatchLuaEvent(kLuaEvent_WorldStartRunning, NULL);
 	}
 
-	static DWORD dwLastWorkTime = GetTickCount();
-	static DWORD dwCurrentWorkTime = dwLastWorkTime;
-	static DWORD dwTimeInterval = 0;
+	static unsigned int dwLastWorkTime = GetTickCount();
+	static unsigned int dwCurrentWorkTime = dwLastWorkTime;
+	static unsigned int dwTimeInterval = 0;
 
 	//	peek message
 	unsigned int uThreadMsgRet = ProcessThreadMsg();
@@ -385,6 +381,7 @@ unsigned int GameWorld::WorldRun()
 /************************************************************************/
 unsigned int THREAD_CALL GameWorld::WorkThread(void* _pData)
 {
+#ifdef _WIN32
 	RECORD_FUNCNAME_WORLD;
 	//
 	PROTECT_START_VM
@@ -395,16 +392,16 @@ unsigned int THREAD_CALL GameWorld::WorkThread(void* _pData)
 	LOG(INFO) << "Main thread entered";
 
 	//	now it is working
-	DWORD dwLastWorkTime = ::GetTickCount();
-	DWORD dwCurrentWorkTime = dwLastWorkTime;
-	DWORD dwTimeInterval = 0;
+	unsigned int dwLastWorkTime = ::GetTickCount();
+	unsigned int dwCurrentWorkTime = dwLastWorkTime;
+	unsigned int dwTimeInterval = 0;
 
 	srand((unsigned int)time(NULL));
 
 	//	Create the message loop
 	MSG msg;
 	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
-	ZeroMemory(&msg, sizeof(MSG));
+	memset(&msg, 0, sizeof(MSG));
 
 	PROTECT_END_VM
 
@@ -457,10 +454,6 @@ unsigned int THREAD_CALL GameWorld::WorkThread(void* _pData)
 		//	Test
 		if(dwCurrentWorkTime - dwLastWorkTime > 5000)
 		{
-			//	??
-			//m_nRetCode = 3;
-			//break;
-			//ZeroMemory(GameWorld::GetInstancePtr(), sizeof(GameWorld));
 			if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
 			{
 				//	nothing
@@ -488,6 +481,9 @@ unsigned int THREAD_CALL GameWorld::WorkThread(void* _pData)
 
 	_endthreadex(m_nRetCode);
 	return m_nRetCode;
+#else
+return 0;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -506,7 +502,7 @@ int GameWorld::Init()
 		return 1;
 	}
 	//	Load script
-	GetRootPath(szPath, MAX_PATH);
+	strcpy(szPath, CMainServer::GetInstance()->GetRootPath());
 
 	//	no reset
 	if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
@@ -520,7 +516,8 @@ int GameWorld::Init()
 	{
 		char szOfflineSellFile[MAX_PATH];
 		sprintf(szOfflineSellFile, "%s/login/offlinesell_%d.db",
-			GetRootPath(), GetServerID());
+			CMainServer::GetInstance()->GetRootPath(),
+			CMainServer::GetInstance()->GetServerID());
 		if(!OfflineSellSystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
 			LOG(ERROR) << "Can not initialize offline sell system";
@@ -533,7 +530,7 @@ int GameWorld::Init()
 	{
 		char szOfflineSellFile[MAX_PATH];
 		sprintf(szOfflineSellFile, "%s/settings/notify.txt",
-			GetRootPath());
+			CMainServer::GetInstance()->GetRootPath());
 		if(!NotifySystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
 			LOG(ERROR) << "Can not initialize world notify";
@@ -567,8 +564,6 @@ int GameWorld::Init()
 		LOG(ERROR) << "Can't initialize stove manager";
 		return 1;
 	}
-
-	LoadBlackList();
 
 	return 0;
 }
@@ -608,48 +603,11 @@ void GameWorld::Join() {
 	m_dwThreadID = 0;
 }
 
-/************************************************************************/
-/* void Initialize(const char* _pszDestFile = NULL)
-/*
-/*	if _pszDestFile is NULL,the log file will be set as ./WorldLog,
-/*	otherwise, the log file will be set as the path that the paramters input
-/************************************************************************/
-void GameWorld::Initialize(const char* _pszDestFile /* = NULL */)
-{
-	char szModule[MAX_PATH];
-	::GetModuleFileName(NULL,
-		szModule,
-		MAX_PATH);
-
-	google::InitGoogleLogging(szModule);
-
-	if(NULL == _pszDestFile)
-	{
-		PathRemoveFileSpec(szModule);
-		strcat(szModule, "\\WorldLog");
-		_pszDestFile = szModule;
-	}
-
-	//	if the path not exists, create it before calling SetLogDestination
-	if(!PathFileExists(_pszDestFile))
-	{
-		BOOL bSuc = CreateDirectory(_pszDestFile,
-			NULL);
-		if(!bSuc)
-		{
-			::OutputDebugString("Error when creating directory");
-		}
-	}
-	strcat(szModule, "\\");
-	google::SetLogDestination(google::GLOG_INFO, _pszDestFile);
-}
-
-
 //////////////////////////////////////////////////////////////////////////
 /************************************************************************/
 /* void DoWork_Objects(DWORD _dwTick)
 /************************************************************************/
-void GameWorld::DoWork_Objects(DWORD _dwTick)
+void GameWorld::DoWork_Objects(unsigned int _dwTick)
 {
 	GameSceneManager::GetInstance()->Update(_dwTick);
 	m_xCronScheduler.Update();
@@ -658,7 +616,7 @@ void GameWorld::DoWork_Objects(DWORD _dwTick)
 /************************************************************************/
 /* void DoWork_System(DWORD _dwTick)
 /************************************************************************/
-void GameWorld::DoWork_System(DWORD _dwTick)
+void GameWorld::DoWork_System(unsigned int _dwTick)
 {
 	if(IsEnableWorldNotify())
 	{
@@ -780,7 +738,7 @@ void GameWorld::OnMessage(unsigned int _dwIndex, unsigned int _uId, ByteBuffer* 
 /************************************************************************/
 unsigned int GameWorld::Broadcast(ByteBuffer* _pBuf)
 {
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 
 // 	for(ObjectMap::const_iterator iter = m_xPlayers.begin();
 // 		iter != m_xPlayers.end();
@@ -805,7 +763,7 @@ unsigned int GameWorld::Broadcast(ByteBuffer* _pBuf)
 /************************************************************************/
 unsigned int GameWorld::BroadcastExcept(GameObject* _pObj, ByteBuffer* _pBuf)
 {
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 
 // 	if(_pObj == NULL)
 // 	{
@@ -843,9 +801,9 @@ unsigned int GameWorld::BroadcastExcept(GameObject* _pObj, ByteBuffer* _pBuf)
 /************************************************************************/
 /* unsigned int BroadcastRange(ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX = 10, DWORD _dwOftY = 10)
 /************************************************************************/
-unsigned int GameWorld::BroadcastRange(ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX /* = 10 */, DWORD _dwOftY /* = 10 */)
+unsigned int GameWorld::BroadcastRange(ByteBuffer* _pBuf, unsigned int _dwSrcX, unsigned int _dwSrcY, unsigned int _dwOftX /* = 10 */, unsigned int _dwOftY /* = 10 */)
 {
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 // 	RECT rcRange;
 // 	rcRange.left = _dwSrcX - _dwOftX;
 // 	rcRange.right = _dwOftX + _dwSrcX;
@@ -891,9 +849,9 @@ unsigned int GameWorld::BroadcastRange(ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _
 /************************************************************************/
 /* unsigned int BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX = 10, DWORD _dwOftY = 10)
 /************************************************************************/
-unsigned int GameWorld::BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBuf, DWORD _dwSrcX, DWORD _dwSrcY, DWORD _dwOftX /* = 10 */, DWORD _dwOftY /* = 10 */)
+unsigned int GameWorld::BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBuf, unsigned int _dwSrcX, unsigned int _dwSrcY, unsigned int _dwOftX /* = 10 */, unsigned int _dwOftY /* = 10 */)
 {
-	DWORD dwCounter = 0;
+	unsigned int dwCounter = 0;
 
 // 	if(_pObj == NULL)
 // 	{
@@ -952,7 +910,7 @@ unsigned int GameWorld::BroadcastRangeExcept(GameObject* _pObj, ByteBuffer* _pBu
 /************************************************************************/
 /* void DoWork_DelayedProcess(DWORD _dwTick)
 /************************************************************************/
-void GameWorld::DoWork_DelayedProcess(DWORD _dwTick)
+void GameWorld::DoWork_DelayedProcess(unsigned int _dwTick)
 {
 	RECORD_FUNCNAME_WORLD;
 	RECORD_FUNCLINE_WORLD;
@@ -1291,10 +1249,7 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 					if(pHero)
 					{
 #ifdef _DEBUG
-						//if(pHero->GetMoney() >= pItem->price)
 						{
-							//int nMoney = pHero->GetMoney() - pItem->price;
-							//pHero->SetMoney(nMoney);
 							pItem->tag = GenerateItemTag();
 
 							PkgPlayerGainItemNtf ntf;
@@ -1313,13 +1268,7 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 							g_xThreadBuffer.Reset();
 							g_xThreadBuffer << udntf;
 							pHero->SendPlayerBuffer(g_xThreadBuffer);
-#ifdef _DEBUG
-							//LOG(INFO) << "玩家:" << pHero->GetUserData()->stAttrib.name << "购买了[" << pItem->name << "]";
-#endif
-						}
-						//else
-						{
-							//ZeroMemory(pItem, sizeof(ItemAttrib));
+							LOG(INFO) << "玩家:" << pHero->GetUserData()->stAttrib.name << "购买了[" << pItem->name << "]";
 						}
 #else
 						if(pHero->GetMoney() >= pItem->price)
@@ -1345,11 +1294,11 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 							g_xThreadBuffer << udntf;
 							pHero->SendPlayerBuffer(g_xThreadBuffer);
 
-							//LOG(INFO) << "玩家:" << pHero->GetUserData()->stAttrib.name << "购买了[" << pItem->name << "]";
+							LOG(INFO) << "玩家:" << pHero->GetUserData()->stAttrib.name << "购买了[" << pItem->name << "]";
 						}
 						else
 						{
-							ZeroMemory(pItem, sizeof(ItemAttrib));
+							memset(pItem, 0, sizeof(ItemAttrib));
 							ObjectValid::EncryptAttrib(pItem);
 						}
 #endif
@@ -1549,8 +1498,8 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 									else
 									{
 										// OK
-										WORD wItemLv = lua_tonumber(L, -1);
-										WORD wItemId = lua_tonumber(L, -2);
+										unsigned short wItemLv = lua_tonumber(L, -1);
+										unsigned short wItemId = lua_tonumber(L, -2);
 										lua_pop(L, 2);
 										pGroundItem->stAttrib.maxHP = MAKELONG(wItemId, wItemLv);
 									}
@@ -1587,8 +1536,8 @@ void GameWorld::DoDelayDatabase(const DelayedProcess &_dp)
 		{
 			DBOperationParam* pParam = (DBOperationParam*)_dp.uParam0;
 			std::list<int>* pItems = (std::list<int>*)pParam->dwParam[2];
-			WORD wPosX = LOWORD(pParam->dwParam[1]);
-			WORD wPosY = HIWORD(pParam->dwParam[1]);
+			unsigned short wPosX = LOWORD(pParam->dwParam[1]);
+			unsigned short wPosY = HIWORD(pParam->dwParam[1]);
 			size_t nSize = pItems->size();
 			GameScene* pScene = GameSceneManager::GetInstance()->GetScene(HIWORD(pParam->dwParam[3]));
 			int nPosSize = 0;
@@ -1700,14 +1649,6 @@ void GameWorld::DoDelaySystem(const DelayedProcess& _dp)
 				LOG(INFO) << "Reload script success[world]";
 			}
 
-			if(GameWorld::GetInstance().LoadBlackList())
-			{
-				LOG(INFO) << "Load black list succeed";
-			}
-			else
-			{
-				LOG(INFO) << "Can't load the black list...";
-			}
 			DBOperationParam* pParam = new DBOperationParam;
 			pParam->dwOperation = DO_QUERY_RELOADSCRIPT;
 			DBThread::GetInstance()->AsynExecute(pParam);
@@ -1847,20 +1788,20 @@ bool GameWorld::LoadMagicInfo()
 	MagicInfo* pInfo = NULL;
 	char szPath[MAX_PATH];
 	sprintf(szPath, "%s\\Config\\Magica.ini",
-		GetRootPath());
+		CMainServer::GetInstance()->GetRootPath());
 	bool bExist = false;
 	if(0 == _access(szPath, 0))
 	{
 		bExist = true;
 	}
 
-	DWORD dwValue = 0;
+	unsigned int dwValue = 0;
 	char szKey[10];
 
 	for(int i = 0; i < MEFF_USERTOTAL; ++i)
 	{
 		pInfo = &g_xMagicInfoTable[i];
-		ZeroMemory(pInfo, sizeof(MagicInfo));
+		memset(pInfo, 0, sizeof(MagicInfo));
 		pInfo->wID = i;
 		itoa(i, szKey, 10);
 
@@ -2649,9 +2590,9 @@ bool GameWorld::UpgradeAttrib(ItemAttrib* _pItem, int _index, int _value)
 
 		if(_pItem->level != 0)
 		{
-			BYTE bLow = LOBYTE(_pItem->level);
-			BYTE bHigh = HIBYTE(_pItem->level);
-			BYTE bKey = GetItemMakeMask(bHigh);
+			unsigned char bLow = LOBYTE(_pItem->level);
+			unsigned char bHigh = HIBYTE(_pItem->level);
+			unsigned char bKey = GetItemMakeMask(bHigh);
 			nValue = GetMakeMaskValue(bKey);
 			nPreAdd = bLow - nValue;
 		}
@@ -2982,108 +2923,6 @@ void GameWorld::UpgradeItemsWithAddition(ItemAttrib* _pItem, int _nAddition)
 	}
 }
 
-bool GameWorld::LoadBlackList()
-{
-	char* pszFileData = NULL;
-	size_t uDataSize = 0;
-	char szBuf[MAX_PATH];
-	sprintf(szBuf, "%s\\blacklist.txt",
-		GetRootPath());
-
-	HANDLE hFile = ::CreateFile(szBuf, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if(INVALID_HANDLE_VALUE == hFile)
-	{
-		return false;
-	}
-	size_t uFileSize = GetFileSize(hFile, NULL);
-
-	if(0 != uFileSize)
-	{
-		uDataSize = uFileSize + 1;
-		pszFileData = new char[uDataSize];
-		pszFileData[uDataSize - 1] = 0;
-	}
-	DWORD dwRead = 0;
-	if(FALSE == ReadFile(hFile, pszFileData, uFileSize, &dwRead, NULL))
-	{
-		CloseHandle(hFile);
-		hFile = 0;
-		delete[] pszFileData;
-		pszFileData = NULL;
-	}
-	CloseHandle(hFile);
-
-	if(NULL == pszFileData)
-	{
-		return false;
-	}
-
-	std::istringstream is(pszFileData);
-	pszFileData[0] = 0;
-	m_xBlackList.clear();
-
-	BlackListItem item;
-	char szName[20];
-	char szJob[20];
-	char szSex[20];
-	int nLevel = 0;
-
-	while(is.getline(pszFileData, uDataSize))
-	{
-		item.xName.clear();
-		item.bJob = 0xFF;
-		item.bSex = 0xFF;
-		item.nLevel = -1;
-		if(pszFileData[0] == ';')
-		{
-			continue;
-		}
-
-		if(4 == sscanf(pszFileData, "%s %s %s %d",
-			szName, szJob, szSex, &nLevel))
-		{
-			if(0 == strcmp(szJob, "战士"))
-			{
-				item.bJob = 0;
-			}
-			else if(0 == strcmp(szJob, "法师"))
-			{
-				item.bJob = 1;
-			}
-			else if(0 == strcmp(szJob, "道士"))
-			{
-				item.bJob = 2;
-			}
-
-			if(0 == strcmp(szSex, "男"))
-			{
-				item.bSex = 1;
-			}
-			else if(0 == strcmp(szSex, "女"))
-			{
-				item.bSex = 2;
-			}
-
-			item.xName = szName;
-			item.nLevel = nLevel;
-
-			if(!item.xName.empty() &&
-				item.bJob != 0xFF &&
-				item.bSex != 0xFF &&
-				item.nLevel != -1)
-			{
-				m_xBlackList.push_back(item);
-			}
-		}
-		pszFileData[0] = 0;
-	}
-
-	delete[] pszFileData;
-	pszFileData = NULL;
-
-	return true;
-}
-
 bool GameWorld::IsInBlackList(HeroObject* _pHero)
 {
 	if(NULL == _pHero)
@@ -3129,7 +2968,7 @@ bool GameWorld::IsInBlackList(HeroObject* _pHero)
 unsigned int GameWorld::Thread_ProcessMessage(const MSG* _pMsg)
 {
 	unsigned int uRet = 0;
-	DWORD dwCurrentTick = GetTickCount();
+	unsigned int dwCurrentTick = GetTickCount();
 
 	g_xConsole.CPrint("Receive thread msg:%d", _pMsg->message);
 
@@ -3626,7 +3465,7 @@ int GameWorld::SyncOnHeroDisconnected(HeroObject* _pHero) {
 	{
 		if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
 			bPushEvent) {
-			DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			unsigned int dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
 			g_xThreadBuffer.Reset();
 			g_xThreadBuffer << ntf;
 			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
@@ -3637,7 +3476,7 @@ int GameWorld::SyncOnHeroDisconnected(HeroObject* _pHero) {
 	{
 		if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
 			bPushEvent) {
-			DWORD dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			unsigned int dwLSIndex = CMainServer::GetInstance()->GetLSConnIndex();
 			g_xThreadBuffer.Reset();
 			g_xThreadBuffer << ntf;
 			SendBufferToServer(dwLSIndex, &g_xThreadBuffer);
@@ -3760,7 +3599,7 @@ int GameWorld::SyncOnHeroConnected(HeroObject* _pHero, bool _bNew) {
 		//	无法进入
 		pOldHero->SendSystemMessage("您的账号被别人登录");
 		pOldHero->DisablePushLSLogoutEvent();
-		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(pOldHero->GetUserIndex());
+		CMainServer::GetInstance()->ForceCloseConnection(pOldHero->GetUserIndex());
 	}
 	else
 	{
@@ -3813,12 +3652,12 @@ int GameWorld::SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf) {
 	{
 		// Buffer un-serialize error, disconnect user and report error
 		LOG(ERROR) << "Hero " << _pHero->GetName() << " unserialize packet failed:" << excp.what();
-		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_pHero->GetUserIndex());
+		CMainServer::GetInstance()->ForceCloseConnection(_pHero->GetUserIndex());
 	}
 	catch (...)
 	{
 		LOG(ERROR) << "Hero " << _pHero->GetName() << " dispatch packet fatal error";
-		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_pHero->GetUserIndex());
+		CMainServer::GetInstance()->ForceCloseConnection(_pHero->GetUserIndex());
 	}
 	
 	return 0;

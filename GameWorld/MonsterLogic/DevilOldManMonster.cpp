@@ -249,7 +249,7 @@ void DevilOldManMonster::ParseAttackMsg(AttackMsg* _pMsg)
 								nCanFrozen = pMgc->bLevel * 20;
 								if(nCanFrozen > rand() % 100)
 								{
-									DWORD dwLastsTime = 0;
+									unsigned int dwLastsTime = 0;
 									dwLastsTime = pMgc->bLevel * 1000;
 									dwLastsTime += (pHero->GetRandomAbility(AT_MC) * 200);
 #ifdef _DEBUG

@@ -1,9 +1,0 @@
-class CUser
-{
-	CUser(DWORD _dwIndex);
-	virtual ~CUser();
-
-	DWORD GetUserIndex();
-};
-
-typedef std::map<DWORD, CUser*> PlayerMap;

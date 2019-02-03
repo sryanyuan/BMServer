@@ -1,4 +1,3 @@
-#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "MonsterObject.h"
 #include "GameSceneManager.h"
@@ -114,7 +113,7 @@ void MonsterObject::DoWork(unsigned int _dwTick)
 					}
 					if(bKick && !pMaster->GetKicked())
 					{
-						CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(pMaster->GetUserIndex());
+						CMainServer::GetInstance()->ForceCloseConnection(pMaster->GetUserIndex());
 						pMaster->SetKicked();
 					}
 				}
@@ -123,7 +122,7 @@ void MonsterObject::DoWork(unsigned int _dwTick)
 	}
 }
 
-void MonsterObject::UpdateStatus(DWORD _dwCurTick)
+void MonsterObject::UpdateStatus(unsigned int _dwCurTick)
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -657,7 +656,7 @@ void MonsterObject::ParseAttackMsg(AttackMsg* _pMsg)
 								nCanFrozen = pMgc->bLevel * 20;
 								if(nCanFrozen > rand() % 100)
 								{
-									DWORD dwLastsTime = 0;
+									unsigned int dwLastsTime = 0;
 									dwLastsTime = pMgc->bLevel * 1000;
 									dwLastsTime += (pHero->GetRandomAbility(AT_MC) * 200);
 #ifdef _DEBUG
@@ -907,7 +906,7 @@ void MonsterObject::ProcessAttackProcess()
 	if(m_stData.eGameState == OS_STAND ||
 		m_stData.eGameState == OS_STOP)
 	{
-		DWORD dwTick = GetTickCount();
+		unsigned int dwTick = GetTickCount();
 		//	Now can struck
 		PkgObjectActionNot not;
 		not.uTargetId = GetID();
@@ -1005,7 +1004,7 @@ void MonsterObject::DropMonsterItems()
 	pParam->dwParam[0] = GetObject_ID();
 	pParam->dwParam[1] = MAKE_POSITION_DWORD(this);
 	std::list<int>* pDropItems = new std::list<int>;
-	pParam->dwParam[2] = (DWORD)pDropItems;
+	pParam->dwParam[2] = (unsigned int)pDropItems;
 	pParam->dwParam[3] = m_stData.wMapID;
 
 	DBThread::GetInstance()->AsynExecute(pParam);
@@ -1038,7 +1037,7 @@ void MonsterObject::DropMonsterItems(HeroObject* _pHero)
 	pParam->dwParam[0] = GetObject_ID();
 	pParam->dwParam[1] = MAKE_POSITION_DWORD(this);
 	std::list<int>* pDropItems = new std::list<int>;
-	pParam->dwParam[2] = (DWORD)pDropItems;
+	pParam->dwParam[2] = (unsigned int)pDropItems;
 	
 	//pParam->dwParam[3] = m_stData.wMapID;
 	if(IsElite())
@@ -1055,12 +1054,12 @@ void MonsterObject::DropMonsterItems(HeroObject* _pHero)
 	}
 	//pParam->dwParam[4] = _pHero->GetID();
 	//pParam->dwParam[5] = GetID();
-	WORD wDropMuiti = 0;
+	unsigned short wDropMuiti = 0;
 	if(_pHero->CanActiveDoubleDrop())
 	{
 		wDropMuiti = 2;
 	}
-	WORD wDifficultyLevel = 0;
+	unsigned short wDifficultyLevel = 0;
 	pParam->dwParam[4] = MAKELONG(wDropMuiti, wDifficultyLevel);
 
 	pParam->dwParam[6] = MAKELONG(m_pValid->TestValid() ? 1 : 0, _pHero->GetStateController()->GetMagicItemAddition());
@@ -1132,7 +1131,7 @@ GameObject* MonsterObject::SearchViewRange()
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-DWORD MonsterObject::GetAttackCostTime()
+unsigned int MonsterObject::GetAttackCostTime()
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -1145,7 +1144,7 @@ DWORD MonsterObject::GetAttackCostTime()
 	{
 		nAtkFrame = 10;
 	}
-	DWORD dwCost = MAX_ATTACK_INTERVAL;
+	unsigned int dwCost = MAX_ATTACK_INTERVAL;
 	dwCost = (MAX_ATTACK_INTERVAL - GetObject_AtkSpeed() * 5) * (nAtkFrame + 2) + 50;
 	if(dwCost > MAX_ATTACK_INTERVAL)
 	{
@@ -1154,7 +1153,7 @@ DWORD MonsterObject::GetAttackCostTime()
 	return dwCost;
 }
 
-DWORD MonsterObject::GetWalkCostTime()
+unsigned int MonsterObject::GetWalkCostTime()
 {
 	RECORD_FUNCNAME_WORLD;
 
@@ -1163,12 +1162,12 @@ DWORD MonsterObject::GetWalkCostTime()
 	{
 		nMoveSpeed = 10;
 	}
-	DWORD dwMoveCost = NORMAL_WALK_COST_TIME - nMoveSpeed * 50;
+	unsigned int dwMoveCost = NORMAL_WALK_COST_TIME - nMoveSpeed * 50;
 	dwMoveCost *= 1.2f;
 	return dwMoveCost;
 
 
-	WORD dwCost = MAX_MOVE_INTERVAL;
+	unsigned short dwCost = MAX_MOVE_INTERVAL;
 	dwCost = (MAX_MOVE_INTERVAL + GetObject_MoveSpeed() * 10) / 2;
 	/*if(dwCost > 220)
 	{
@@ -1511,7 +1510,7 @@ void MonsterObject::WalkToMaster()
 	{
 		return;
 	}
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 	if(dwCurTick - m_dwLastWalkTime > GetWalkInterval())
 	{
 		int nOftX = m_pMaster->GetUserData()->wCoordX - m_stData.wCoordX;
@@ -2191,7 +2190,7 @@ void MonsterObject::OnMonsterDead(HeroObject *_pAttacher, bool _bKilledBySlave)
 	}
 
 	//	礼花经验加成
-	DWORD dwExpFirework = GameWorld::GetInstance().GetExpFireworkTime();
+	unsigned int dwExpFirework = GameWorld::GetInstance().GetExpFireworkTime();
 	if(0 != dwExpFirework)
 	{
 		nGainExp += GetObject_Expr() * 0.5f;
@@ -2352,7 +2351,7 @@ void MonsterObject::ProcessDelayAction()
 		AddDelayAction(pAction);
 	}*/
 
-	DWORD dwTick = GetTickCount();
+	unsigned int dwTick = GetTickCount();
 	DelayActionList::iterator it = m_xDelayActions.begin();
 
 	for(it;

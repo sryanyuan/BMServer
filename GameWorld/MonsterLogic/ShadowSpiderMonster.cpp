@@ -38,7 +38,7 @@ bool ShadowSpiderMonster::AttackTarget()
 		return true;
 	}
 
-	DWORD dwCurTick = GetTickCount();
+	unsigned int dwCurTick = GetTickCount();
 	int nTargetX = 0;
 	int nTargetY = 0;
 	int nMonsterCounter = 0;

@@ -2,7 +2,6 @@
 #define _INC_SCENEEVENT_
 //////////////////////////////////////////////////////////////////////////
 #include <list>
-#include "../../CommonModule/osapi.h"
 #include <string>
 //////////////////////////////////////////////////////////////////////////
 class GameScene;
@@ -21,8 +20,8 @@ struct SceneEventItem
 {
 	SceneEvent eEventType;
 	std::string xFuncName;
-	DWORD dwLastCallbackTime;
-	DWORD dwCallbackInterval;
+	unsigned int dwLastCallbackTime;
+	unsigned int dwCallbackInterval;
 
 	SceneEventItem()
 	{
@@ -43,7 +42,7 @@ public:
 	}
 
 public:
-	void AddSceneEvent(SceneEvent _eType, const char* _pszFuncName, DWORD _dwInterval);
+	void AddSceneEvent(SceneEvent _eType, const char* _pszFuncName, unsigned int _dwInterval);
 	void RemoveSceneEvent(SceneEvent _eType);
 	void RemoveAllSceneEvent();
 

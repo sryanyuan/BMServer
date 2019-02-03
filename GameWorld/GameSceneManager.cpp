@@ -3,10 +3,8 @@
 #include "ObjectEngine.h"
 #include "MonsterObject.h"
 #include <io.h>
-#include <Shlwapi.h>
 #include "../common/glog.h"
 #include "DBThread.h"
-#include "../Helper.h"
 #include "GameWorld.h"
 #include "struct.h"
 #include "ObjectValid.h"
@@ -19,6 +17,7 @@
 #include "../Interface/ServerShell.h"
 #include "../../CommonModule/ProtoType.h"
 #include "../../CommonModule/loginsvr.pb.h"
+#include "../../CommonModule/MirMap.h"
 //////////////////////////////////////////////////////////////////////////
 extern HWND g_hServerDlg;
 //////////////////////////////////////////////////////////////////////////
@@ -106,15 +105,6 @@ GameSceneManager::GameSceneManager()
 	}
 	m_dwLoadedMap = 0;
 
-	/*if(!GetRunMapDataEx(m_xRunMapData))
-	{
-		LOG(ERROR) << "Can't load the run map information.";
-	}
-	if(!GetInstanceMapDataEx(m_xInsMapData))
-	{
-		LOG(ERROR) << "Can't load the instance map information.";
-	}*/
-
 	m_dwLastNotifyPlayerCount = 0;
 	m_dwFixedMapIDSeed = FIXED_MAPID_BEGIN;
 	m_dwInstanceMapIDSeed = INSTANCE_MAPID_BEGIN;
@@ -198,7 +188,7 @@ bool GameSceneManager::CreateAllScene()
 //////////////////////////////////////////////////////////////////////////
 void GameSceneManager::ReleaseAllScene()
 {
-	for(DWORD i = 0; i < m_dwLoadedMap; ++i)
+	for(unsigned int i = 0; i < m_dwLoadedMap; ++i)
 	{
 		m_pScenes[i]->Release();
 		delete m_pScenes[i];
@@ -260,9 +250,9 @@ bool GameSceneManager::InsertNPC(GameObject* _pObj)
 	return pScene->InsertNPC(_pObj);
 }
 //////////////////////////////////////////////////////////////////////////
-bool GameSceneManager::RemovePlayer(DWORD _dwID)
+bool GameSceneManager::RemovePlayer(unsigned int _dwID)
 {
-	for(DWORD i = 0; i < m_dwLoadedMap; ++i)
+	for(unsigned int i = 0; i < m_dwLoadedMap; ++i)
 	{
 		if(m_pScenes[i])
 		{
@@ -289,7 +279,7 @@ bool GameSceneManager::RemovePlayer(DWORD _dwID)
 	return false;
 }
 //////////////////////////////////////////////////////////////////////////
-GameObject* GameSceneManager::GetPlayer(WORD _wMapID, DWORD _dwID)
+GameObject* GameSceneManager::GetPlayer(unsigned short _wMapID, unsigned int _dwID)
 {
 	/*if(_wMapID >= MAX_SCENE_NUMBER)
 	{
@@ -308,7 +298,7 @@ GameObject* GameSceneManager::GetPlayer(WORD _wMapID, DWORD _dwID)
 	{
 		return NULL;
 	}
-	std::map<DWORD, GameObject*>::iterator iter = pScene->m_xPlayers.find(_dwID);
+	std::map<unsigned int, GameObject*>::iterator iter = pScene->m_xPlayers.find(_dwID);
 	if(iter != pScene->m_xPlayers.end())
 	{
 		return iter->second;
@@ -318,7 +308,7 @@ GameObject* GameSceneManager::GetPlayer(WORD _wMapID, DWORD _dwID)
 //////////////////////////////////////////////////////////////////////////
 void GameSceneManager::GetPlayerByUid(int _nUid, GameObjectList& _refList)
 {
-	for(DWORD i = 0; i < m_dwLoadedMap; ++i)
+	for(unsigned int i = 0; i < m_dwLoadedMap; ++i)
 	{
 		if(i >= MAX_SCENE_NUMBER)
 		{
@@ -329,8 +319,8 @@ void GameSceneManager::GetPlayerByUid(int _nUid, GameObjectList& _refList)
 
 		if(pScene)
 		{
-			std::map<DWORD, GameObject*>& refPlayers = pScene->m_xPlayers;
-			std::map<DWORD, GameObject*>::iterator iter = refPlayers.begin();
+			std::map<unsigned int, GameObject*>& refPlayers = pScene->m_xPlayers;
+			std::map<unsigned int, GameObject*>::iterator iter = refPlayers.begin();
 
 			for(iter;
 				iter != refPlayers.end();
@@ -363,8 +353,8 @@ void GameSceneManager::GetPlayerByUid(int _nUid, GameObjectList& _refList)
 			++it)
 		{
 			GameScene* pScene = *it;
-			std::map<DWORD, GameObject*>& refPlayers = pScene->m_xPlayers;
-			std::map<DWORD, GameObject*>::iterator iter = refPlayers.begin();
+			std::map<unsigned int, GameObject*>& refPlayers = pScene->m_xPlayers;
+			std::map<unsigned int, GameObject*>::iterator iter = refPlayers.begin();
 
 			for(iter;
 				iter != refPlayers.end();
@@ -390,11 +380,11 @@ void GameSceneManager::GetPlayerByUid(int _nUid, GameObjectList& _refList)
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-GameObject* GameSceneManager::GetPlayer(DWORD _dwID)
+GameObject* GameSceneManager::GetPlayer(unsigned int _dwID)
 {
 	GameObject* pObj = NULL;
 
-	for(DWORD i = 0; i < m_dwLoadedMap; ++i)
+	for(unsigned int i = 0; i < m_dwLoadedMap; ++i)
 	{
 		pObj = GetPlayer(i, _dwID);
 		if(pObj)
@@ -438,22 +428,6 @@ void GameSceneManager::ReloadScript()
 		}
 	}
 
-	if(!m_xInsMaps.empty())
-	{
-		INSTANCEMAPLIST::const_iterator begIter = m_xInsMaps.begin();
-		INSTANCEMAPLIST::const_iterator endIter = m_xInsMaps.end();
-
-		for(begIter;
-			begIter != endIter;
-			++begIter)
-		{
-			if((*begIter)->ReloadScript())
-			{
-				LOG(INFO) << "重新载入脚本[scene" << (*begIter)->GetMapResID() << ".lua]成功";
-			}
-		}
-	}
-
 	if (!m_xInstanceScenes.empty())
 	{
 		GameSceneList::const_iterator it = m_xInstanceScenes.begin();
@@ -470,7 +444,7 @@ void GameSceneManager::ReloadScript()
 	}
 }
 //////////////////////////////////////////////////////////////////////////
-void GameSceneManager::Update(DWORD _dwTick)
+void GameSceneManager::Update(unsigned int _dwTick)
 {
 	int nInstanceMoveCount = 0;
 
@@ -501,19 +475,6 @@ void GameSceneManager::Update(DWORD _dwTick)
 		else
 		{
 			break;
-		}
-	}
-
-	if(!m_xInsMaps.empty())
-	{
-		INSTANCEMAPLIST::const_iterator begIter = m_xInsMaps.begin();
-		INSTANCEMAPLIST::const_iterator endIter = m_xInsMaps.end();
-
-		for(begIter;
-			begIter != endIter;
-			++begIter)
-		{
-			(*begIter)->Update(_dwTick);
 		}
 	}
 
@@ -596,58 +557,12 @@ void GameSceneManager::Update(DWORD _dwTick)
 
 		int nCounter = CountPlayer();
 		int nMonsterCounter = CountMonster();
-
-		ServerShell *pServerShell = CMainServer::GetInstance()->GetServerShell();
-		if (nullptr != pServerShell) {
-			pServerShell->UpdateObjectCount(nCounter, nMonsterCounter);
-		}
+		CMainServer::GetInstance()->UpdateObjectCount(nCounter, nMonsterCounter);
 	}
 
+#ifndef _WIN32
 	assert(_CrtCheckMemory());
-}
-//////////////////////////////////////////////////////////////////////////
-GameInstanceScene* GameSceneManager::GetFreeInstanceScene(int _id)
-{
-	if(_id < 100)
-	{
-		return NULL;
-	}
-
-	GameInstanceScene* pInsScene = NULL;
-
-	if(!m_xInsMaps.empty())
-	{
-		INSTANCEMAPLIST::const_iterator begIter = m_xInsMaps.begin();
-		INSTANCEMAPLIST::const_iterator endIter = m_xInsMaps.end();
-
-		for(begIter;
-			begIter != endIter;
-			++begIter)
-		{
-			pInsScene = *begIter;
-			if(pInsScene->GetMapID() == _id &&
-				pInsScene->IsFree())
-			{
-				return pInsScene;
-			}
-		}
-	}
-
-	if(pInsScene == NULL)
-	{
-		pInsScene = new GameInstanceScene;
-		if(pInsScene->Initialize(_id))
-		{
-			m_xInsMaps.push_back(pInsScene);
-		}
-		else
-		{
-			LOG(ERROR) << "Initialize failed when loading the instance map[" << _id << "]";
-			SAFE_DELETE(pInsScene);
-		}
-	}
-
-	return pInsScene;
+#endif
 }
 
 const char* GameSceneManager::GetMapChName(int _id)
@@ -822,7 +737,7 @@ void GameSceneManager::AllMonsterHPToFull()
 	}
 }
 
-void GameSceneManager::BroadcastPacketAllScene(ByteBuffer* _xBuf, DWORD _dwIgnore/* = 0*/)
+void GameSceneManager::BroadcastPacketAllScene(ByteBuffer* _xBuf, unsigned int _dwIgnore/* = 0*/)
 {
 	for(int i = 0; i < MAX_SCENE_NUMBER; ++i)
 	{
@@ -929,7 +844,7 @@ void GameSceneManager::SendSystemNotifyAllScene(const char* _pszMsg)
 	}
 }
 
-GameScene* GameSceneManager::GetScene(DWORD _dwMapID)
+GameScene* GameSceneManager::GetScene(unsigned int _dwMapID)
 {
 	if (_dwMapID >= 0 &&
 		_dwMapID < MAX_SCENE_NUMBER)

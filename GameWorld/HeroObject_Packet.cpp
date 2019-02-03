@@ -1,4 +1,3 @@
-#include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
 #include "ObjectEngine.h"
 #include "GameWorld.h"
@@ -11,7 +10,6 @@
 #include <math.h>
 #include <zlib.h>
 #include <algorithm>
-#include "../runarg.h"
 #include "../../CommonModule/HideAttribHelper.h"
 #include "../../CommonModule/StoveManager.h"
 #include "../../CommonModule/DataEncryptor.h"
@@ -97,12 +95,12 @@ void HeroObject::ProcessPacket(PacketHeader* _pPkt)
 void HeroObject::DoPacket(const PkgUserActionReq& req)
 {
 	//char szMsg[MAX_PATH];
-	DWORD dwCurrentTick = GetTickCount();
+	unsigned int dwCurrentTick = GetTickCount();
 	GameScene* pScene = GetLocateScene();
-	WORD wPosX = m_stData.wCoordX;
-	WORD wPosY = m_stData.wCoordY;
-	WORD wDestPosX = LOWORD(req.uParam1);
-	WORD wDestPosY = HIWORD(req.uParam1);
+	unsigned short wPosX = m_stData.wCoordX;
+	unsigned short wPosY = m_stData.wCoordY;
+	unsigned short wDestPosX = LOWORD(req.uParam1);
+	unsigned short wDestPosY = HIWORD(req.uParam1);
 	int nOftX = 0;
 	int nOftY = 0;
 	int nDrt = -1;
@@ -309,8 +307,8 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 	}
 	else if(req.uAction == ACTION_ATTACK)
 	{
-		WORD wNowX = LOWORD(req.uParam0);
-		WORD wNowY = HIWORD(req.uParam0);
+		unsigned short wNowX = LOWORD(req.uParam0);
+		unsigned short wNowY = HIWORD(req.uParam0);
 		if(wNowX != GetValidPositionX() ||
 			wNowY != GetValidPositionY())
 		{
@@ -398,7 +396,7 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		not.uTargetId = GetID();
 
 
-		WORD wDamage = 0;
+		unsigned short wDamage = 0;
 
 		if(pMonster)
 		{
@@ -433,7 +431,7 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		}
 		else
 		{
-			DoSpeHit(pMonster, pHero, (DWORD*)&not.uParam2);
+			DoSpeHit(pMonster, pHero, (unsigned int*)&not.uParam2);
 		}
 
 		g_xThreadBuffer.Reset();
@@ -479,8 +477,8 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		{
 			return;
 		}
-		WORD wNowX = LOWORD(req.uParam0);
-		WORD wNowY = HIWORD(req.uParam0);
+		unsigned short wNowX = LOWORD(req.uParam0);
+		unsigned short wNowY = HIWORD(req.uParam0);
 		if(wNowX != GetValidPositionX() ||
 			wNowY != GetValidPositionY())
 		{
@@ -898,7 +896,7 @@ void HeroObject::DoPacket(const PkgPlayerUndressItemReq& req)
 		ItemAttrib* pItem = &m_stEquip[req.bPos];
 		if(AddBagItem(pItem))
 		{
-			ZeroMemory(pItem, sizeof(ItemAttrib));
+			memset(pItem, 0, sizeof(ItemAttrib));
 			ObjectValid::EncryptAttrib(pItem);
 			g_xThreadBuffer.Reset();
 			g_xThreadBuffer << ack;
@@ -911,7 +909,7 @@ void HeroObject::DoPacket(const PkgPlayerUndressItemReq& req)
 void HeroObject::DoPacket(const PkgPlayerDressItemReq& req)
 {
 	//	First check if the destinate rect have item
-	if(req.bPos >= (BYTE)PLAYER_ITEM_TOTAL)
+	if(req.bPos >= (unsigned char)PLAYER_ITEM_TOTAL)
 	{
 		return;
 	}
@@ -1011,7 +1009,7 @@ void HeroObject::DoPacket(const PkgPlayerDressItemReq& req)
 		}
 	}
 
-	BYTE bRet = 0;
+	unsigned char bRet = 0;
 
 	PkgPlayerDressItemAck ack;
 	bRet = CheckItemCanDress(pWantDressItem);
@@ -1080,7 +1078,7 @@ void HeroObject::DoPacket(const PkgPlayerUseItemReq& req)
 	{
 		if(IsEquipItem(GETITEMATB(pItem, Type)))
 		{
-			BYTE bRet = 0;
+			unsigned char bRet = 0;
 			PkgPlayerDressItemAck ack;
 			bRet = CheckItemCanDress(pItem);
 
@@ -1100,23 +1098,23 @@ void HeroObject::DoPacket(const PkgPlayerUseItemReq& req)
 				{
 				case ITEM_WEAPON:
 					{
-						ack.bPos = (BYTE)PLAYER_ITEM_WEAPON;
+						ack.bPos = (unsigned char)PLAYER_ITEM_WEAPON;
 					}break;
 				case ITEM_CLOTH:
 					{
-						ack.bPos = (BYTE)PLAYER_ITEM_CLOTH;
+						ack.bPos = (unsigned char)PLAYER_ITEM_CLOTH;
 					}break;
 				case ITEM_NECKLACE:
 					{
-						ack.bPos = (BYTE)PLAYER_ITEM_NECKLACE;
+						ack.bPos = (unsigned char)PLAYER_ITEM_NECKLACE;
 					}break;
 				case ITEM_MEDAL:
 					{
-						ack.bPos = (BYTE)PLAYER_ITEM_MEDAL;
+						ack.bPos = (unsigned char)PLAYER_ITEM_MEDAL;
 					}break;
 				case ITEM_HELMET:
 					{
-						ack.bPos = (BYTE)PLAYER_ITEM_HELMET;
+						ack.bPos = (unsigned char)PLAYER_ITEM_HELMET;
 					}break;
 				case ITEM_BELT:
 					{
@@ -1138,22 +1136,22 @@ void HeroObject::DoPacket(const PkgPlayerUseItemReq& req)
 					{
 						if(GETITEMATB(&m_stEquip[PLAYER_ITEM_RING1], Type) == ITEM_NO)
 						{
-							ack.bPos = (BYTE)PLAYER_ITEM_RING1;
+							ack.bPos = (unsigned char)PLAYER_ITEM_RING1;
 						}
 						else if(GETITEMATB(&m_stEquip[PLAYER_ITEM_RING2], Type) == ITEM_NO)
 						{
-							ack.bPos = (BYTE)PLAYER_ITEM_RING2;
+							ack.bPos = (unsigned char)PLAYER_ITEM_RING2;
 						}
 						else
 						{
-							ack.bPos = (BYTE)PLAYER_ITEM_RING1;
+							ack.bPos = (unsigned char)PLAYER_ITEM_RING1;
 						}
 					}break;
 				case ITEM_BRACELAT:
 					{
 						if(GETITEMATB(&m_stEquip[PLAYER_ITEM_BRACELAT1], Type) == ITEM_NO)
 						{
-							ack.bPos = (BYTE)PLAYER_ITEM_BRACELAT1;
+							ack.bPos = (unsigned char)PLAYER_ITEM_BRACELAT1;
 						}
 						else if(GETITEMATB(&m_stEquip[PLAYER_ITEM_BRACELAT2], Type) == ITEM_NO)
 						{
@@ -1502,12 +1500,12 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					int nSellMoney = g_nItemPrice[GETITEMATB(pItem, ID)] / SELL_ITEM_MULTI;
 					if(HeroObject::IsEquipItem(GETITEMATB(pItem, Type)))
 					{
-						WORD wLevel = GETITEMATB(pItem, Level);
+						unsigned short wLevel = GETITEMATB(pItem, Level);
 
 						if(wLevel != 0)
 						{
-							BYTE bLow = LOBYTE(wLevel);
-							BYTE bHigh = HIBYTE(wLevel);
+							unsigned char bLow = LOBYTE(wLevel);
+							unsigned char bHigh = HIBYTE(wLevel);
 
 							bHigh &= 0x7A;
 							bool bZero = false;
@@ -1542,7 +1540,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 							{
 								9, 2, 1, 3, 4, 7, 8, 5
 							};
-							static BYTE s_btMaskTable[] =
+							static unsigned char s_btMaskTable[] =
 							{
 								0x80, 0x40, 0x20, 0x10,
 								0x08, 0x04, 0x02, 0x01
@@ -1584,7 +1582,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 				g_xThreadBuffer.Reset();
 				g_xThreadBuffer << cbntf;
 				SendPlayerBuffer(g_xThreadBuffer);
-				ZeroMemory(pItem, sizeof(ItemAttrib));
+				memset(pItem, 0, sizeof(ItemAttrib));
 				ObjectValid::EncryptAttrib(pItem);
 			}
 		}
@@ -1608,7 +1606,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 				ack.uTargetId = GetID();
 				SendPacket(ack);
 
-				ZeroMemory(pItem, sizeof(ItemAttrib));
+				memset(pItem, 0, sizeof(ItemAttrib));
 				ObjectValid::EncryptAttrib(pItem);
 			}
 		}
@@ -1632,7 +1630,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 				ack.uTargetId = GetID();
 				SendPacket(ack);
 
-				ZeroMemory(pItem, sizeof(ItemAttrib));
+				memset(pItem, 0, sizeof(ItemAttrib));
 				ObjectValid::EncryptAttrib(pItem);
 			}
 		}
@@ -1662,7 +1660,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					memcpy(pBagItem, pItem, sizeof(ItemAttrib));
 					//SETITEMATB(pItem, Type, ITEM_NO);
 					//pItem->tag = 0;
-					ZeroMemory(pItem, sizeof(ItemAttrib));
+					memset(pItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pItem);
 
 					//	Now ok
@@ -1707,7 +1705,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					memcpy(pBagItem, pItem, sizeof(ItemAttrib));
 					//SETITEMATB(pItem, Type, ITEM_NO);
 					//pItem->tag = 0;
-					ZeroMemory(pItem, sizeof(ItemAttrib));
+					memset(pItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pItem);
 
 					//	Now ok
@@ -1971,7 +1969,7 @@ void HeroObject::DoPacket(const PkgPlayerClickNPCReq& req)
 				LOG(ERROR) << szName << " fatal error operation!!!ClickNPCReq";
 				LOG(ERROR) << "Content:" << g_xThreadBuffer.ToHexString();
 				if (!GetKicked()) {
-					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+					CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
 					SetKicked();
 				}
 			}
@@ -2133,7 +2131,7 @@ void HeroObject::DoPacket(const PkgPlayerMergyCostItemReq& req)
 					pplia.dwTag = pSrcItem->tag;
 					SendPacket(pplia);
 
-					ZeroMemory(pSrcItem, sizeof(ItemAttrib));
+					memset(pSrcItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pSrcItem);
 				}
 				else
@@ -2179,7 +2177,7 @@ void HeroObject::DoPacket(const PkgPlayerMergyCostItemReq& req)
 					pplia.dwTag = pSrcItem->tag;
 					SendPacket(pplia);
 
-					ZeroMemory(pSrcItem, sizeof(ItemAttrib));
+					memset(pSrcItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pSrcItem);
 				}
 				else
@@ -2258,10 +2256,10 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 				return;
 			}*/
 			// Here check the durability of item
-			WORD wMaxDura = LOWORD(GETITEMATB(pItem, MaxHP));
-			WORD wCurDura = HIWORD(GETITEMATB(pItem, MaxHP));
+			unsigned short wMaxDura = LOWORD(GETITEMATB(pItem, MaxHP));
+			unsigned short wCurDura = HIWORD(GETITEMATB(pItem, MaxHP));
 
-			WORD wDuraCost = 0;
+			unsigned short wDuraCost = 0;
 			if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
 			{
 				wDuraCost = 100;
@@ -2273,7 +2271,7 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 				{
 					// clean item
 					int nTag = pItem->tag;
-					ZeroMemory(pItem, sizeof(ItemAttrib));
+					memset(pItem, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pItem);
 
 					PkgPlayerLostItemAck pplia;
@@ -2285,7 +2283,7 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 				}
 				else
 				{
-					WORD wLeftDura = wMaxDura - wDuraCost;
+					unsigned short wLeftDura = wMaxDura - wDuraCost;
 					if (wCurDura > wLeftDura)
 					{
 						wCurDura = wLeftDura;
@@ -2364,7 +2362,7 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 //#ifdef _DEBUG
 		if(IsGmHide())
 		{
-			DWORD dwPos = 0;
+			unsigned int dwPos = 0;
 			GameScene* pNextScene = GameSceneManager::GetInstance()->GetScene(req.dwParam);
 			if(NULL != pNextScene)
 			{
@@ -2396,8 +2394,8 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 	{
 		if(IsGmHide())
 		{
-			WORD wPlayerID = LOWORD(req.dwParam);
-			WORD wItemID = HIWORD(req.dwParam);
+			unsigned short wPlayerID = LOWORD(req.dwParam);
+			unsigned short wItemID = HIWORD(req.dwParam);
 
 			HeroObject* pPlayer = static_cast<HeroObject*>(GetLocateScene()->GetPlayer(wPlayerID));
 			if(pPlayer)
@@ -2424,8 +2422,8 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 	}
 	else if (req.dwOp == CMD_OP_SETWORLDWEIGHT)
 	{
-		WORD wValue = LOWORD(req.dwParam);
-		WORD wWeight = HIWORD(req.dwParam);
+		unsigned short wValue = LOWORD(req.dwParam);
+		unsigned short wWeight = HIWORD(req.dwParam);
 
 		if (wValue > 0 &&
 			wValue < 9)
@@ -2444,8 +2442,8 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			pScene->CopyAdditionPointCalcFromWorld();
 		}
 
-		WORD wValue = LOWORD(req.dwParam);
-		WORD wWeight = HIWORD(req.dwParam);
+		unsigned short wValue = LOWORD(req.dwParam);
+		unsigned short wWeight = HIWORD(req.dwParam);
 
 		if (wValue > 0 &&
 			wValue < 9)
@@ -2821,7 +2819,7 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			const char* pszGMCode = getenv("gmcode");
 			if (NULL == pszGMCode) {
 				// Get code from launch arguments
-				pszGMCode = GetRunArg("gmcode");
+				pszGMCode = CMainServer::GetInstance()->GetConfig("gmcode");
 			}
 			s_pszGMCode = pszGMCode;
 		}
@@ -3031,7 +3029,7 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 			g_xThreadBuffer.Reset();
 			g_xThreadBuffer << xName;
 
-			BYTE bSex = pHero->GetHeroSex();
+			unsigned char bSex = pHero->GetHeroSex();
 			g_xThreadBuffer << bSex;
 
 			ItemAttrib item;
@@ -3332,7 +3330,7 @@ void HeroObject::DoPacket(const PkgPlayerDecomposeReq& req)
 							g_xThreadBuffer << ppcbn;
 							SendPacket(ppcbn);
 
-							ZeroMemory(pItem, sizeof(ItemAttrib));
+							memset(pItem, 0, sizeof(ItemAttrib));
 							ObjectValid::EncryptAttrib(pItem);
 
 							//	Add Item
@@ -3435,7 +3433,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 						}
 					}
 
-					ZeroMemory(pStone, sizeof(ItemAttrib));
+					memset(pStone, 0, sizeof(ItemAttrib));
 					ObjectValid::EncryptAttrib(pStone);
 				}
 			}
@@ -3459,8 +3457,8 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 
 			bUpgradeItem = false;
 			int nUpgradeValue = 0;
-			BYTE bLow = LOBYTE(pCheckItem->level);
-			BYTE bHigh = HIBYTE(pCheckItem->level);
+			unsigned char bLow = LOBYTE(pCheckItem->level);
+			unsigned char bHigh = HIBYTE(pCheckItem->level);
 
 			{
 				if(pCheckItem->level == 0)
@@ -3469,7 +3467,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 				}
 				else
 				{
-					BYTE bKey = GetItemMakeMask(bHigh);
+					unsigned char bKey = GetItemMakeMask(bHigh);
 					int nValue = GetMakeMaskValue(bKey);
 					nValue = (int)bLow - nValue;
 					nUpgradeValue = nValue;
@@ -3530,7 +3528,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 
 							if(nLeft == 0)
 							{
-								ZeroMemory(pStone, sizeof(ItemAttrib));
+								memset(pStone, 0, sizeof(ItemAttrib));
 								ObjectValid::EncryptAttrib(pStone);
 							}
 
@@ -3621,7 +3619,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 
 							if(0 == nLeft)
 							{
-								ZeroMemory(pStone, sizeof(ItemAttrib));
+								memset(pStone, 0, sizeof(ItemAttrib));
 								ObjectValid::EncryptAttrib(pStone);
 							}
 
@@ -4348,7 +4346,7 @@ void HeroObject::DoPacket(const PkgPlayerServerDelayAck &ack)
 		return;
 	}
 
-	DWORD dwCurrentTick = GetTickCount();
+	unsigned int dwCurrentTick = GetTickCount();
 	if(ack.dwTimeStamp > dwCurrentTick)
 	{
 		return;
@@ -4415,7 +4413,7 @@ void HeroObject::DoPacket(const PkgPlayerBuyOlShopItemReq &req)
 		lreq.nUid = GetUID();
 		lreq.nQueryId = OlShopManager::GetInstance()->GetQueryID(GetUID());
 		
-		DWORD dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
+		unsigned int dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
 		if(0 != dwLsIndex)
 		{
 			g_xThreadBuffer.Reset();
@@ -4486,7 +4484,7 @@ void HeroObject::DoPacket(const PkgLoginCheckBuyShopItemAck& ack)
 			}
 			req.xName = szName;
 
-			DWORD dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
+			unsigned int dwLsIndex = CMainServer::GetInstance()->GetLSConnIndex();
 			if(0 != dwLsIndex)
 			{
 				g_xThreadBuffer.Reset();
@@ -5010,7 +5008,7 @@ void HeroObject::DoPacket(const PkgPlayerOpenPotentialReq& req)
 		return;
 	}
 
-	DWORD dwMPDesc = GETITEMATB(pItem, MP);
+	unsigned int dwMPDesc = GETITEMATB(pItem, MP);
 	if(dwMPDesc == 0)
 	{
 		return;
@@ -5067,7 +5065,7 @@ void HeroObject::DoPacket(const PkgPlayerOpenPotentialReq& req)
 		SETITEMATB(pItem, MP, dwMPDesc);
 
 		//	°ó¶¨×°±¸
-		DWORD dwAtkPois = GETITEMATB(pItem, AtkPois);
+		unsigned int dwAtkPois = GETITEMATB(pItem, AtkPois);
 		SET_FLAG(dwAtkPois, POIS_MASK_BIND);
 		SETITEMATB(pItem, AtkPois, dwAtkPois);
 
@@ -5134,10 +5132,10 @@ void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 #define MAX_SAVEDATA_SIZE (8 * 1024)
 	char cExtIndex = 0;
 	std::string xName;
-	BYTE bCount = 0;
+	unsigned char bCount = 0;
 
 	const char* pData = &req.xData[0];
-	DWORD dwDataLen = req.xData.size();
+	unsigned int dwDataLen = req.xData.size();
 
 	static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
 	GlobalAllocRecord::GetInstance()->RecordArray(s_pBuf);
@@ -5200,7 +5198,7 @@ void HeroObject::DoPacket(const PkgPlayerLoginExtDataReq &req)
 	{
 		LOG(ERROR) << "Invalid ext save." << GetName();
 		if (!GetKicked()) {
-			CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(GetUserIndex());
+			CMainServer::GetInstance()->ForceCloseConnection(GetUserIndex());
 			SetKicked();
 		}
 	}

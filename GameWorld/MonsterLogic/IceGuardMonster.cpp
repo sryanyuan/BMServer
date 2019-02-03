@@ -28,10 +28,10 @@ void IceGuardMonster::DoAction(unsigned int _dwTick)
 	}
 }
 
-DWORD IceGuardMonster::GetAttackCostTime()
+unsigned int IceGuardMonster::GetAttackCostTime()
 {
 	int nAtkFrame = 10;
-	DWORD dwCost = MAX_ATTACK_INTERVAL;
+	unsigned int dwCost = MAX_ATTACK_INTERVAL;
 	dwCost = (MAX_ATTACK_INTERVAL - GetObject_AtkSpeed() * 5) * (nAtkFrame + 2) + 50;
 	if(dwCost > MAX_ATTACK_INTERVAL)
 	{

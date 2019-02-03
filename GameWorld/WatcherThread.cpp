@@ -122,7 +122,7 @@ unsigned int WatcherThread::Thread_DoWork()
 		szForbidAppName[2][nWriteIndex] = 0;
 
 		const char* pszCheckApp = NULL;
-		DWORD dwProcessID = 0;
+		unsigned int dwProcessID = 0;
 
 		for(int i = 0; i < sizeof(szForbidAppName) / sizeof(szForbidAppName[0]); ++i)
 		{
@@ -151,7 +151,7 @@ unsigned int WatcherThread::Thread_DoWork()
 		ZeroMemory(&msg, sizeof(MSG));
 		msg.message = WM_WORLDCHECKCRC;
 		msg.wParam = GetTickCount();
-		WORD wCRC16 = 0;
+		unsigned short wCRC16 = 0;
 		CalcCRC16(&wCRC16, 4, (LPBYTE)&msg.wParam);
 		msg.lParam = wCRC16;
 		GameWorld::GetInstance().PostRunMessage(&msg);

@@ -1,6 +1,5 @@
 #ifdef _WIN32
 #include <WinSock2.h>
-#include <Shlwapi.h>
 #endif
 #include "../IOServer/IOServer.h"
 #include "../CMainServer/CMainServer.h"
@@ -18,14 +17,12 @@
 #include "../../CommonModule/DataEncryptor.h"
 #include "../../CommonModule/loginsvr.pb.h"
 #include "../../CommonModule/ProtoType.h"
-#include "../runarg.h"
 #include "../GameWorld/GlobalAllocRecord.h"
 #include "../GameWorld/TeammateControl.h"
 #include "../../CommonModule/version.h"
 #include "CMainServerMacros.h"
 #include "../Interface/ServerShell.h"
 #include "../common/cmsg.h"
-#include "../Helper.h"
 
 #include <direct.h>
 #include <zlib.h>
@@ -58,10 +55,12 @@ CMainServer::CMainServer()
 	m_dwListenPort = 0;
 	m_pServerShell = nullptr;
 	m_pIOServer = nullptr;
+	m_pServerState = new ServerState;
 }
 
 CMainServer::~CMainServer()
 {
+	SAFE_DELETE(m_pServerState);
 	if(m_pIOServer != nullptr)
 	{
 		delete m_pIOServer;
@@ -119,14 +118,14 @@ bool CMainServer::InitNetWork()
 {
 	//	Get global settings
 	char szPath[MAX_PATH];
-	if (NULL == GetRunArg("cfgfile") ||
-		strlen(GetRunArg("cfgfile")) == 0)
+	if (NULL == GetConfig("cfgfile") ||
+		strlen(GetConfig("cfgfile")) == 0)
 	{
 		sprintf(szPath, "%s\\conf\\cfg.ini", GetRootPath());
 	}
 	else
 	{
-		sprintf(szPath, "%s\\conf\\%s", GetRootPath(), GetRunArg("cfgfile"));
+		sprintf(szPath, "%s\\conf\\%s", GetRootPath(), GetConfig("cfgfile"));
 	}
 	g_xConsole.CPrint("Using server config file : %s", szPath);
 	SettingLoader::GetInstance()->LoadSetting(szPath);
@@ -176,7 +175,7 @@ bool CMainServer::InitNetWork()
 /************************************************************************/
 /* 启动游戏服务器
 /************************************************************************/
-bool CMainServer::StartServer(char* _szIP, WORD _wPort)
+bool CMainServer::StartServer(char* _szIP, unsigned short _wPort)
 {
 	if(nullptr == m_pIOServer)
 	{
@@ -282,21 +281,21 @@ bool CMainServer::ConnectToLoginSvr()
 	}
 }
 
-void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
+void STDCALL CMainServer::_OnLsConnSuccess(unsigned int _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = true;
 	CMainServer::GetInstance()->m_dwLsConnIndex = _dwIndex;
 	CMainServer::GetInstance()->AddInformationToMessageBoard("连接登陆服务器成功");
 
-	const char* pszLsAddr = GetRunArg("outerip");
-	const char* pszServerId = GetRunArg("serverid");
-	const char* pszServerName = GetRunArg("servername");
+	const char* pszLsAddr = CMainServer::GetInstance()->GetServeIP();
+	int nServerId = CMainServer::GetInstance()->GetServerID();
+	const char* pszServerName = CMainServer::GetInstance()->GetServerName();
 
 	if(NULL == pszLsAddr)
 	{
 		return;
 	}
-	if (NULL == pszServerId)
+	if (0 == nServerId)
 	{
 		return;
 	}
@@ -306,7 +305,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	xBuf.Reset();
 	xBuf << int(0)
 		<< (int)PKG_LOGIN_SERVERVERIFYV2_REQ
-		<< (short)GetServerID()
+		<< (short)nServerId
 		<< (int)0
 		<< (char)strlen(pszLsAddr);
 	xBuf.Write(pszLsAddr, strlen(pszLsAddr));
@@ -322,7 +321,7 @@ void STDCALL CMainServer::_OnLsConnSuccess(DWORD _dwIndex, void* _pParam)
 	GameWorld::GetInstancePtr()->PostRunMessage(&msgQuery);
 }
 
-void STDCALL CMainServer::_OnLsConnFailed(DWORD _dwIndex, void* _pParam)
+void STDCALL CMainServer::_OnLsConnFailed(unsigned int _dwIndex, void* _pParam)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 	CMainServer::GetInstance()->m_dwLsConnIndex = 0;
@@ -375,7 +374,6 @@ void CMainServer::WaitForStopEngine()
 	DBThread::GetInstance()->Stop();
 	DBThread::GetInstance()->Join();
 	DBThread::GetInstance(true);
-	ReleaseGlobalSuitExtraAttrib();
 	google::protobuf::ShutdownProtobufLibrary();
 	GlobalAllocRecord::GetInstance()->DeleteAll();
 	GlobalAllocRecord::DestroyInstance();
@@ -394,7 +392,7 @@ bool CMainServer::InitDatabase()
 	ObjectValid::GenerateEncryptTable();
 	//	First open database
 	char szPath[MAX_PATH];
-	GetRootPath(szPath, MAX_PATH);
+	strcpy(szPath, GetRootPath());
 	strcat(szPath, "\\Help\\legend.bm");
 	if(!DBThread::GetInstance()->ConnectDB(szPath))
 	{
@@ -424,7 +422,7 @@ bool CMainServer::InitDatabase()
 		bRet = false;
 	}
 
-	if(!CheckVersion())
+	if(false && !CheckVersion())
 	{
 		AddInformationToMessageBoard("游戏已损坏");
 		bRet = false;
@@ -464,17 +462,17 @@ bool CMainServer::InitDatabase()
 /************************************************************************/
 /* 连接事件处理
 /************************************************************************/
-void CMainServer::OnAcceptUser(DWORD _dwIndex)
+void CMainServer::OnAcceptUser(unsigned int _dwIndex)
 {
 	static ByteBuffer s_xMainTcpBuf;
 
 	RECORD_FUNCNAME_SERVER;
 
 	char szIP[20];
-	WORD wPort = 0;
+	unsigned short wPort = 0;
 
 	//	生成一个连接序号
-	DWORD dwConnCode = GetNewConnCode();
+	unsigned int dwConnCode = GetNewConnCode();
 	SetConnCode(_dwIndex, dwConnCode);
 
 	IOConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
@@ -492,10 +490,8 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 	else {
 		it->second++;
 	}
-	if (nullptr != m_pServerShell) {
-		m_pServerShell->UpdateDistinctIPCount(m_xIPs.size());
-	}
 
+	m_pServerState->uDistinctIPCount = m_xIPs.size();
 	UpdateServerState();
 
 	PkgLoginGameTypeNot not;
@@ -509,12 +505,12 @@ void CMainServer::OnAcceptUser(DWORD _dwIndex)
 /************************************************************************/
 /* 断开事件处理
 /************************************************************************/
-void CMainServer::OnDisconnectUser(DWORD _dwIndex)
+void CMainServer::OnDisconnectUser(unsigned int _dwIndex)
 {
 	RECORD_FUNCNAME_SERVER;
 
 	char szIP[20];
-	WORD wPort = 0;
+	unsigned short wPort = 0;
 	IOConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
 	if (nullptr != pConn) {
 		pConn->GetAddress(szIP, &wPort);
@@ -526,9 +522,7 @@ void CMainServer::OnDisconnectUser(DWORD _dwIndex)
 			}
 		}
 		// Update distinct ip count to server shell
-		if (nullptr != m_pServerShell) {
-			m_pServerShell->UpdateDistinctIPCount(m_xIPs.size());
-		}
+		m_pServerState->uDistinctIPCount = m_xIPs.size();
 	}
 
 	//	连接序号归位0
@@ -600,11 +594,11 @@ bool CMainServer::CheckUserValid(GameObject* _pObj)
 /************************************************************************/
 /* 数据处理
 /************************************************************************/
-void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
+void CMainServer::OnRecvFromUserTCP(unsigned int _dwIndex, ByteBuffer* _xBuf)
 {
 	RECORD_FUNCNAME_SERVER;
 
-	DWORD dwOpCode = GET_PACKET_OP_CLIENT((*_xBuf));
+	unsigned int dwOpCode = GET_PACKET_OP_CLIENT((*_xBuf));
 	static ByteBuffer s_xMainTcpBuf;
 
 	if(dwOpCode >= PKG_LOGIN_START)
@@ -673,9 +667,9 @@ void CMainServer::OnRecvFromUserTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 	}
 }
 
-void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
+void CMainServer::OnRecvFromServerTCP(unsigned int _dwIndex, ByteBuffer* _xBuf)
 {
-	DWORD dwOpCode = GET_PACKET_OP((*_xBuf));
+	unsigned int dwOpCode = GET_PACKET_OP((*_xBuf));
 
 	if (dwOpCode >= protocol::LSOp_MIN &&
 		dwOpCode <= protocol::LSOp_MAX)
@@ -759,7 +753,7 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 				catch(std::exception& e)
 				{
 					LOG(ERROR) << "!!!Packet unserialize failed while processing hero <" << pHero->GetName() << "> UID(" << pHero->GetUID() << ") packet <" << pHeader->uOp << "> , exception:" << e.what();
-					CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_dwIndex);
+					CMainServer::GetInstance()->ForceCloseConnection(_dwIndex);
 				}
 			}
 		}
@@ -821,9 +815,9 @@ void CMainServer::OnRecvFromServerTCP(DWORD _dwIndex, ByteBuffer* _xBuf)
 	}
 }
 
-void CMainServer::OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf)
+void CMainServer::OnRecvFromServerTCPProtobuf(unsigned int _dwIndex, ByteBuffer* _xBuf)
 {
-	DWORD dwOpCode = GET_PACKET_OP((*_xBuf));
+	unsigned int dwOpCode = GET_PACKET_OP((*_xBuf));
 	g_xConsole.CPrint("Process protobuf : %d", dwOpCode);
 
 	switch (dwOpCode)
@@ -832,14 +826,14 @@ void CMainServer::OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf)
 		{
 			//	register server
 			protocol::MRegisterServerReq req;
-			const char* szServerName = GetRunArg("servername");
+			const char* szServerName = GetServerName();
 			if (NULL == szServerName)
 			{
 				szServerName = "Undefined";
 			}
 			req.set_servername(szServerName);
-			req.set_exposeaddress(GetRunArg("outerip"));
-			req.set_serverid(atoi(GetRunArg("serverid")));
+			req.set_exposeaddress(GetServeIP());
+			req.set_serverid(GetServerID());
 			SendProtoToServer(_dwIndex, protocol::RegisterServerReq, req);
 		}break;
 	case protocol::PlayerLoginHumDataNtf:
@@ -914,8 +908,11 @@ void CMainServer::OnRecvFromServerTCPProtobuf(DWORD _dwIndex, ByteBuffer* _xBuf)
 
 //////////////////////////////////////////////////////////////////////////
 
-void CMainServer::ForceCloseConnection(DWORD _dwIndex)
+void CMainServer::ForceCloseConnection(unsigned int _dwIndex)
 {
+	if (nullptr == m_pIOServer) {
+		return;
+	}
 	m_pIOServer->CloseUserConnection(_dwIndex);
 }
 
@@ -925,10 +922,10 @@ void CMainServer::ForceCloseConnection(DWORD _dwIndex)
 bool CMainServer::InitLogFile()
 {
 	char szFilePath[MAX_PATH];
-	GetRootPath(szFilePath, MAX_PATH);
+	strcpy(szFilePath, GetRootPath());
 
 	google::InitGoogleLogging(szFilePath);
-	PathRemoveFileSpec(szFilePath);
+	//PathRemoveFileSpec(szFilePath);
 	strcat(szFilePath, "\\serverlog\\");
 
 	std::list<std::string> xFiles;
@@ -964,10 +961,7 @@ bool CMainServer::InitLogFile()
 	}
 	xFiles.clear();
 
-	if(!PathFileExists(szFilePath))
-	{
-		mkdir(szFilePath);
-	}
+	mkdir(szFilePath);
 	google::SetLogDestination(google::GLOG_INFO, szFilePath);
 
 	return true;
@@ -979,7 +973,7 @@ bool CMainServer::InitLogFile()
 void CMainServer::MakeServerState(ServerState* _pState)
 {
 	//_pState->wOnline = m_xPlayers.size();
-	_pState->wOnline = (WORD)m_dwUserNumber;
+	_pState->wOnline = (unsigned short)m_dwUserNumber;
 	_pState->bMode = m_bMode;
 }
 
@@ -988,29 +982,25 @@ void CMainServer::MakeServerState(ServerState* _pState)
 /************************************************************************/
 void CMainServer::UpdateServerState()
 {
-	ServerState state;
-	MakeServerState(&state);
-	UpdateDialogInfo(&state);
-
-	//InterlockedExchange((unsigned int*)(&GameWorld::GetInstance().m_nOnlinePlayers), (unsigned int)state.wOnline);
-
-#ifdef _DEBUG
-#else
-#endif
+	m_pServerState->bMode = m_bMode;
+	if (nullptr == m_pServerShell) {
+		return;
+	}
+	m_pServerShell->UpdateServerState(m_pServerState);
 }
 
 //////////////////////////////////////////////////////////////////////////
-void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
+void CMainServer::_OnGameLoop(unsigned int _dwEvtIndex)
 {
 	if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN &&
 		!CMainServer::GetInstance()->m_bLoginConnected)
 	{
-		static DWORD s_dwLastConnTime = GetTickCount();
+		static unsigned int s_dwLastConnTime = GetTickCount();
 
 		if(GetTickCount() - s_dwLastConnTime > 5000)
 		{
 			if(!CMainServer::GetInstance()->m_xLoginAddr.empty() &&
-				NULL != GetRunArg("serverid"))
+				0 != CMainServer::GetInstance()->GetServerID())
 			{
 				CMainServer::GetInstance()->ConnectToLoginSvr();
 			}
@@ -1019,7 +1009,7 @@ void CMainServer::_OnGameLoop(DWORD _dwEvtIndex)
 	}
 
 	//	process time event
-	static DWORD s_dwLastProcessNetThreadEventTime = GetTickCount();
+	static unsigned int s_dwLastProcessNetThreadEventTime = GetTickCount();
 	if (GetTickCount() - s_dwLastProcessNetThreadEventTime > 3000) {
 		s_dwLastProcessNetThreadEventTime = GetTickCount();
 		CMainServer::GetInstance()->ProcessNetThreadEvent();
@@ -1050,7 +1040,7 @@ void CMainServer::ProcessNetThreadEvent()
 
 		if(refEvt.nEventId == kNetThreadEvent_SmallQuit)
 		{
-			DWORD dwIndex = refEvt.nArg;
+			unsigned int dwIndex = refEvt.nArg;
 
 			//	small quit
 			if(dwIndex <= MAX_CONNECTIONS)
@@ -1092,7 +1082,7 @@ void CMainServer::SendNetThreadEvent(const NetThreadEvent& _refEvt)
 /************************************************************************/
 /* 接收玩家
 /************************************************************************/
-void CMainServer::_OnAcceptUser(DWORD _dwIndex)
+void CMainServer::_OnAcceptUser(unsigned int _dwIndex)
 {
 	GetInstance()->OnAcceptUser(_dwIndex);
 }
@@ -1100,7 +1090,7 @@ void CMainServer::_OnAcceptUser(DWORD _dwIndex)
 /************************************************************************/
 /* 玩家离开
 /************************************************************************/
-void CMainServer::_OnDisconnectUser(DWORD _dwIndex)
+void CMainServer::_OnDisconnectUser(unsigned int _dwIndex)
 {
 	GetInstance()->OnDisconnectUser(_dwIndex);
 }
@@ -1108,14 +1098,14 @@ void CMainServer::_OnDisconnectUser(DWORD _dwIndex)
 /************************************************************************/
 /* 接收玩家数据
 /************************************************************************/
-void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
+void CMainServer::_OnRecvFromUserTCP(unsigned int _dwIndex, char *_pMsg, unsigned int _dwLen)
 {
 	RECORD_FUNCNAME_SERVER;
 
 	//	校验数据包
 	bool bValid = true;
-	DWORD dwOpCode = 0;
-	WORD wCheckSum = 0;
+	unsigned int dwOpCode = 0;
+	unsigned short wCheckSum = 0;
 
 	do 
 	{
@@ -1143,7 +1133,7 @@ void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
 		}
 
 		wCheckSum = HIWORD(header.uOp);
-		WORD wCurrentCheckSum = DataEncryptor::GetCheckSum(dwOpCode, _pMsg + 4, _dwLen - 4);
+		unsigned short wCurrentCheckSum = DataEncryptor::GetCheckSum(dwOpCode, _pMsg + 4, _dwLen - 4);
 		if(wCurrentCheckSum != wCheckSum)
 		{
 			LOG(ERROR) << "Invalid check sum:" << wCurrentCheckSum << "!=" << wCheckSum << " op:" << dwOpCode;
@@ -1152,8 +1142,8 @@ void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
 		}
 
 		g_xMainBuffer.Reset();
-		DWORD dwLength = _dwLen + sizeof(DWORD);
-		if(0 == g_xMainBuffer.Write(&dwLength, sizeof(DWORD)))
+		unsigned int dwLength = _dwLen + sizeof(unsigned int);
+		if(0 == g_xMainBuffer.Write(&dwLength, sizeof(unsigned int)))
 		{
 			LOG(FATAL) << "Unresolved packet!";
 			bValid = false;
@@ -1177,17 +1167,17 @@ void CMainServer::_OnRecvFromUserTCP(DWORD _dwIndex, char *_pMsg, DWORD _dwLen)
 
 	if(bValid)
 	{
-		DWORD* pOp = ((DWORD*)g_xMainBuffer.GetBuffer()) + 1;
+		unsigned int* pOp = ((unsigned int*)g_xMainBuffer.GetBuffer()) + 1;
 		*pOp = dwOpCode;
 		GetInstance()->OnRecvFromUserTCP(_dwIndex, &g_xMainBuffer);
 	}
 	else
 	{
-		CMainServer::GetInstance()->GetIOServer()->CloseUserConnection(_dwIndex);
+		CMainServer::GetInstance()->ForceCloseConnection(_dwIndex);
 	}
 }
 
-void CMainServer::_OnRecvFromServerTCP(DWORD _dwIndex, char* _pMsg, DWORD _dwLen)
+void CMainServer::_OnRecvFromServerTCP(unsigned int _dwIndex, char* _pMsg, unsigned int _dwLen)
 {
 	//	校验数据包
 	bool bValid = true;
@@ -1199,8 +1189,8 @@ void CMainServer::_OnRecvFromServerTCP(DWORD _dwIndex, char* _pMsg, DWORD _dwLen
 
 	PacketHeader* pHeader = (PacketHeader*)_pMsg;
 	g_xMainBuffer.Reset();
-	DWORD dwLength = _dwLen + sizeof(DWORD);
-	if(0 == g_xMainBuffer.Write(&dwLength, sizeof(DWORD)))
+	unsigned int dwLength = _dwLen + sizeof(unsigned int);
+	if(0 == g_xMainBuffer.Write(&dwLength, sizeof(unsigned int)))
 	{
 		LOG(FATAL) << "Unresolved packet!";
 		bValid = false;
@@ -1217,12 +1207,12 @@ void CMainServer::_OnRecvFromServerTCP(DWORD _dwIndex, char* _pMsg, DWORD _dwLen
 	}
 }
 
-void CMainServer::_OnAcceptServer(DWORD _dwIndex)
+void CMainServer::_OnAcceptServer(unsigned int _dwIndex)
 {
 	//
 }
 
-void CMainServer::_OnDisconnectServer(DWORD _dwIndex)
+void CMainServer::_OnDisconnectServer(unsigned int _dwIndex)
 {
 	CMainServer::GetInstance()->m_bLoginConnected = false;
 }
@@ -1261,7 +1251,7 @@ bool CMainServer::CreateLoginHero(HeroObject* _pHero,
 
 	// Initialize hero with saved data
 	const char* pData = &_refLoginData[0];
-	DWORD dwDataLen = _refLoginData.size();
+	unsigned int dwDataLen = _refLoginData.size();
 
 	static char* s_pBuf = new char[MAX_SAVEDATA_SIZE];
 	// Add to global static pointer list
@@ -1322,10 +1312,10 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 		_xBuf >> pUserData->stAttrib.level;
 		_xBuf >> pUserData->bJob;
 		_xBuf >> pUserData->wMapID;
-		WORD wLastCity = 0;
+		unsigned short wLastCity = 0;
 		_xBuf >> wLastCity;
 		_pHero->SetCityMap(wLastCity);
-		DWORD dwPos = 0;
+		unsigned int dwPos = 0;
 		_xBuf >> dwPos;
 		pUserData->wCoordX = LOWORD(dwPos);
 		pUserData->wCoordY = HIWORD(dwPos);
@@ -1357,7 +1347,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 		_xBuf >> *_pHero->GetQuest();
 	}
 
-	DWORD dwMoney = 0;
+	unsigned int dwMoney = 0;
 	if (_xBuf.GetLength() > 4)
 	{
 		_xBuf >> dwMoney;
@@ -1368,8 +1358,8 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 		return false;
 	}
 
-	BYTE bBag = 0;
-	BYTE bBody = 0;
+	unsigned char bBag = 0;
+	unsigned char bBody = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bBag;
@@ -1410,7 +1400,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	}
 	if (bBody > 0)
 	{
-		BYTE bPos = 0;
+		unsigned char bPos = 0;
 		for (int i = 0; i < bBody; ++i)
 		{
 			_xBuf >> bPos;
@@ -1433,7 +1423,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	}
 
 	//	Magic
-	BYTE bMagic = 0;
+	unsigned char bMagic = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bMagic;
@@ -1446,8 +1436,8 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	const MagicInfo* pMagicInfo = NULL;
 	if (bMagic > 0)
 	{
-		BYTE bLevel = 0;
-		WORD wID = 0;
+		unsigned char bLevel = 0;
+		unsigned short wID = 0;
 
 		for (int i = 0; i < bMagic; ++i)
 		{
@@ -1489,7 +1479,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	}
 
 	//	storage
-	BYTE bStorage = 0;
+	unsigned char bStorage = 0;
 	if (_xBuf.GetLength() >= 1)
 	{
 		_xBuf >> bStorage;
@@ -1525,7 +1515,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	//	two dword reserve
 	if (_xBuf.GetLength() >= 8)
 	{
-		DWORD dwReserve = 0;
+		unsigned int dwReserve = 0;
 		_xBuf >> dwReserve;
 		_xBuf >> dwReserve;
 	}
@@ -1547,7 +1537,7 @@ bool CMainServer::LoadHumData(HeroObject *_pHero, ByteBuffer& _xBuf, USHORT _uVe
 	return true;
 }
 
-bool CMainServer::OnPlayerRequestLogin(DWORD _dwIndex, DWORD _dwLSIndex, DWORD _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req) {
+bool CMainServer::OnPlayerRequestLogin(unsigned int _dwIndex, unsigned int _dwLSIndex, unsigned int _dwUID, const char* _pExtendInfo, PkgUserLoginReq& req) {
 	RECORD_FUNCNAME_SERVER;
 #ifdef _DEBUG
 	if (NULL != _pExtendInfo)
@@ -1681,9 +1671,9 @@ unsigned int CMainServer::SendBuffer(unsigned int _nIdx, ByteBuffer* _pBuf)
 		return 0;
 	}
 
-	DWORD dwPacketLength = _pBuf->GetLength();
+	unsigned int dwPacketLength = _pBuf->GetLength();
 	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
-	*(DWORD*)pBuf = dwPacketLength;
+	*(unsigned int*)pBuf = dwPacketLength;
 
 	if (TRUE == pNet->SyncSendPacketToUser(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4))
 	{
@@ -1708,9 +1698,9 @@ unsigned int CMainServer::SendBufferToServer(unsigned int _nIdx, ByteBuffer* _pB
 		return 0;
 	}
 
-	DWORD dwPacketLength = _pBuf->GetLength();
+	unsigned int dwPacketLength = _pBuf->GetLength();
 	unsigned char* pBuf = const_cast<unsigned char*>(_pBuf->GetBuffer());
-	*(DWORD*)pBuf = dwPacketLength;
+	*(unsigned int*)pBuf = dwPacketLength;
 
 	if (TRUE == pNet->SyncSendPacketToServer(_nIdx, (char*)_pBuf->GetBuffer() + sizeof(unsigned int), dwPacketLength - 4))
 	{
@@ -1757,4 +1747,44 @@ unsigned int CMainServer::SendProtoToServer(unsigned int _nIdx, int _nCode, goog
 	}
 
 	return 0;
+}
+
+const char* CMainServer::GetConfig(const char* _pszKey) {
+	if (nullptr == m_pServerShell) {
+		return nullptr;
+	}
+	return m_pServerShell->GetConfig(_pszKey);
+}
+
+const char* CMainServer::GetServerName() {
+	if (nullptr == m_pServerShell) {
+		return "";
+	}
+	return m_pServerShell->GetServerBaseInfo()->strServerName;
+}
+
+int CMainServer::GetServerID() {
+	if (nullptr == m_pServerShell) {
+		return 0;
+	}
+	return m_pServerShell->GetServerBaseInfo()->nServerID;
+}
+
+const char* CMainServer::GetRootPath() {
+	if (nullptr == m_pServerShell) {
+		return "";
+	}
+	return m_pServerShell->GetRootPath();
+}
+
+const char* CMainServer::GetServeIP() {
+	if (nullptr == m_pServerShell) {
+		return "";
+	}
+	return m_pServerShell->GetServerBaseInfo()->szServeIP;
+}
+
+void CMainServer::UpdateObjectCount(int _nHero, int _nMons) {
+	m_pServerState->uHeroCount = _nHero;
+	m_pServerState->uMonsCount = _nMons;
 }

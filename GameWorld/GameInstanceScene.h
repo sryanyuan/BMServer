@@ -10,8 +10,8 @@ public:
 	virtual ~GameInstanceScene();
 
 public:
-	virtual void Update(DWORD _dwTick);
-	virtual bool Initialize(DWORD _dwMapID);
+	virtual void Update(unsigned int _dwTick);
+	//virtual bool Initialize(unsigned int _dwMapID);
 	virtual void Release();
 
 public:
@@ -25,8 +25,8 @@ public:
 protected:
 	//	是否可以回收副本资源
 	bool m_bFree;
-	DWORD m_dwLastFreeTime;
-	DWORD m_dwLastRoundTime;
+	unsigned int m_dwLastFreeTime;
+	unsigned int m_dwLastRoundTime;
 	int m_nCurRound;
 	//	一轮是否开始
 	bool m_bRoundRunning;

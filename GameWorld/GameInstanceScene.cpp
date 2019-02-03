@@ -22,12 +22,12 @@ void GameInstanceScene::Release()
 	__super::Release();
 }
 
-bool GameInstanceScene::Initialize(DWORD _dwMapID)
+/*bool GameInstanceScene::Initialize(unsigned int _dwMapID)
 {
 	return __super::Initialize(_dwMapID);
-}
+}*/
 
-void GameInstanceScene::Update(DWORD _dwTick)
+void GameInstanceScene::Update(unsigned int _dwTick)
 {
 	__super::Update(_dwTick);
 
