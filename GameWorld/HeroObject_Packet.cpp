@@ -3178,6 +3178,11 @@ void HeroObject::DoPacket(const PkgPlayerDecomposeReq& req)
 		{
 			int nItemLevel = GetItemGradeInFullAttrib(oriItem.id);
 
+			if (nItemLevel > 6) {
+				SendSystemMessage("高阶装备暂不支持分解");
+				return;
+			}
+
 			if(0 != nItemLevel)
 			{
 				int nTotalPrice = 0;
