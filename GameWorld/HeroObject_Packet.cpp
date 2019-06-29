@@ -1468,6 +1468,20 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 			return;
 		}
 
+		// Check if the scene has shop npc
+		bool bFindShop = false;
+		GetLocateScene()->WalkNPCs([&bFindShop](NPCObject* pNPC) -> bool {
+			if (pNPC->GetItemSum() != 0) {
+				bFindShop = true;
+				return false;
+			}
+			return true;
+		});
+		if (!bFindShop) {
+			// The scene seems have no shop npc
+			return;
+		}
+
 		ItemAttrib* pItem = GetItemByTag(req.dwData);
 		if(pItem)
 		{

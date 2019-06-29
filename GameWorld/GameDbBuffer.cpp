@@ -88,16 +88,28 @@ bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo) {
 #endif
 	}
 	// Initialize hero base attrib
+	g_xHeroBaseInfo.resize(MAX_LEVEL);
 	if (bUsingLuaHeroBaseInfo) {
-		g_xHeroBaseInfo.resize(MAX_LEVEL);
 		if (!LuaDataLoader::LoadHeroBaseAttrib(L, pszDefaultHeroBaseAttirbTableName, g_xHeroBaseInfo)) {
 			LOG(ERROR) << "Error on loading hero base attrib from lua";
 			return false;
 		}
-		if (!compareLuaHeroBaseInfo()) {
-			LOG(ERROR) << "Compare lua hero base info with share data failed";
-			return false;
+	}
+	else {
+		// Using the share data
+		for (int level = 1; level <= MAX_LEVEL; level++) {
+			HeroBaseInfo *pBaseInfo = &g_xHeroBaseInfo[level - 1];
+			pBaseInfo->nExpr = GetGlobalExpr(level);
+			for (int i = 0; i < 3; i++) {
+				pBaseInfo->nHP[i] = GetGlobalHP(level, i);
+				pBaseInfo->nMP[i] = GetGlobalMP(level, i);
+				pBaseInfo->nWanli[i] = GetGlobalWanLi(level, i);
+			}
 		}
+	}
+	if (!compareLuaHeroBaseInfo()) {
+		LOG(ERROR) << "Compare lua hero base info with share data failed";
+		return false;
 	}
 	
 	return true;
@@ -309,18 +321,6 @@ bool GetRecordInHeroBaseAttribTable(int nLevel, HeroBaseInfo *_pAttrib) {
 	}
 	if (nLevel > MAX_LEVEL || nLevel <= 0) {
 		return false;
-	}
-
-	if (g_xHeroBaseInfo.empty()) {
-		// Using the share data
-		_pAttrib->nExpr = GetHeroBaseAttribExpr(nLevel);
-		for (int i = 0; i < 3; i++) {
-			_pAttrib->nHP[i] = GetGlobalHP(nLevel, i);
-			_pAttrib->nMP[i] = GetGlobalMP(nLevel, i);
-			_pAttrib->nWanli[i] = GetGlobalWanLi(nLevel, i);
-		}
-		
-		return true;
 	}
 	
 	memcpy(_pAttrib, &g_xHeroBaseInfo[nLevel - 1], sizeof(HeroBaseInfo));

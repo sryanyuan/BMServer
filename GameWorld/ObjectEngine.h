@@ -16,6 +16,7 @@
 #include "../../CommonModule/RandGenerator.h"
 #include "../../CommonModule/StoveManager.h"
 #include "../../CommonModule/StateController.h"
+#include "../../CommonModule/CollDownController.h"
 #include "FreeListManager.h"
 #include <google/protobuf/message.h>
 #include <mutex>
@@ -477,17 +478,6 @@ protected:
 	bool m_bWorldNPC;
 };
 //////////////////////////////////////////////////////////////////////////
-/*
-class SortAttribIDByTag
-{
-public:
-	bool operator()(const ItemAttrib* _pLeft, const ItemAttrib* _pRight) const
-	{
-		return _pLeft->id < _pRight->id;
-	}
-};*/
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
 typedef std::vector<int> GiftItemIDVector;
 typedef std::map<int, unsigned int> DrugUseTimeMap;
@@ -705,6 +695,17 @@ public:
 
 	inline unsigned int GetLSIndex()							{return m_dwLSIndex;}
 	inline void SetLSIndex(unsigned int _dwIdx)				{m_dwLSIndex = _dwIdx;}
+
+	inline void SetConnAddrInfo(const std::string &ip, int port)	{
+		m_nConnPort = port;
+		m_xConnIP = ip;
+	}
+	inline int GetConnAddrPort() {
+		return m_nConnPort;
+	}
+	inline std::string& GetConnAddrIP() {
+		return m_xConnIP;
+	}
 
 	inline unsigned int GetUID()								{return m_dwUID;}
 	inline void SetUID(unsigned int _dwUID)					{m_dwUID = _dwUID;}
@@ -1243,6 +1244,13 @@ protected:
 
 	// Kicked or not
 	bool m_bKicked;
+
+	// Connection information
+	std::string m_xConnIP;
+	int m_nConnPort;
+
+	// Magic cooldown control
+	CoolDownController m_xMagicColldown;
 };
 
 typedef std::list<HeroObject*> HeroObjectList;

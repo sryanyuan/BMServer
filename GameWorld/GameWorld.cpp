@@ -520,7 +520,9 @@ int GameWorld::Init()
 			CMainServer::GetInstance()->GetServerID());
 		if(!OfflineSellSystem::GetInstance()->Initialize(szOfflineSellFile))
 		{
-			LOG(ERROR) << "Can not initialize offline sell system";
+			LOG(ERROR) << "Can not initialize offline sell system"
+				<< "RootPath: " << CMainServer::GetInstance()->GetRootPath() << "___"
+				<< "ServerID: " << CMainServer::GetInstance()->GetServerID();
 			return 1;
 		}
 		OfflineSellSystem::GetInstance()->CopyFromSQL();
@@ -545,7 +547,7 @@ int GameWorld::Init()
 	m_xScript.SetModulePath(szPath);
 	m_xScript.SetLuaLoadPath(szPath);
 #else
-	strcat(szPath, "\\Help\\dog.idx");
+	strcat(szPath, "\\Script\\dog.idx");
 	m_xScript.SetModulePath(szPath, LOADMODE_ZIP);
 	m_xScript.SetLuaLoadPath(szPath);
 #endif
@@ -2665,7 +2667,7 @@ bool GameWorld::ReloadScript()
 #else
 	strcpy(szFile, "world.bbt");
 #endif
-	sprintf(szBuf, "%s\\Help\\dog.idx",
+	sprintf(szBuf, "%s\\Script\\dog.idx",
 		GetRootPath());
 
 	if(m_xScript.ExecuteZip(szBuf, szFile))
@@ -3672,6 +3674,17 @@ int GameWorld::SyncIsHeroExists(LoginQueryInfo* _pQuery) {
 	}
 
 	return 0;
+}
+
+int GameWorld::SyncGetPlayerIPCount(const std::string& _xIP) {
+	int nCount = 0;
+	GameSceneManager::GetInstance()->WalkPlayers([&nCount, &_xIP](HeroObject* pHero) -> bool {
+		if (pHero->GetConnAddrIP() == _xIP) {
+			nCount++;
+		}
+		return true;
+	});
+	return nCount;
 }
 
 WeightCalc& GameWorld::GetAdditionPointCalc()

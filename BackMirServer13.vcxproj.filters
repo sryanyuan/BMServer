@@ -442,6 +442,9 @@
     <ClCompile Include="..\CommonModule\CollDownController.cpp">
       <Filter>Module</Filter>
     </ClCompile>
+    <ClCompile Include="GameWorld\ServerStatus.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CMainServer\CMainServer.h">
@@ -767,6 +770,9 @@
     </ClInclude>
     <ClInclude Include="..\CommonModule\CollDownController.h">
       <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\ServerStatus.h">
+      <Filter>GameWorld</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

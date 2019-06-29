@@ -243,6 +243,7 @@ public:
 	int SyncOnHeroConnected(HeroObject* _pHero, bool _bNew);
 	int SyncOnHeroMsg(HeroObject* _pHero, ByteBuffer& _refBuf);
 	int SyncIsHeroExists(LoginQueryInfo* _pQuery);
+	int SyncGetPlayerIPCount(const std::string& _xIP);
 
 	// addition point calc
 	bool LoadAdditionPointCalcDataFromScript();

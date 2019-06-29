@@ -170,7 +170,7 @@ bool GameScene::Initialize(unsigned int _dwMapResID, unsigned int _dwMapID)
 	m_xScript.SetModulePath(szMapFile);
 	m_xScript.SetLuaLoadPath(szMapFile);
 #else
-	sprintf(szMapFile, "%s\\Help\\dog.idx",
+	sprintf(szMapFile, "%s\\Script\\dog.idx",
 		szRootPath);
 	m_xScript.SetModulePath(szMapFile, LOADMODE_ZIP);
 	m_xScript.SetLuaLoadPath(szMapFile);
@@ -305,7 +305,7 @@ bool GameScene::Initialize(unsigned int _dwMapResID, unsigned int _dwMapID)
 	m_xScript.SetModulePath(szMapFile);
 	m_xScript.SetLuaLoadPath(szMapFile);
 #else
-	sprintf(szMapFile, "%s\\Help\\dog.idx",
+	sprintf(szMapFile, "%s\\Script\\dog.idx",
 		szRootPath);
 	m_xScript.SetModulePath(szMapFile, LOADMODE_ZIP);
 	m_xScript.SetLuaLoadPath(szMapFile);
@@ -2581,7 +2581,7 @@ bool GameScene::ReloadScript()
 	sprintf(szFile, "scene%d.bbt",
 		m_xScript.GetUserTag());
 #endif
-	sprintf(szBuf, "%s\\Help\\dog.idx",
+	sprintf(szBuf, "%s\\Script\\dog.idx",
 		GetRootPath());
 
 	if(m_xScript.ExecuteZip(szBuf, szFile))
@@ -2953,6 +2953,14 @@ NPCObject* GameScene::GetNPCByID(unsigned int _uID)
 		}
 	}
 	return NULL;
+}
+
+void GameScene::WalkNPCs(std::function<bool(NPCObject *)> fn) {
+	for (auto &v : m_xNPCs) {
+		if (!fn((NPCObject*)(v.second))) {
+			break;
+		}
+	}
 }
 
 GameObject* GameScene::GetNPCByHandleID(unsigned int _uID)

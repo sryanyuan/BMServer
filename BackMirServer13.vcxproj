@@ -189,6 +189,7 @@
     <ClCompile Include="GameWorld\LibImport.cpp" />
     <ClCompile Include="GameWorld\LuaItemHelper.cpp" />
     <ClCompile Include="GameWorld\LuaServerEngine.cpp" />
+    <ClCompile Include="GameWorld\ServerStatus.cpp" />
     <ClCompile Include="GameWorld\MonsGenEngine.cpp" />
     <ClCompile Include="GameWorld\MonsterLogic\BaiHuMonster.cpp" />
     <ClCompile Include="GameWorld\MonsterLogic\BehemothDevourerMonster.cpp" />
@@ -335,6 +336,7 @@
     <ClInclude Include="GameWorld\GlobalAllocRecord.h" />
     <ClInclude Include="GameWorld\LuaItemHelper.h" />
     <ClInclude Include="GameWorld\LuaServerEngine.h" />
+    <ClInclude Include="GameWorld\ServerStatus.h" />
     <ClInclude Include="GameWorld\MonsGenEngine.h" />
     <ClInclude Include="GameWorld\MonsterObject.h" />
     <ClInclude Include="GameWorld\MonsterTemplateObject.h" />

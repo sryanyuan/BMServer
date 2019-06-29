@@ -51,8 +51,8 @@ unsigned int DBThread::Run()
 	m_xScript.SetModulePath(szBuf, LOADMODE_PATH);
 	m_xScript.SetLuaLoadPath(szBuf);
 #else
-	sprintf(szBuf, "%s\\Help\\dog.idx",
-		GetRootPath());
+	sprintf(szBuf, "%s\\Script\\dog.idx",
+		CMainServer::GetInstance()->GetRootPath());
 	m_xScript.SetModulePath(szBuf, LOADMODE_ZIP);
 	m_xScript.SetLuaLoadPath(szBuf);
 #endif

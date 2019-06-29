@@ -145,7 +145,7 @@ bool GameSceneManager::CreateAllScene()
 		return false;
 	}
 	// Initialize item attrib config
-	if (!CreateGameDbBufferLua(pWorldState, true)) {
+	if (!CreateGameDbBufferLua(pWorldState, false)) {
 		LOG(ERROR) << "Initialize item or monster full attrib error";
 		return false;
 	}
@@ -579,6 +579,38 @@ const char* GameSceneManager::GetMapChName(int _id)
 		return "Î´ÖªµØÍ¼";
 	}
 	return pMapInfo->szMapChName;
+}
+
+void GameSceneManager::WalkPlayers(std::function<bool(HeroObject *)> cb) {
+	for (int i = 0; i < MAX_SCENE_NUMBER; ++i)
+	{
+		GameScene *pScene = m_pScenes[i];
+		if (nullptr == pScene) {
+			break;
+		}
+		
+		for (auto &v : pScene->m_xPlayers) {
+			if (!cb((HeroObject*)(v.second))) {
+				break;
+			}
+		}
+	}
+
+	if (!m_xInstanceScenes.empty())
+	{
+		GameSceneList::const_iterator it = m_xInstanceScenes.begin();
+		for (it;
+			it != m_xInstanceScenes.end();
+			++it)
+		{
+			GameScene* pScene = *it;
+			for (auto &v : pScene->m_xPlayers) {
+				if (!cb((HeroObject*)(v.second))) {
+					break;
+				}
+			}
+		}
+	}
 }
 
 GameObject* GameSceneManager::GetPlayerByName(const char* _pszName)

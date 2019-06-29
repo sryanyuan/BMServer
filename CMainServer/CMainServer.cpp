@@ -45,7 +45,6 @@ CMainServer::CMainServer()
 {
 	m_bMode = MODE_STOP;
 	m_dwUserNumber = 0;
-	InitLogFile();
 	m_dwThreadID = GetCurrentThreadId();
 	m_eMode = GM_NORMAL;
 	srand((unsigned int)time(NULL));
@@ -87,6 +86,7 @@ ServerShell* CMainServer::GetServerShell() {
 
 void CMainServer::SetServerShell(ServerShell *_pServerShell) {
 	m_pServerShell = _pServerShell;
+	InitLogFile();
 }
 
 void CMainServer::AddInformationToMessageBoard(const char* fmt, ...) {
@@ -651,7 +651,8 @@ void CMainServer::OnRecvFromUserTCP(unsigned int _dwIndex, ByteBuffer* _xBuf)
 				}
 				PkgUserLoginReq req;
 				*_xBuf >> req;
-				OnPreProcessPacket(_dwIndex, 0, 0, NULL, req);
+				//OnPreProcessPacket(_dwIndex, 0, 0, NULL, req);
+				OnPlayerRequestLogin(_dwIndex, 0, 0, NULL, req);
 			}break;
 		default:
 			{
@@ -709,7 +710,8 @@ void CMainServer::OnRecvFromServerTCP(unsigned int _dwIndex, ByteBuffer* _xBuf)
 		PkgUserLoginReq req;
 		memcpy(&req.stHeader, &not.stHeader, sizeof(HeroHeader));
 		req.xData = not.xData;
-		OnPreProcessPacket(not.dwPlayerIndex, not.dwLSIndex, not.dwUID, not.xExtendInfo.c_str(), req);
+		//OnPreProcessPacket(not.dwPlayerIndex, not.dwLSIndex, not.dwUID, not.xExtendInfo.c_str(), req);
+		OnPlayerRequestLogin(not.dwPlayerIndex, not.dwLSIndex, not.dwUID, not.xExtendInfo.c_str(), req);
 
 		//
 		GameWorld::GetInstance().DisableAutoReset();
@@ -870,7 +872,8 @@ void CMainServer::OnRecvFromServerTCPProtobuf(unsigned int _dwIndex, ByteBuffer*
 				req.xData.resize(ntf.data().size());
 				memcpy(&req.xData[0], &ntf.data()[0], ntf.data().size());
 			}
-			OnPreProcessPacket(ntf.gid(), ntf.lid(), ntf.uid(), ntf.jsondata().c_str(), req);
+			//OnPreProcessPacket(ntf.gid(), ntf.lid(), ntf.uid(), ntf.jsondata().c_str(), req);
+			OnPlayerRequestLogin(ntf.gid(), ntf.lid(), ntf.uid(), ntf.jsondata().c_str(), req);
 
 			//
 			GameWorld::GetInstance().DisableAutoReset();
@@ -1545,6 +1548,11 @@ bool CMainServer::OnPlayerRequestLogin(unsigned int _dwIndex, unsigned int _dwLS
 		LOG(INFO) << "¶îÍâµÇÂ¼ÐÅÏ¢:" << _pExtendInfo;
 	}
 #endif
+	ioserver::IOConn *pConn = m_pIOServer->GetUserConn(_dwIndex);
+	if (nullptr == pConn) {
+		LOG(ERROR) << "Connection object of index " << _dwIndex << " is null";
+		return false;
+	}
 
 	// Check connection index
 	if (_dwIndex > MAX_CONNECTIONS) {
@@ -1583,6 +1591,17 @@ bool CMainServer::OnPlayerRequestLogin(unsigned int _dwIndex, unsigned int _dwLS
 	strcpy(info.szName, req.stHeader.szName);
 	info.bExists = true;
 	GameWorld::GetInstance().SyncIsHeroExists(&info);
+
+	// Check the ip limit
+	int nConnIPLimit = SettingLoader::GetInstance()->GetIntValue("IPLIMIT");
+	if (0 != nConnIPLimit) {
+		int nExistsIPCount = GameWorld::GetInstance().SyncGetPlayerIPCount(pConn->GetAddress()->strIP);
+		if (nExistsIPCount >= nConnIPLimit) {
+			LOG(WARNING) << "Player[" << req.stHeader.szName << "] connection count is out of ip limit value"
+				<< nConnIPLimit;
+			return false;
+		}
+	}
 
 	if (!info.bExists)
 	{
@@ -1637,6 +1656,8 @@ bool CMainServer::OnPlayerRequestLogin(unsigned int _dwIndex, unsigned int _dwLS
 		}
 		return false;
 	}
+	// Set conn info
+	pObj->SetConnAddrInfo(pConn->GetAddress()->strIP, pConn->GetAddress()->uPort);
 	// Add it to game world
 	if (0 != GameWorld::GetInstance().SyncOnHeroConnected(pObj, req.xData.empty())) {
 		// Add failed
@@ -1785,6 +1806,19 @@ const char* CMainServer::GetServeIP() {
 }
 
 void CMainServer::UpdateObjectCount(int _nHero, int _nMons) {
+	bool bChanged = false;
+	if (m_pServerState->uHeroCount != _nHero ||
+		m_pServerState->uMonsCount != _nMons) {
+		bChanged = true;
+	}
 	m_pServerState->uHeroCount = _nHero;
 	m_pServerState->uMonsCount = _nMons;
+
+	if (!bChanged) {
+		return;
+	}
+	UpdateServerState();
+	g_xConsole.CPrint("Update server status:\nHero: %d | Mons: %d | DtIP£º %d\n",
+		m_pServerState->uHeroCount, m_pServerState->uMonsCount,
+		m_pServerState->uDistinctIPCount);
 }

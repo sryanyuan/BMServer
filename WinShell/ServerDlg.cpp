@@ -110,6 +110,20 @@ BOOL CServerDlg::OnInitDialog()
 #endif
 	g_xConsole.InitConsole();
 
+	// Setup server base info
+	const char* pszServerName = GetRunArg("servername");
+	if (nullptr != pszServerName) {
+		strcpy(m_stServerBaseInfo.strServerName, pszServerName);
+	}
+	const char* pszServerID = GetRunArg("serverid");
+	if (nullptr != pszServerID) {
+		m_stServerBaseInfo.nServerID = atoi(pszServerID);
+	}
+	const char* pszServeIP = GetRunArg("outerip");
+	if (nullptr != pszServeIP) {
+		strcpy(m_stServerBaseInfo.szServeIP, pszServeIP);
+	}
+
 	g_hServerDlg = GetSafeHwnd();
 	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
 	m_bInitNetwork = m_pxMainServer->InitNetWork() ? TRUE : FALSE;
@@ -141,20 +155,6 @@ BOOL CServerDlg::OnInitDialog()
 	SetTimer(TIMER_MSGBOARD, 50, NULL);
 
 	SetRandomTitle(GetSafeHwnd());
-
-	// Setup server base info
-	const char* pszServerName = GetRunArg("servername");
-	if (nullptr != pszServerName) {
-		strcpy(m_stServerBaseInfo.strServerName, pszServerName);
-	}
-	const char* pszServerID = GetRunArg("serverid");
-	if (nullptr != pszServerID) {
-		m_stServerBaseInfo.nServerID = atoi(pszServerID);
-	}
-	const char* pszServeIP = GetRunArg("outerip");
-	if (nullptr != pszServeIP) {
-		strcpy(m_stServerBaseInfo.szServeIP, pszServerID);
-	}
 
 #ifndef _DEBUG
 	GetDlgItem(IDC_BUTTON4)->EnableWindow(FALSE);
@@ -462,7 +462,6 @@ LRESULT CServerDlg::OnUpdateDistinctIP(WPARAM wParam, LPARAM lParam)
 	char szOutput[MAX_PATH];
 	sprintf(szOutput, "¶ÀÁ¢IPÊý: %d",
 		wParam);
-	m_nOnlinePlayerCount = wParam;
 	GetDlgItem(IDC_DISTINCTIP)->SetWindowText(szOutput);
 
 	return S_OK;
@@ -923,7 +922,7 @@ const char* CServerDlg::GetRootPath() {
 
 void CServerDlg::UpdateServerState(const ServerState* _pState) {
 	PostMessage(WM_DISTINCTIP, _pState->uDistinctIPCount, 0);
-	PostMessage(WM_PLAYERCOUNT, _pState->uHeroCount, _pState->uHeroCount);
+	PostMessage(WM_PLAYERCOUNT, _pState->uHeroCount, _pState->uMonsCount);
 	PostMessage(WM_UPDATE_INFO, _pState->bMode, 0);
 }
 

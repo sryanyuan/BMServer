@@ -251,6 +251,7 @@ public:
 	void CreateDoorEvent(unsigned int _uMapID, unsigned int _ux, unsigned int _uy, unsigned int _nextx, unsigned int _nexty, unsigned int _utime);
 	void CreateDoorEventWithNotification(unsigned int _uMapID, unsigned int _ux, unsigned int _uy, unsigned int _nextx, unsigned int _nexty, unsigned int _utime);
 	NPCObject* GetNPCByID(unsigned int _uID);
+	void WalkNPCs(std::function<bool(NPCObject*)>);
 	GameObject* GetNPCByHandleID(unsigned int _uID);
 	GameObject* GetOnePlayerInRange(RECT& _rc, bool _bCanSeeHide = false);
 	GameObject* MonsterGetOneTargetInRange(const RECT& _rc, bool _bCanSeeHide = false);
@@ -472,6 +473,8 @@ public:
 	GameObject* GetPlayer(unsigned int _dwID);
 	void GetPlayerByUid(int _nUid, GameObjectList& _refList);
 	GameObject* GetPlayerByName(const char* _pszName);
+	// Common traverse function
+	void WalkPlayers(std::function<bool(HeroObject*)> cb);
 
 	int CountPlayer();
 

@@ -141,6 +141,8 @@ HeroObject::HeroObject(unsigned int _dwID) : m_xMagics(USER_MAGIC_NUM),
 	m_bLSLoginPushed = false;
 
 	m_bKicked = false;
+
+	m_nConnPort = 0;
 }
 
 HeroObject::~HeroObject()
@@ -6639,9 +6641,23 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 
 	PkgPlayerEnableSkillNot ppesn;
 	ppesn.uTargetId = GetID();
-	ppesn.nSkillId = LOWORD(req.uParam1);
+	ppesn.nSkillId = dwMgcID;
 
-	switch(LOWORD(req.uParam1))
+	pMagic = GetUserMagic(dwMgcID);
+	if (nullptr == pMagic) {
+		return false;
+	}
+	if (pMagic->pInfo->dwDelay != 0) {
+		unsigned int uDelayMS = pMagic->pInfo->dwDelay;
+		if (uDelayMS > 100) {
+			uDelayMS -= 100;
+		}
+		if (!m_xMagicColldown.PushItem(dwMgcID, uDelayMS)) {
+			return false;
+		}
+	}
+
+	switch (dwMgcID)
 	{
 	case MEFF_GONGSHA:
 		{
