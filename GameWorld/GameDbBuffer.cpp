@@ -48,6 +48,11 @@ bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo) {
 		}
 		int nId = GETITEMATB(&pa.second.baseAttrib, ID);
 		string s = szName;
+		auto it = itemNameMap.find(s);
+		if (it != itemNameMap.end()) {
+			LOG(WARNING) << "Item " << s << " is duplicated with id " << it->second << "," << nId;
+			continue;
+		}
 		itemNameMap[std::move(s)] = nId;
 	}
 	for (int i = 0; i < 5; i++) {

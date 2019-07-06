@@ -7,6 +7,7 @@
 #include <time.h>
 #include "fastdelegate.h"
 #include "FastDelegateBind.h"
+#include <functional>
 //////////////////////////////////////////////////////////////////////////
 #define DEFAULT_MONSGENRECORDVECTOR_SIZE	32
 //////////////////////////////////////////////////////////////////////////
@@ -14,6 +15,7 @@
 // return: monsObjectID
 typedef fastdelegate::FastDelegate4<int, int, int, int, int> GenMonsCallback;
 typedef fastdelegate::FastDelegate2<int, int, bool> CanThroughCallback;
+typedef std::function<float()> MonsGenMultipleCallback;
 //////////////////////////////////////////////////////////////////////////
 struct MonsGenRecord
 {
@@ -24,6 +26,7 @@ struct MonsGenRecord
 	int nOffset;
 	time_t nInterval;
 	int nGenType;
+	bool bBoss;
 
 	// private fields
 	int nRecordID;
@@ -74,6 +77,7 @@ public:
 
 	void SetGenMonsCallback(GenMonsCallback _cb)			{m_cbGenMons = _cb;}
 	void SetCanThroughCallback(CanThroughCallback _cb)		{m_cbCanThrough = _cb;}
+	void SetMonsGenMultipleCallback(MonsGenMultipleCallback _cb) { m_cbGenMultiple = _cb; }
 
 private:
 	int GenWithRecord(int _nExistsCount, const MonsGenRecord* _pRecord);
@@ -87,6 +91,7 @@ private:
 	MonsCountRecorder m_xMonsGenTotalCounter;
 	GenMonsCallback m_cbGenMons;
 	CanThroughCallback m_cbCanThrough;
+	MonsGenMultipleCallback m_cbGenMultiple;
 };
 //////////////////////////////////////////////////////////////////////////
 #endif

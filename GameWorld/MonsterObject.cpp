@@ -491,6 +491,44 @@ void MonsterObject::AddAttackProcess(AttackMsg* _pMsg)
 	m_xAttackMsgList.push_back(_pMsg);
 }
 //////////////////////////////////////////////////////////////////////////
+void MonsterObject::AddHumDam(GameObject* _pAttacker, int _nDam) {
+	if (m_stData.eGameState == OS_DEAD || _nDam == 0)
+	{
+		return;
+	}
+
+	GameObject *pAttacker = _pAttacker;
+	if (nullptr == pAttacker) {
+		return;
+	}
+
+	if (!m_bCanDropItems) {
+		return;
+	}
+	if (GetMaster() != nullptr) {
+		return;
+	}
+
+	int nUid = 0;
+	if (pAttacker->GetType() == SOT_HERO) {
+		nUid = static_cast<HeroObject*>(_pAttacker)->GetUID();
+	}
+	else if (pAttacker->GetType() == SOT_MONSTER) {
+		MonsterObject *pMons = static_cast<MonsterObject*>(pAttacker);
+		if (nullptr == pMons->GetMaster()) {
+			return;
+		}
+		HeroObject *pMaster = static_cast<HeroObject*>(pMons->GetMaster());
+		nUid = pMaster->GetUID();
+	}
+
+	if (0 == nUid) {
+		return;
+	}
+
+	m_xdamCal.AddDam(nUid, _nDam > GetObject_HP() ? GetObject_HP() : _nDam);
+}
+//////////////////////////////////////////////////////////////////////////
 void MonsterObject::ParseAttackMsg(AttackMsg* _pMsg)
 {
 	RECORD_FUNCNAME_WORLD;
@@ -532,314 +570,298 @@ void MonsterObject::ParseAttackMsg(AttackMsg* _pMsg)
 	m_nLastRecvDamage = _pMsg->wDamage;
 	m_nTotalRecvDamage += _pMsg->wDamage;
 
-	//if(req.uAction == ACTION_ATTACK)
+	GameObject* pAttacker = NULL;
+	if (_pMsg->dwAttacker != 0)
 	{
-		GameObject* pAttacker = NULL;
-		if(_pMsg->dwAttacker != 0)
+		pAttacker = pScene->GetPlayerWithoutLock(_pMsg->dwAttacker);
+		if (NULL == pAttacker)
 		{
-			pAttacker = pScene->GetPlayerWithoutLock(_pMsg->dwAttacker);
-			if(NULL == pAttacker)
-			{
-				pAttacker = pScene->GetNPCByHandleID(_pMsg->dwAttacker);
-			}
-		}
-
-		if(pAttacker != NULL)
-		{
-			//	是否是宠物的攻击
-			if(GetMaster() != NULL)
-			{
-				if(pAttacker->GetType() == SOT_MONSTER)
-				{
-					if(static_cast<MonsterObject*>(pAttacker)->GetMaster() != NULL)
-					{
-						return;
-					}
-				}
-			}
-		}
-		/*if(GetObject_HP() > info.wDamage)*/
-		if(GetObject_HP() > _pMsg->wDamage)
-		{
-			/*DecHP(info.wDamage);*/
-			DecHP(_pMsg->wDamage);
-			/*m_pValid->DecHP(info.wDamage);*/
-			m_pValid->DecHP(_pMsg->wDamage);
-
-			not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
-
-			//	set param3 mask
-			not.uParam3 = 0;
-
-			if(pAttacker != NULL)
-			{
-				if(_pMsg->bType != 0)
-				{
-					//	魔法攻击
-					not.uParam3 = 0;
-				}
-				else
-				{
-					//	物理攻击
-					if(pAttacker->GetType() == SOT_HERO)
-					{
-						HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
-						ItemAttrib* pWeapon = pHero->GetEquip(PLAYER_ITEM_WEAPON);
-						if(GETITEMATB(pWeapon, Type) != ITEM_NO)
-						{
-							SET_FLAG(not.uParam3, STRUCK_MASK_WEAPON);
-						}
-					}
-				}
-			}
-
-			//	critical flag
-			if(TEST_FLAG_BOOL(_pMsg->dwMasks, ATTACKMSG_MASK_CRITICAL))
-			{
-				SET_FLAG(not.uParam3, STRUCK_MASK_CRITICAL);
-			}
-
-			if(m_stData.eGameState != OS_STRUCK)
-			{
-				if(m_bCanStruck)
-				{
-					m_stData.eGameState = OS_STRUCK;
-					/*m_stData.*/m_dwLastStruckTime = m_dwCurrentTime;
-				}
-			}
-
-			g_xThreadBuffer.Reset();
-			g_xThreadBuffer << not;
-			pScene->BroadcastPacket(&g_xThreadBuffer);
-
-			//	Set the target
-			if(GetUserData()->eGameState != OS_STOP &&
-				pAttacker != NULL)
-			{
-				if(pAttacker->GetMapID() == GetMapID())
-				{
-					SetTarget(pAttacker);
-				}
-				else
-				{
-					SetTarget(NULL);
-				}
-			}
-
-			/*if(info.bType == MEFF_ICEPALM)*/
-			if(_pMsg->bType == MEFF_ICEPALM ||
-				_pMsg->bType == MEFF_ICETHRUST)
-			{
-				if(!IsFrozen() &&
-					pAttacker != NULL &&
-					!CanDefIce())
-				{
-					if(pAttacker->GetType() == SOT_HERO)
-					{
-						HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
-						const UserMagic* pMgc = NULL;
-
-						if(_pMsg->bType == MEFF_ICEPALM)
-						{
-							pMgc = pHero->GetUserMagic(MEFF_ICEPALM);
-						}
-						else if(_pMsg->bType == MEFF_ICETHRUST)
-						{
-							pMgc = pHero->GetUserMagic(MEFF_ICETHRUST);
-						}
-
-						if(NULL != pMgc)
-						{
-							if(pMgc->bLevel > 0)
-							{
-								int nCanFrozen = 0;
-								nCanFrozen = pMgc->bLevel * 20;
-								if(nCanFrozen > rand() % 100)
-								{
-									unsigned int dwLastsTime = 0;
-									dwLastsTime = pMgc->bLevel * 1000;
-									dwLastsTime += (pHero->GetRandomAbility(AT_MC) * 200);
-#ifdef _DEBUG
-									dwLastsTime = 30000;
-#endif
-
-									SetEffStatus(MMASK_ICE, dwLastsTime, 0);
-
-									PkgPlayerSetEffectAck ack;
-									ack.uTargetId = GetID();
-									ack.bShow = true;
-									ack.dwMgcID = MMASK_ICE;
-									ack.dwTime = dwLastsTime;
-									g_xThreadBuffer.Reset();
-									g_xThreadBuffer << ack;
-									GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			//	Dead
-			//m_pValid->SetHP(0);
-			//PROTECT_START_VM
-			if(m_nLifeTimes > 0)
-			{
-				--m_nLifeTimes;
-
-				//	回血
-				ItemAttrib atb;
-				if(GetRecordInMonsterTable(GetObject_ID(), &atb))
-				{
-					SetObject_HP(GetObject_MaxHP());
-					m_pValid->SetHP(GetObject_MaxHP());
-
-					not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
-					g_xThreadBuffer.Reset();
-					g_xThreadBuffer << not;
-					pScene->BroadcastPacket(&g_xThreadBuffer);
-
-					OnDeadRevive(m_nLifeTimes);
-
-					return;
-				}
-			}
-
-			SetObject_HP(0);
-			/*m_pValid->DecHP(info.wDamage);*/
-			m_pValid->DecHP(_pMsg->wDamage);
-
-			bool bCanDropItem = true;
-
-			if(!m_pValid->TestValid())
-			{
-				DEBUG_BREAK;
-				//LOG(INFO) << "CHEATER";
-				//PostQuitMessage(0);
-				//_endthreadex(10);
-				GameWorld::GetInstance().Stop(10);
-				//FlyToPrison();
-				bCanDropItem = false;
-			}
-
-			/*m_stData.*/m_dwLastDeadTime = m_dwCurrentTime;
-			not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
-			//PROTECT_END_VM
-
-			m_stData.eGameState = OS_DEAD;
-			ResetSupply();
-			not.uAction = ACTION_DEAD;
-			not.uParam0 = MAKE_POSITION_DWORD(this);
-
-			g_xThreadBuffer.Reset();
-			g_xThreadBuffer << not;
-			pScene->BroadcastPacket(&g_xThreadBuffer);
-
-			if(GetMaster() != NULL)
-			{
-				bCanDropItem = false;
-				m_bDeadAsSlave = true;
-				if(m_pMaster->GetType() == SOT_HERO)
-				{
-					HeroObject* pMaster = static_cast<HeroObject*>(m_pMaster);
-					pMaster->ClearSlave(this);
-					m_nMasterIdBeforeDie = pMaster->GetID();
-				}
-				SetMaster(NULL);
-			}
-
-			/*GameObject* pAttacker = NULL;
-			if(_pMsg->dwAttacker != 0)
-			{
-				pAttacker = pScene->GetPlayerWithoutLock(_pMsg->dwAttacker);
-				if(NULL == pAttacker)
-				{
-					pAttacker = pScene->GetNPCByHandleID(_pMsg->dwAttacker);
-				}
-			}*/
-
-			HeroObject* pHeroAttacker = NULL;
-			bool bKilledBySlave = false;
-			int nFinnalExprMulti = GameWorld::GetInstance().GetFinnalExprMulti();
-			int nMonsterId = GetObject_ID();
-
-			if(pAttacker != NULL &&
-				GetObject_HP() == 0 &&
-				m_stData.eGameState == OS_DEAD)
-			{
-				if(pAttacker->GetType() == SOT_HERO)
-				{
-					HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
-					pHeroAttacker = pHero;
-				}
-				else if(pAttacker->GetType() == SOT_MONSTER)
-				{
-					MonsterObject* pSlave = static_cast<MonsterObject*>(pAttacker);
-					if(pSlave->GetUserData()->eGameState == OS_DEAD)
-					{
-						//	可能宠物已经死了
-						int nMasterId = pSlave->GetMasterIdBeforeDie();
-						if(0 != nMasterId)
-						{
-							pHeroAttacker = (HeroObject*)pScene->GetPlayerWithoutLock(nMasterId);
-							bKilledBySlave = true;
-						}
-					}
-					else
-					{
-						if(pSlave->GetMaster())
-						{
-							if(pSlave->GetMaster()->GetType() == SOT_HERO)
-							{
-								pHeroAttacker = static_cast<HeroObject*>(pSlave->GetMaster());
-								bKilledBySlave = true;
-
-								if(pSlave->AddSlaveExpr(GetObject_Expr()))
-								{
-									PkgPlayerUpdateAttribNtf uantf;
-									uantf.bType = UPDATE_SLAVELV;
-									uantf.dwParam = pSlave->GetObject_MaxAC();
-									uantf.uTargetId = pSlave->GetID();
-									g_xThreadBuffer.Reset();
-									g_xThreadBuffer << uantf;
-									pSlave->GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
-								}
-							}
-						}
-					}
-				}
-
-				if(NULL != pHeroAttacker)
-				{
-					OnMonsterDead(pHeroAttacker, bKilledBySlave);
-				}
-
-				if(bCanDropItem)
-				{
-					//PROTECT_START
-						if(GetObject_HP() == 0 &&
-							m_stData.eGameState == OS_DEAD)
-						{
-							//DropMonsterItems();
-							DropMonsterItems(pHeroAttacker);
-						}
-						//PROTECT_END
-				}
-
-				SetTarget(NULL);
-			}
-
-			//	清空所有目标为this的对象的目标
-			//GetLocateScene()->EraseTarget(this);
+			pAttacker = pScene->GetNPCByHandleID(_pMsg->dwAttacker);
 		}
 	}
 
-	/*if(m_stData.eGameState == OS_DEAD)
+	if (pAttacker != NULL)
 	{
-		break;
-	}*/
+		//	是否是宠物的攻击
+		if (GetMaster() != NULL)
+		{
+			if (pAttacker->GetType() == SOT_MONSTER)
+			{
+				if (static_cast<MonsterObject*>(pAttacker)->GetMaster() != NULL)
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	AddHumDam(pAttacker, _pMsg->wDamage);
+	
+	if (GetObject_HP() > _pMsg->wDamage)
+	{
+		/*DecHP(info.wDamage);*/
+		DecHP(_pMsg->wDamage);
+		/*m_pValid->DecHP(info.wDamage);*/
+		m_pValid->DecHP(_pMsg->wDamage);
+
+		not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
+
+		//	set param3 mask
+		not.uParam3 = 0;
+
+		if (pAttacker != NULL)
+		{
+			if (_pMsg->bType != 0)
+			{
+				//	魔法攻击
+				not.uParam3 = 0;
+			}
+			else
+			{
+				//	物理攻击
+				if (pAttacker->GetType() == SOT_HERO)
+				{
+					HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
+					ItemAttrib* pWeapon = pHero->GetEquip(PLAYER_ITEM_WEAPON);
+					if (GETITEMATB(pWeapon, Type) != ITEM_NO)
+					{
+						SET_FLAG(not.uParam3, STRUCK_MASK_WEAPON);
+					}
+				}
+			}
+		}
+
+		//	critical flag
+		if (TEST_FLAG_BOOL(_pMsg->dwMasks, ATTACKMSG_MASK_CRITICAL))
+		{
+			SET_FLAG(not.uParam3, STRUCK_MASK_CRITICAL);
+		}
+
+		if (m_stData.eGameState != OS_STRUCK)
+		{
+			if (m_bCanStruck)
+			{
+				m_stData.eGameState = OS_STRUCK;
+				/*m_stData.*/m_dwLastStruckTime = m_dwCurrentTime;
+			}
+		}
+
+		g_xThreadBuffer.Reset();
+		g_xThreadBuffer << not;
+		pScene->BroadcastPacket(&g_xThreadBuffer);
+
+		//	Set the target
+		if (GetUserData()->eGameState != OS_STOP &&
+			pAttacker != NULL)
+		{
+			if (pAttacker->GetMapID() == GetMapID())
+			{
+				SetTarget(pAttacker);
+			}
+			else
+			{
+				SetTarget(NULL);
+			}
+		}
+
+		/*if(info.bType == MEFF_ICEPALM)*/
+		if (_pMsg->bType == MEFF_ICEPALM ||
+			_pMsg->bType == MEFF_ICETHRUST)
+		{
+			if (!IsFrozen() &&
+				pAttacker != NULL &&
+				!CanDefIce())
+			{
+				if (pAttacker->GetType() == SOT_HERO)
+				{
+					HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
+					const UserMagic* pMgc = NULL;
+
+					if (_pMsg->bType == MEFF_ICEPALM)
+					{
+						pMgc = pHero->GetUserMagic(MEFF_ICEPALM);
+					}
+					else if (_pMsg->bType == MEFF_ICETHRUST)
+					{
+						pMgc = pHero->GetUserMagic(MEFF_ICETHRUST);
+					}
+
+					if (NULL != pMgc)
+					{
+						if (pMgc->bLevel > 0)
+						{
+							int nCanFrozen = 0;
+							nCanFrozen = pMgc->bLevel * 20;
+							if (nCanFrozen > rand() % 100)
+							{
+								unsigned int dwLastsTime = 0;
+								dwLastsTime = pMgc->bLevel * 1000;
+								dwLastsTime += (pHero->GetRandomAbility(AT_MC) * 200);
+#ifdef _DEBUG
+								dwLastsTime = 30000;
+#endif
+
+								SetEffStatus(MMASK_ICE, dwLastsTime, 0);
+
+								PkgPlayerSetEffectAck ack;
+								ack.uTargetId = GetID();
+								ack.bShow = true;
+								ack.dwMgcID = MMASK_ICE;
+								ack.dwTime = dwLastsTime;
+								g_xThreadBuffer.Reset();
+								g_xThreadBuffer << ack;
+								GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		//	Dead
+		//m_pValid->SetHP(0);
+		//PROTECT_START_VM
+		if (m_nLifeTimes > 0)
+		{
+			--m_nLifeTimes;
+
+			//	回血
+			ItemAttrib atb;
+			if (GetRecordInMonsterTable(GetObject_ID(), &atb))
+			{
+				SetObject_HP(GetObject_MaxHP());
+				m_pValid->SetHP(GetObject_MaxHP());
+
+				not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
+				g_xThreadBuffer.Reset();
+				g_xThreadBuffer << not;
+				pScene->BroadcastPacket(&g_xThreadBuffer);
+
+				OnDeadRevive(m_nLifeTimes);
+
+				return;
+			}
+		}
+
+		SetObject_HP(0);
+		/*m_pValid->DecHP(info.wDamage);*/
+		m_pValid->DecHP(_pMsg->wDamage);
+
+		bool bCanDropItem = true;
+
+		if (!m_pValid->TestValid())
+		{
+			DEBUG_BREAK;
+			//LOG(INFO) << "CHEATER";
+			//PostQuitMessage(0);
+			//_endthreadex(10);
+			GameWorld::GetInstance().Stop(10);
+			//FlyToPrison();
+			bCanDropItem = false;
+		}
+
+		/*m_stData.*/m_dwLastDeadTime = m_dwCurrentTime;
+		not.uParam2 = MAKELONG(GetObject_HP(), GetObject_MaxHP());
+		//PROTECT_END_VM
+
+		m_stData.eGameState = OS_DEAD;
+		ResetSupply();
+		not.uAction = ACTION_DEAD;
+		not.uParam0 = MAKE_POSITION_DWORD(this);
+
+		g_xThreadBuffer.Reset();
+		g_xThreadBuffer << not;
+		pScene->BroadcastPacket(&g_xThreadBuffer);
+
+		if (GetMaster() != NULL)
+		{
+			bCanDropItem = false;
+			m_bDeadAsSlave = true;
+			if (m_pMaster->GetType() == SOT_HERO)
+			{
+				HeroObject* pMaster = static_cast<HeroObject*>(m_pMaster);
+				pMaster->ClearSlave(this);
+				m_nMasterIdBeforeDie = pMaster->GetID();
+			}
+			SetMaster(NULL);
+		}
+
+		HeroObject* pHeroAttacker = NULL;
+		bool bKilledBySlave = false;
+		int nFinnalExprMulti = GameWorld::GetInstance().GetFinnalExprMulti();
+		int nMonsterId = GetObject_ID();
+
+		if (pAttacker != NULL &&
+			GetObject_HP() == 0 &&
+			m_stData.eGameState == OS_DEAD)
+		{
+			if (pAttacker->GetType() == SOT_HERO)
+			{
+				HeroObject* pHero = static_cast<HeroObject*>(pAttacker);
+				pHeroAttacker = pHero;
+			}
+			else if (pAttacker->GetType() == SOT_MONSTER)
+			{
+				MonsterObject* pSlave = static_cast<MonsterObject*>(pAttacker);
+				if (pSlave->GetUserData()->eGameState == OS_DEAD)
+				{
+					//	可能宠物已经死了
+					int nMasterId = pSlave->GetMasterIdBeforeDie();
+					if (0 != nMasterId)
+					{
+						pHeroAttacker = (HeroObject*)pScene->GetPlayerWithoutLock(nMasterId);
+						bKilledBySlave = true;
+					}
+				}
+				else
+				{
+					if (pSlave->GetMaster())
+					{
+						if (pSlave->GetMaster()->GetType() == SOT_HERO)
+						{
+							pHeroAttacker = static_cast<HeroObject*>(pSlave->GetMaster());
+							bKilledBySlave = true;
+
+							if (pSlave->AddSlaveExpr(GetObject_Expr()))
+							{
+								PkgPlayerUpdateAttribNtf uantf;
+								uantf.bType = UPDATE_SLAVELV;
+								uantf.dwParam = pSlave->GetObject_MaxAC();
+								uantf.uTargetId = pSlave->GetID();
+								g_xThreadBuffer.Reset();
+								g_xThreadBuffer << uantf;
+								pSlave->GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+							}
+						}
+					}
+				}
+			}
+
+			if (NULL != pHeroAttacker)
+			{
+				OnMonsterDead(pHeroAttacker, bKilledBySlave);
+			}
+
+			if (bCanDropItem)
+			{
+				//PROTECT_START
+				if (GetObject_HP() == 0 &&
+					m_stData.eGameState == OS_DEAD)
+				{
+					//DropMonsterItems();
+					DropMonsterItems(pHeroAttacker);
+				}
+				//PROTECT_END
+			}
+
+			SetTarget(NULL);
+		}
+
+		//	清空所有目标为this的对象的目标
+		//GetLocateScene()->EraseTarget(this);
+	}
 }
 //////////////////////////////////////////////////////////////////////////
 void MonsterObject::KilledByMaster()
@@ -921,21 +943,6 @@ void MonsterObject::ProcessAttackProcess()
 			AttackMsgList::const_iterator endIter = m_xAttackMsgList.end();
 			AttackMsg* pMsg = NULL;
 
-			/*for(begIter;
-				begIter != endIter;
-				)
-			{
-				pMsg = *begIter;
-
-				if(m_stData.eGameState != OS_DEAD)
-				{
-					ParseAttackMsg(pMsg);
-				}
-					
-				//	Remove this one 
-				FreeListManager::GetInstance()->PushFreeAttackMsg(pMsg);
-				begIter = m_xAttackMsgList.erase(begIter);
-			}*/
 			for(begIter;
 				begIter != m_xAttackMsgList.end();
 				)
@@ -1063,6 +1070,29 @@ void MonsterObject::DropMonsterItems(HeroObject* _pHero)
 	pParam->dwParam[4] = MAKELONG(wDropMuiti, wDifficultyLevel);
 
 	pParam->dwParam[6] = MAKELONG(m_pValid->TestValid() ? 1 : 0, _pHero->GetStateController()->GetMagicItemAddition());
+
+	// Get owner
+	pParam->dwParam[5] = 0;
+	if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN) {
+		int nOwner = 0;
+		std::map<int, int> xScenePlayers;
+		GetLocateScene()->GetPlayerMap(xScenePlayers);
+
+		for (;;) {
+			nOwner = m_xdamCal.GetMaxDamUid();
+			if (0 == nOwner) {
+				break;
+			}
+			auto it = xScenePlayers.find(nOwner);
+			if (it == xScenePlayers.end()) {
+				// Player not found in the scene
+				continue;
+			}
+			break;
+		}
+
+		pParam->dwParam[5] = nOwner;
+	}
 
 	//DBThread::GetInstance()->AsynExecute(pParam);
 	lua_State* L = GameWorld::GetInstance().GetLuaState();

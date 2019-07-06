@@ -12,7 +12,8 @@ class DBDropDownContext
 	int GetDropPosX(int _nItemIndex);
 	int GetDropPosY(int _nItemIndex);
 
-	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY);
+	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY, int _nOwner);
 	
 	int GetAdditionPoint();
+	int GetOwnerID();
 };

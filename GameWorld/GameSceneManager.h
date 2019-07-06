@@ -13,6 +13,7 @@
 #include "MonsGenEngine.h"
 #include "WeightCalc.h"
 #include "../../CommonModule/MirMap.h"
+#include "BroadcaseQueue.h"
 //////////////////////////////////////////////////////////////////////////
 #define MAX_SCENE_NUMBER		60/*60¸öµØÍ¼³¡¾°*/
 #define EXECUTE_SCRIPT_INTERVAL	2*1000
@@ -133,6 +134,7 @@ public:
 public:
 	bool InsertPlayer(GameObject* _pObj);
 	bool RemovePlayer(unsigned int _dwID, bool _bDelete = true);
+	void GetPlayerMap(std::map<int, int> &_refPlayers);
 	GameObject* GetPlayer(unsigned int _dwID);
 	GameObject* GetPlayerByName(const char* _pszName);
 	GameObject* GetPlayerWithoutLock(unsigned int _dwID);
@@ -313,6 +315,22 @@ public:
 	void ProcessWaitRemove();
 	void ProcessWaitDelete();
 
+	void BroadcastAppend(PkgObjectActionWalkNot &not) {
+		if (!m_xPlayers.empty()) {
+			m_xBroadcastQueue.Append(not);
+		}
+	}
+	void BroadcastAppend(PkgObjectActionRunNot &not) {
+		if (!m_xPlayers.empty()) {
+			m_xBroadcastQueue.Append(not);
+		}
+	}
+	void BroadcastAppend(PkgObjectActionTurnNot &not) {
+		if (!m_xPlayers.empty()) {
+			m_xBroadcastQueue.Append(not);
+		}
+	}
+
 public:
 	void PushDelayBuf(DelaySendInfo& _inf);
 	void PushDelayBuf(SceneDelayMsg* _pMsg);
@@ -325,6 +343,7 @@ protected:
 public:
 	void ClearGroundItem(unsigned int _dwExpire);
 	void AutoGenerateMonster();
+	float GetMonsGenMulti();
 	void AllMonsterHPToFull();
 public:
 	//	Not:Don't use those
@@ -441,6 +460,8 @@ protected:
 	WeightCalc m_xAdditionPointCalc;
 
 	unsigned int m_dwInstanceMapFreeTime;
+
+	BroadcastQueue m_xBroadcastQueue;
 };
 
 //////////////////////////////////////////////////////////////////////////

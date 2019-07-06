@@ -143,6 +143,10 @@ HeroObject::HeroObject(unsigned int _dwID) : m_xMagics(USER_MAGIC_NUM),
 	m_bKicked = false;
 
 	m_nConnPort = 0;
+	m_uLastEnterSceneTime = 0;
+
+	m_uLastAttackTimeoutCounts = m_uLastAttackTimeoutTime = 0;
+	m_uForbidAttackUntil = 0;
 }
 
 HeroObject::~HeroObject()
@@ -6580,7 +6584,13 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	unsigned int dwInterval = dwCurTick - m_dwLastSpellTime;
 	if(dwInterval < GetHeroSpellInterval() - 200)
 	{
+		IncAttackTimeout();
 		++m_dwTimeOut;
+		return false;
+	}
+
+	if (m_uForbidAttackUntil != 0 &&
+		dwCurTick < m_uForbidAttackUntil) {
 		return false;
 	}
 
@@ -6647,7 +6657,8 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 	if (nullptr == pMagic) {
 		return false;
 	}
-	if (pMagic->pInfo->dwDelay != 0) {
+	if (nullptr != pMagic->pInfo &&
+		pMagic->pInfo->dwDelay != 0) {
 		unsigned int uDelayMS = pMagic->pInfo->dwDelay;
 		if (uDelayMS > 100) {
 			uDelayMS -= 100;
@@ -10829,6 +10840,23 @@ bool HeroObject::SwitchScene(unsigned int _dwMapID, unsigned short _wPosX, unsig
 //////////////////////////////////////////////////////////////////////////
 void HeroObject::GainExp(int _expr)
 {
+	// Expr adjust
+	if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN) {
+		unsigned int uCurTick = GetTickCount();
+		if (uCurTick - m_uLastEnterSceneTime > 120 * 60 * 1000) {
+			_expr /= 8;
+		}
+		else if (uCurTick - m_uLastEnterSceneTime > 90 * 60 * 1000) {
+			_expr /= 4;
+		}
+		else if (uCurTick - m_uLastEnterSceneTime > 60 * 60 * 1000) {
+			_expr /= 2;
+		}
+	}
+
+	if (_expr == 0) {
+		_expr = 1;
+	}
 	int nExpr = GetObject_Expr();
 	nExpr += _expr;
 	SetObject_Expr(nExpr);
@@ -14216,4 +14244,34 @@ void HeroObject::Lua_OpenChestBox(ItemAttrib* _pItem, int _nItemID, int _nItemLv
 	{
 		AddSuperItem(wItemID, wItemLv);
 	}
+}
+
+void HeroObject::IncAttackTimeout() {
+	unsigned int uCurTick = GetTickCount();
+	bool bForbid = false;
+	const int nTimeoutCount30s = 3 * 20;
+
+	if (0 == m_uLastAttackTimeoutTime) {
+		m_uLastAttackTimeoutTime = uCurTick;
+		++m_uLastAttackTimeoutCounts;
+	}
+	else if (uCurTick - m_uLastAttackTimeoutTime > 30 * 1000) {
+		++m_uLastAttackTimeoutCounts;
+		if (m_uLastAttackTimeoutCounts > nTimeoutCount30s) {
+			bForbid = true;
+		}
+		m_uLastAttackTimeoutTime = m_uLastAttackTimeoutCounts = 0;
+	}
+	else {
+		++m_uLastAttackTimeoutCounts;
+	}
+
+	if (m_uLastAttackTimeoutCounts > nTimeoutCount30s || bForbid) {
+		m_uLastAttackTimeoutCounts = m_uLastAttackTimeoutTime = 0;
+		m_uForbidAttackUntil = uCurTick + 60 * 1000;
+		LOG(ERROR) << "Player[" << GetName() << "] Forbid to time " << m_uForbidAttackUntil;
+	}
+
+	g_xConsole.CPrint("IncAttackTimeout, lastAttackTimeoutTime=%d, lastAttackTimeoutCount=%d, forbidAttackUntil=%d",
+		m_uLastAttackTimeoutTime, m_uLastAttackTimeoutCounts, m_uForbidAttackUntil);
 }

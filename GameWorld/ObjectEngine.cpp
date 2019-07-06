@@ -1156,7 +1156,8 @@ bool GameObject::WalkOneStep(int _nDrt)
 			}
 			else
 			{
-				GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+				//GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+				GetLocateScene()->BroadcastAppend(snot);
 			}
 		}
 		else
@@ -1221,7 +1222,8 @@ bool GameObject::RunOneStep(int _nDrt)
 			}
 			else
 			{
-				GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+				//GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+				GetLocateScene()->BroadcastAppend(snot);
 			}
 		}
 		else
@@ -1270,6 +1272,7 @@ bool GameObject::TurnTo(int _nDrt)
 	else
 	{
 		GetLocateScene()->BroadcastPacket(&g_xThreadBuffer);
+		//GetLocateScene()->BroadcastAppend(snot);
 	}
 	// Monster can update walk time when turning, but hero not
 	if (GetType() == SOT_MONSTER) {

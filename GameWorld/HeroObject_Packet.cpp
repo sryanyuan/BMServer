@@ -17,6 +17,7 @@
 #include "../../CommonModule/PotentialAttribHelper.h"
 #include "GlobalAllocRecord.h"
 #include "../../CommonModule/version.h"
+#include "../../CommonModule/SettingLoader.h"
 
 using namespace ioserver;
 
@@ -105,6 +106,11 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 	int nOftY = 0;
 	int nDrt = -1;
 
+	if (m_uForbidAttackUntil != 0 &&
+		dwCurrentTick < m_uForbidAttackUntil) {
+		return;
+	}
+
 	if(m_stData.eGameState == OS_DEAD)
 	{
 		return;
@@ -127,12 +133,13 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		//m_stData.wCoordY = HIWORD(req.uParam1);
 		//m_stData.eGameState = OS_WALK;
 		///*m_stData.*/m_dwLastWalkTime = dwCurrentTick;
-		//g_xConsole.CPrint("Walk interval:%d", dwCurrentTick - m_dwLastWalkTime);
+		g_xConsole.CPrint("Walk interval:%d, Speed %d", dwCurrentTick - m_dwLastWalkTime, GetObject_MoveSpeed());
 
 		if(dwCurrentTick - m_dwLastWalkTime < 250)
 		{
 			++m_dwTimeOut;
 			ForceGotoValidPosition();
+			IncAttackTimeout();
 			return;
 		}
 		if(bIsStone)
@@ -214,11 +221,12 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		//m_stData.wCoordY = HIWORD(req.uParam1);
 		//m_stData.eGameState = OS_RUN;
 		///*m_stData.*/m_dwLastRunTime = dwCurrentTick;
-		//g_xConsole.CPrint("Run interval:%d", dwCurrentTick - m_dwLastRunTime);
+		g_xConsole.CPrint("Run interval:%d, Speed %d", dwCurrentTick - m_dwLastRunTime, GetObject_MoveSpeed());
 
 		if(dwCurrentTick - m_dwLastRunTime < 250)
 		{
 			++m_dwTimeOut;
+			IncAttackTimeout();
 			ForceGotoValidPosition();
 			return;
 		}
@@ -330,6 +338,7 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		{
 			LOG(WARNING) << "Attack timeout:" << GetName() << " last attack time:" << m_dwLastAttackTime << " now time:" << dwCurrentTick << " interval:" << (GetTickCount() - m_dwLastAttackTime) << " need interval:" << nAttackInterval;
 			++m_dwTimeOut;
+			IncAttackTimeout();
 			return;
 		}
 		if(bIsStone)
@@ -550,147 +559,82 @@ void HeroObject::DoPacket(const PkgPlayerDropItemReq& req)
 	//	find if the item exists
 	ItemAttrib* pDropedItem = NULL;
 	pDropedItem = GetItemByTag(req.dwId);
-	if(pDropedItem != NULL)
+	if (pDropedItem == NULL)
 	{
-		/*
-		PkgPlayerDropItemNot not;
-				not.uTargetId = GetID();
-				not.dwID = pDropedItem->id;
-				not.dwTag = pDropedItem->tag;
-				not.wCoordX = m_stData.wCoordX;
-				not.wCoordY = m_stData.wCoordY;
-				g_xThreadBuffer.Reset();
-				g_xThreadBuffer << not;
-				GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);*/
-		
-		/*
-		GroundItem item;
-				item.wPosX = m_stData.wCoordX;
-				item.wPosY = m_stData.wCoordY;
-				memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
-				item.wID = GetTickCount();*/
-		//if(pDropedItem->atkPois > 0)
-		if (TEST_FLAG_BOOL(GETITEMATB(pDropedItem, Expr), EXPR_MASK_NOSELL))
+		return;
+	}
+
+	if (TEST_FLAG_BOOL(GETITEMATB(pDropedItem, Expr), EXPR_MASK_NOSELL))
+	{
+		SendSystemMessage("任务物品无法丢弃");
+		return;
+	}
+	if (TEST_FLAG_BOOL(GETITEMATB(pDropedItem, AtkPois), POIS_MASK_BIND))
+	{
+		//	destory
+		PkgPlayerLostItemAck ack;
+		ack.uTargetId = GetID();
+		ack.dwTag = pDropedItem->tag;
+		g_xThreadBuffer.Reset();
+		g_xThreadBuffer << ack;
+		SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+		memset(pDropedItem, 0, sizeof(ItemAttrib));
+		ObjectValid::EncryptAttrib(pDropedItem);
+		return;
+	}
+	
+	if (GETITEMATB(pDropedItem, Type) == ITEM_COST)
+	{
+		int nNumber = GETITEMATB(pDropedItem, AtkSpeed);
+
+		if (nNumber >= 1)
 		{
-			SendSystemMessage("任务物品无法丢弃");
-			return;
-		}
-		if(TEST_FLAG_BOOL(GETITEMATB(pDropedItem, AtkPois), POIS_MASK_BIND))
-		{
-			//	destory
-			PkgPlayerLostItemAck ack;
-			ack.uTargetId = GetID();
-			ack.dwTag = pDropedItem->tag;
-			g_xThreadBuffer.Reset();
-			g_xThreadBuffer << ack;
-			SendBuffer(GetUserIndex(), &g_xThreadBuffer);
-			memset(pDropedItem, 0, sizeof(ItemAttrib));
-			ObjectValid::EncryptAttrib(pDropedItem);
-		}
-		else
-		{
-			/*
-			PkgPlayerDropItemNot not;
-						not.uTargetId = GetID();
-						not.dwID = pDropedItem->id;
-						not.dwTag = pDropedItem->tag;
-						not.wCoordX = m_stData.wCoordX;
-						not.wCoordY = m_stData.wCoordY;
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << not;
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);*/
-			
-			if(GETITEMATB(pDropedItem, Type) == ITEM_COST)
+			GroundItem item;
+			item.wPosX = m_stData.wCoordX;
+			item.wPosY = m_stData.wCoordY;
+			memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
+			item.wID = GetTickCount();
+
+			--nNumber;
+			PkgPlayerUpdateCostNtf ntf;
+			ntf.uTargetId = GetID();
+			ntf.dwTag = pDropedItem->tag;
+			ntf.nNumber = nNumber;
+			SendPacket(ntf);
+
+			if (nNumber == 0)
 			{
-				int nNumber = GETITEMATB(pDropedItem, AtkSpeed);
-
-				/*if(nNumber >= 1 &&
-					req.uTargetId >= 1 &&
-					req.uTargetId <= nNumber)
-				{
-					GroundItem item;
-					item.wPosX = m_stData.wCoordX;
-					item.wPosY = m_stData.wCoordY;
-					memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
-					item.wID = GetTickCount();
-
-					//--nNumber;
-					nNumber -= req.uTargetId;
-
-					PkgPlayerUpdateCostNtf ntf;
-					ntf.uTargetId = GetID();
-					ntf.dwTag = pDropedItem->tag;
-					ntf.nNumber = nNumber;
-					SendPacket(ntf);
-
-					if(nNumber == 0)
-					{
-						memset(pDropedItem, 0, sizeof(ItemAttrib));
-						ObjectValid::EncryptAttrib(pDropedItem);
-					}
-					else
-					{
-						SETITEMATB(pDropedItem, AtkSpeed, nNumber);
-					}
-
-					//	Cost item need new tag
-					item.stAttrib.tag = GameWorld::GetInstance().GenerateItemTag();
-					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
-				}*/
-
-				if(nNumber >= 1)
-				{
-					GroundItem item;
-					item.wPosX = m_stData.wCoordX;
-					item.wPosY = m_stData.wCoordY;
-					memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
-					item.wID = GetTickCount();
-
-					--nNumber;
-					PkgPlayerUpdateCostNtf ntf;
-					ntf.uTargetId = GetID();
-					ntf.dwTag = pDropedItem->tag;
-					ntf.nNumber = nNumber;
-					SendPacket(ntf);
-
-					if(nNumber == 0)
-					{
-						memset(pDropedItem, 0, sizeof(ItemAttrib));
-						ObjectValid::EncryptAttrib(pDropedItem);
-					}
-					else
-					{
-						SETITEMATB(pDropedItem, AtkSpeed, nNumber);
-					}
-
-					//	Cost item need new tag
-					item.stAttrib.tag = GameWorld::GetInstance().GenerateItemTag();
-					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
-				}
-			}
-			else
-			{
-				GroundItem item;
-				item.wPosX = m_stData.wCoordX;
-				item.wPosY = m_stData.wCoordY;
-				memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
-				item.wID = GetTickCount();
-
-				PkgPlayerLostItemAck ack;
-				ack.uTargetId = GetID();
-				ack.dwTag = pDropedItem->tag;
-				g_xThreadBuffer.Reset();
-				g_xThreadBuffer << ack;
-				SendBuffer(GetUserIndex(), &g_xThreadBuffer);
-
-				GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
 				memset(pDropedItem, 0, sizeof(ItemAttrib));
 				ObjectValid::EncryptAttrib(pDropedItem);
 			}
+			else
+			{
+				SETITEMATB(pDropedItem, AtkSpeed, nNumber);
+			}
+
+			//	Cost item need new tag
+			item.stAttrib.tag = GameWorld::GetInstance().GenerateItemTag();
+			GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
 		}
-		
-		
-		//GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
+	}
+	else
+	{
+		GroundItem item;
+		item.wPosX = m_stData.wCoordX;
+		item.wPosY = m_stData.wCoordY;
+		memcpy(&item.stAttrib, pDropedItem, sizeof(ItemAttrib));
+		item.wID = GetTickCount();
+
+		PkgPlayerLostItemAck ack;
+		ack.uTargetId = GetID();
+		ack.dwTag = pDropedItem->tag;
+		g_xThreadBuffer.Reset();
+		g_xThreadBuffer << ack;
+		SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+
+		GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->InsertItem(&item);
+		memset(pDropedItem, 0, sizeof(ItemAttrib));
+		ObjectValid::EncryptAttrib(pDropedItem);
 	}
 }
 
@@ -698,185 +642,197 @@ void HeroObject::DoPacket(const PkgPlayerPickUpItemReq& req)
 {
 	//	find if the tag exists
 	GroundItem* pItem = GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->GetItem(req.dwTag);
-	if(pItem)
+	if (nullptr == pItem)
 	{
-		int nMoney = 0;
-		if(GETITEMATB(&pItem->stAttrib, ID) >= 112 &&
-			GETITEMATB(&pItem->stAttrib, ID) <= 116)
-		{
-			if(pItem->wPosX == m_stData.wCoordX &&
-				pItem->wPosY == m_stData.wCoordY)
-			{
-				if(GETITEMATB(&pItem->stAttrib, ID) == 112)
-				{
-					nMoney = rand() % 10 + 20;
-				}
-				else if(GETITEMATB(&pItem->stAttrib, ID) == 113)
-				{
-					nMoney = 50 + rand() % 50;
-				}
-				else if(GETITEMATB(&pItem->stAttrib, ID) == 114)
-				{
-					nMoney = 100 + rand() % 100;
-				}
-				else if(GETITEMATB(&pItem->stAttrib, ID) == 115)
-				{
-					nMoney = 200 + rand() % 100;
-				}
-				else if(GETITEMATB(&pItem->stAttrib, ID) == 116)
-				{
-					nMoney = 300 + rand() % 800;
-				}
+		return;
+	}
 
-				AddMoney(nMoney);
-				PkgPlayerUpdateAttribNtf uantf;
-				uantf.uTargetId = GetID();
-				uantf.bType = UPDATE_MONEY;
-				uantf.dwParam = GetMoney();
-				g_xThreadBuffer.Reset();
-				g_xThreadBuffer << uantf;
-				SendPlayerBuffer(g_xThreadBuffer);
-
-				//	clean the ground item
-				//PkgPlayerClearItemNtf cntf;
-				PkgSystemClearGroundItemNtf cntf;
-				cntf.dwTag = pItem->stAttrib.tag;
-				cntf.uTargetId = GetID();
-				g_xThreadBuffer.Reset();
-				g_xThreadBuffer << cntf;
-				GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
-				GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
-			}
+	if (pItem->nOwner != 0 &&
+		pItem->nOwner != int(GetUID())) {
+		unsigned int uCurTick = GetTickCount();
+		unsigned int uTickLast = uCurTick - pItem->wID;
+		if (uTickLast < 120 * 1000) {
+			SendSystemMessage("规定时间范围内无法捡取不属于您的物品");
+			return;
 		}
-		else if(pItem->wPosX == m_stData.wCoordX &&
+	}
+
+	int nMoney = 0;
+	if (GETITEMATB(&pItem->stAttrib, ID) >= 112 &&
+		GETITEMATB(&pItem->stAttrib, ID) <= 116)
+	{
+		if (pItem->wPosX == m_stData.wCoordX &&
 			pItem->wPosY == m_stData.wCoordY)
 		{
-			ItemAttrib* pBagItem = NULL;
-			if(GETITEMATB(&pItem->stAttrib, Type) == ITEM_COST)
+			if (GETITEMATB(&pItem->stAttrib, ID) == 112)
 			{
-				//	1. cost items
-				for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+				nMoney = rand() % 10 + 20;
+			}
+			else if (GETITEMATB(&pItem->stAttrib, ID) == 113)
+			{
+				nMoney = 50 + rand() % 50;
+			}
+			else if (GETITEMATB(&pItem->stAttrib, ID) == 114)
+			{
+				nMoney = 100 + rand() % 100;
+			}
+			else if (GETITEMATB(&pItem->stAttrib, ID) == 115)
+			{
+				nMoney = 200 + rand() % 100;
+			}
+			else if (GETITEMATB(&pItem->stAttrib, ID) == 116)
+			{
+				nMoney = 300 + rand() % 800;
+			}
+
+			AddMoney(nMoney);
+			PkgPlayerUpdateAttribNtf uantf;
+			uantf.uTargetId = GetID();
+			uantf.bType = UPDATE_MONEY;
+			uantf.dwParam = GetMoney();
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << uantf;
+			SendPlayerBuffer(g_xThreadBuffer);
+
+			//	clean the ground item
+			//PkgPlayerClearItemNtf cntf;
+			PkgSystemClearGroundItemNtf cntf;
+			cntf.dwTag = pItem->stAttrib.tag;
+			cntf.uTargetId = GetID();
+			g_xThreadBuffer.Reset();
+			g_xThreadBuffer << cntf;
+			GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
+			GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
+		}
+	}
+	else if (pItem->wPosX == m_stData.wCoordX &&
+		pItem->wPosY == m_stData.wCoordY)
+	{
+		ItemAttrib* pBagItem = NULL;
+		if (GETITEMATB(&pItem->stAttrib, Type) == ITEM_COST)
+		{
+			//	1. cost items
+			for (int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+			{
+				//	search the same item that already exists
+				if (GETITEMATB(&m_xBag[i], Type) == ITEM_COST &&
+					GETITEMATB(&m_xBag[i], ID) == GETITEMATB(&pItem->stAttrib, ID) &&
+					!TEST_FLAG_BOOL(GETITEMATB(&m_xBag[i], AtkPois), POIS_MASK_BIND))
 				{
-					//	search the same item that already exists
-					if(GETITEMATB(&m_xBag[i], Type) == ITEM_COST &&
-						GETITEMATB(&m_xBag[i], ID) == GETITEMATB(&pItem->stAttrib, ID) &&
-						!TEST_FLAG_BOOL(GETITEMATB(&m_xBag[i], AtkPois), POIS_MASK_BIND))
+					if (GETITEMATB(&m_xBag[i], AtkSpeed) < GRID_MAX)
 					{
-						if(GETITEMATB(&m_xBag[i], AtkSpeed) < GRID_MAX)
-						{
-							pBagItem = &m_xBag[i];
-							break;
-						}
-					}
-				}
-
-				if(pBagItem == NULL)
-				{
-					//	search empty item
-					for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
-					{
-						if(GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
-							m_xBag[i].tag != ITEMTAG_INQUERY)
-						{
-							pBagItem = &m_xBag[i];
-							break;
-						}
-					}
-				}
-
-				if(NULL != pBagItem)
-				{
-					//	Can save 20 items
-					if(GETITEMATB(pBagItem, Type) == ITEM_NO)
-					{
-						memcpy(pBagItem, &pItem->stAttrib, sizeof(ItemAttrib));
-						SETITEMATB(pBagItem, AtkSpeed, 1);
-
-						// notify player
-						PkgPlayerGainItemNtf ntf;
-						ntf.stItem = *pBagItem;
-						ObjectValid::DecryptAttrib(&ntf.stItem);
-						ntf.uTargetId = GetID();
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << ntf;
-						SendBuffer(GetUserIndex(), &g_xThreadBuffer);
-
-						//	clean the ground item
-						//PkgPlayerClearItemNtf cntf;
-						PkgSystemClearGroundItemNtf cntf;
-						cntf.dwTag = pItem->stAttrib.tag;
-						cntf.uTargetId = GetID();
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << cntf;
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
-					}
-					else if(GETITEMATB(pBagItem, Type) == ITEM_COST)
-					{
-						int nSum = GETITEMATB(pBagItem, AtkSpeed) + 1;
-						if(nSum <= GRID_MAX)
-						{
-							SETITEMATB(pBagItem, AtkSpeed, nSum);
-
-							PkgPlayerUpdateCostNtf ntf;
-							ntf.uTargetId = GetID();
-							ntf.nNumber = nSum;
-							ntf.dwTag = pBagItem->tag;
-							g_xThreadBuffer.Reset();
-							g_xThreadBuffer << ntf;
-							SendPlayerBuffer(g_xThreadBuffer);
-						}
-
-						//	clean the ground item
-						//PkgPlayerClearItemNtf cntf;
-						PkgSystemClearGroundItemNtf cntf;
-						cntf.dwTag = pItem->stAttrib.tag;
-						cntf.uTargetId = GetID();
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << cntf;
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
+						pBagItem = &m_xBag[i];
+						break;
 					}
 				}
 			}
-			else
+
+			if (pBagItem == NULL)
 			{
-				//	2.other items
-				for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+				//	search empty item
+				for (int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
 				{
-					if(GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
+					if (GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
 						m_xBag[i].tag != ITEMTAG_INQUERY)
 					{
 						pBagItem = &m_xBag[i];
 						break;
 					}
 				}
+			}
 
-				if(NULL != pBagItem)
+			if (NULL != pBagItem)
+			{
+				//	Can save 20 items
+				if (GETITEMATB(pBagItem, Type) == ITEM_NO)
 				{
-					if(GETITEMATB(pBagItem, Type) == ITEM_NO)
-					{
-						memcpy(pBagItem, &pItem->stAttrib, sizeof(ItemAttrib));
+					memcpy(pBagItem, &pItem->stAttrib, sizeof(ItemAttrib));
+					SETITEMATB(pBagItem, AtkSpeed, 1);
 
-						// notify player
-						PkgPlayerGainItemNtf ntf;
-						ntf.stItem = *pBagItem;
-						ObjectValid::DecryptAttrib(&ntf.stItem);
+					// notify player
+					PkgPlayerGainItemNtf ntf;
+					ntf.stItem = *pBagItem;
+					ObjectValid::DecryptAttrib(&ntf.stItem);
+					ntf.uTargetId = GetID();
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << ntf;
+					SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+
+					//	clean the ground item
+					//PkgPlayerClearItemNtf cntf;
+					PkgSystemClearGroundItemNtf cntf;
+					cntf.dwTag = pItem->stAttrib.tag;
+					cntf.uTargetId = GetID();
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << cntf;
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
+				}
+				else if (GETITEMATB(pBagItem, Type) == ITEM_COST)
+				{
+					int nSum = GETITEMATB(pBagItem, AtkSpeed) + 1;
+					if (nSum <= GRID_MAX)
+					{
+						SETITEMATB(pBagItem, AtkSpeed, nSum);
+
+						PkgPlayerUpdateCostNtf ntf;
 						ntf.uTargetId = GetID();
+						ntf.nNumber = nSum;
+						ntf.dwTag = pBagItem->tag;
 						g_xThreadBuffer.Reset();
 						g_xThreadBuffer << ntf;
-						SendBuffer(GetUserIndex(), &g_xThreadBuffer);
-
-						//	clean the ground item
-						//PkgPlayerClearItemNtf cntf;
-						PkgSystemClearGroundItemNtf cntf;
-						cntf.dwTag = pItem->stAttrib.tag;
-						cntf.uTargetId = GetID();
-						g_xThreadBuffer.Reset();
-						g_xThreadBuffer << cntf;
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
-						GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
+						SendPlayerBuffer(g_xThreadBuffer);
 					}
+
+					//	clean the ground item
+					//PkgPlayerClearItemNtf cntf;
+					PkgSystemClearGroundItemNtf cntf;
+					cntf.dwTag = pItem->stAttrib.tag;
+					cntf.uTargetId = GetID();
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << cntf;
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
+				}
+			}
+		}
+		else
+		{
+			//	2.other items
+			for (int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
+			{
+				if (GETITEMATB(&m_xBag[i], Type) == ITEM_NO &&
+					m_xBag[i].tag != ITEMTAG_INQUERY)
+				{
+					pBagItem = &m_xBag[i];
+					break;
+				}
+			}
+
+			if (NULL != pBagItem)
+			{
+				if (GETITEMATB(pBagItem, Type) == ITEM_NO)
+				{
+					memcpy(pBagItem, &pItem->stAttrib, sizeof(ItemAttrib));
+
+					// notify player
+					PkgPlayerGainItemNtf ntf;
+					ntf.stItem = *pBagItem;
+					ObjectValid::DecryptAttrib(&ntf.stItem);
+					ntf.uTargetId = GetID();
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << ntf;
+					SendBuffer(GetUserIndex(), &g_xThreadBuffer);
+
+					//	clean the ground item
+					//PkgPlayerClearItemNtf cntf;
+					PkgSystemClearGroundItemNtf cntf;
+					cntf.dwTag = pItem->stAttrib.tag;
+					cntf.uTargetId = GetID();
+					g_xThreadBuffer.Reset();
+					g_xThreadBuffer << cntf;
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->BroadcastPacket(&g_xThreadBuffer);
+					GameSceneManager::GetInstance()->GetScene(m_stData.wMapID)->RemoveItem(req.dwTag);
 				}
 			}
 		}
@@ -1348,6 +1304,17 @@ void HeroObject::DoPacket(const PkgGameLoadedAck& ack)
 			sprintf(szMsg, "玩家[%s]燃放了魔法礼花，您享受魔法装备加成+8", GameWorld::GetInstance().GetMagicDropFireworkUserName().c_str());
 			SendSystemMessage(szMsg);
 		}
+		// Sync datas
+		if (SettingLoader::GetInstance()->GetIntValue("DYNAEXPR") != 0) {
+			PkgGameSyncDataNot not;
+			not.nType = SyncDataUpgradeExpr;
+			not.vecVals.reserve(MAX_LEVEL);
+			for (int i = 0; i < MAX_LEVEL; i++) {
+				not.vecVals.push_back(GetHeroBaseAttribExpr(i + 1));
+			}
+			not.uTargetId = GetID();
+			SendPacket(not);
+		}
 	}
 }
 
@@ -1500,7 +1467,16 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					{
 						return;
 					}
-					AddMoney(g_nItemPrice[GETITEMATB(pItem, ID)] / SELL_ITEM_MULTI * GETITEMATB(pItem, AtkSpeed));
+
+					int nSellMoney = g_nItemPrice[GETITEMATB(pItem, ID)] / SELL_ITEM_MULTI * GETITEMATB(pItem, AtkSpeed);
+					if (0 != SettingLoader::GetInstance()->GetIntValue("SELLRAND") &&
+						nSellMoney != 0) {
+						nSellMoney = nSellMoney / 10 + rand() % nSellMoney * 0.9f;
+						if (nSellMoney == 0) {
+							nSellMoney = 1;
+						}
+					}
+					AddMoney(nSellMoney);
 				}
 				else
 				{
@@ -1576,6 +1552,13 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 								//	recalc price
 								nSellMoney *= (float)(1.0f + (float)((float)nValue / 4));
 							}
+						}
+					}
+					if (0 != SettingLoader::GetInstance()->GetIntValue("SELLRAND") &&
+						nSellMoney != 0) {
+						nSellMoney = nSellMoney / 10 + rand() % nSellMoney * 0.9f;
+						if (nSellMoney == 0) {
+							nSellMoney = 1;
 						}
 					}
 					AddMoney(nSellMoney);
@@ -3096,6 +3079,18 @@ void HeroObject::DoPacket(const PkgPlayerSpeOperateReq& req)
 		g_xThreadBuffer.Reset();
 		g_xThreadBuffer << ntf;
 		SendPacket(ntf);
+	}
+	else if (req.dwOp == CMD_OP_SETMOVESPEED) {
+		if (IsGmHide()) {
+			int nSpeed = LOWORD(req.dwParam);
+			SetObject_MoveSpeed(nSpeed);
+		}
+	}
+	else if (req.dwOp == CMD_OP_SETATTACKSPEED) {
+		if (IsGmHide()) {
+			int nSpeed = LOWORD(req.dwParam);
+			SetObject_AtkSpeed(nSpeed);
+		}
 	}
 }
 

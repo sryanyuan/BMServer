@@ -154,6 +154,9 @@ void DevilOldManMonster::ParseAttackMsg(AttackMsg* _pMsg)
 				}
 			}
 		}
+
+		AddHumDam(pAttacker, _pMsg->wDamage);
+
 		/*if(GetObject_HP() > info.wDamage)*/
 		if(GetObject_HP() > nDamage)
 		{

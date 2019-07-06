@@ -219,6 +219,7 @@ GameWorld::GameWorld()
 	m_nMagicDropFireworkUID = 0;
 	m_nDifficultyLevel = 0;
 	m_dwLastUpdateScriptEngineTime = GetTickCount();
+	m_nFinnalExprMulti = 0;
 
 	//	Thread run mode
 	m_bThreadRunMode = false;

@@ -445,6 +445,12 @@
     <ClCompile Include="GameWorld\ServerStatus.cpp">
       <Filter>GameWorld</Filter>
     </ClCompile>
+    <ClCompile Include="GameWorld\HumDamCalc.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld\BroadcastQueue.cpp">
+      <Filter>GameWorld</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CMainServer\CMainServer.h">
@@ -772,6 +778,12 @@
       <Filter>Module</Filter>
     </ClInclude>
     <ClInclude Include="GameWorld\ServerStatus.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\HumDamCalc.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld\BroadcaseQueue.h">
       <Filter>GameWorld</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,6 @@
 /*
 ** Lua binding: BackMirServer
-** Generated automatically by tolua++-1.0.92 on 01/13/19 15:19:59.
+** Generated automatically by tolua++-1.0.92 on 07/05/19 19:55:39.
 */
 
 #ifndef __cplusplus
@@ -7629,7 +7629,8 @@ static int tolua_BackMirServer_DBDropDownContext_NewGroundItem00(lua_State* tolu
      !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      !tolua_isnumber(tolua_S,3,0,&tolua_err) ||
      !tolua_isnumber(tolua_S,4,0,&tolua_err) ||
-     !tolua_isnoobj(tolua_S,5,&tolua_err)
+     !tolua_isnumber(tolua_S,5,0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,6,&tolua_err)
  )
   goto tolua_lerror;
  else
@@ -7639,11 +7640,12 @@ static int tolua_BackMirServer_DBDropDownContext_NewGroundItem00(lua_State* tolu
   int _nItemID = ((int)  tolua_tonumber(tolua_S,2,0));
   int _nPosX = ((int)  tolua_tonumber(tolua_S,3,0));
   int _nPosY = ((int)  tolua_tonumber(tolua_S,4,0));
+  int _nOwner = ((int)  tolua_tonumber(tolua_S,5,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'NewGroundItem'", NULL);
 #endif
   {
-   GroundItem* tolua_ret = (GroundItem*)  self->NewGroundItem(_nItemID,_nPosX,_nPosY);
+   GroundItem* tolua_ret = (GroundItem*)  self->NewGroundItem(_nItemID,_nPosX,_nPosY,_nOwner);
     tolua_pushusertype(tolua_S,(void*)tolua_ret,"GroundItem");
   }
  }
@@ -7683,6 +7685,38 @@ static int tolua_BackMirServer_DBDropDownContext_GetAdditionPoint00(lua_State* t
 #ifndef TOLUA_RELEASE
  tolua_lerror:
  tolua_error(tolua_S,"#ferror in function 'GetAdditionPoint'.",&tolua_err);
+ return 0;
+#endif
+}
+#endif //#ifndef TOLUA_DISABLE
+
+/* method: GetOwnerID of class  DBDropDownContext */
+#ifndef TOLUA_DISABLE_tolua_BackMirServer_DBDropDownContext_GetOwnerID00
+static int tolua_BackMirServer_DBDropDownContext_GetOwnerID00(lua_State* tolua_S)
+{
+#ifndef TOLUA_RELEASE
+ tolua_Error tolua_err;
+ if (
+     !tolua_isusertype(tolua_S,1,"DBDropDownContext",0,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,2,&tolua_err)
+ )
+  goto tolua_lerror;
+ else
+#endif
+ {
+  DBDropDownContext* self = (DBDropDownContext*)  tolua_tousertype(tolua_S,1,0);
+#ifndef TOLUA_RELEASE
+  if (!self) tolua_error(tolua_S,"invalid 'self' in function 'GetOwnerID'", NULL);
+#endif
+  {
+   int tolua_ret = (int)  self->GetOwnerID();
+   tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
+  }
+ }
+ return 1;
+#ifndef TOLUA_RELEASE
+ tolua_lerror:
+ tolua_error(tolua_S,"#ferror in function 'GetOwnerID'.",&tolua_err);
  return 0;
 #endif
 }
@@ -8704,6 +8738,7 @@ TOLUA_API int tolua_BackMirServer_open (lua_State* tolua_S)
    tolua_function(tolua_S,"GetDropPosY",tolua_BackMirServer_DBDropDownContext_GetDropPosY00);
    tolua_function(tolua_S,"NewGroundItem",tolua_BackMirServer_DBDropDownContext_NewGroundItem00);
    tolua_function(tolua_S,"GetAdditionPoint",tolua_BackMirServer_DBDropDownContext_GetAdditionPoint00);
+   tolua_function(tolua_S,"GetOwnerID",tolua_BackMirServer_DBDropDownContext_GetOwnerID00);
   tolua_endmodule(tolua_S);
   tolua_cclass(tolua_S,"LuaItemHelper","LuaItemHelper","",NULL);
   tolua_beginmodule(tolua_S,"LuaItemHelper");

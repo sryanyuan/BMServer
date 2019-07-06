@@ -145,7 +145,7 @@ bool GameSceneManager::CreateAllScene()
 		return false;
 	}
 	// Initialize item attrib config
-	if (!CreateGameDbBufferLua(pWorldState, false)) {
+	if (!CreateGameDbBufferLua(pWorldState, SettingLoader::GetInstance()->GetIntValue("DYNAEXPR") != 0)) {
 		LOG(ERROR) << "Initialize item or monster full attrib error";
 		return false;
 	}

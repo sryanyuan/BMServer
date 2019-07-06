@@ -30,7 +30,9 @@ public:
 
 	int GetAdditionPoint();
 
-	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY);
+	int GetOwnerID();
+
+	GroundItem* NewGroundItem(int _nItemID, int _nPosX, int _nPosY, int _nOwner);
 
 protected:
 	DBOperationParam* m_pParam;

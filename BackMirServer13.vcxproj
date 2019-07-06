@@ -172,6 +172,7 @@
     <ClCompile Include="..\CommonModule\ZipDataReader.cpp" />
     <ClCompile Include="CMainServer\CMainServer.cpp" />
     <ClCompile Include="CMainServer\CMainServer_Deprecated.cpp" />
+    <ClCompile Include="GameWorld\BroadcastQueue.cpp" />
     <ClCompile Include="GameWorld\ConnCode.cpp" />
     <ClCompile Include="GameWorld\DamagePool.cpp" />
     <ClCompile Include="GameWorld\DBDropDownContext.cpp" />
@@ -186,6 +187,7 @@
     <ClCompile Include="GameWorld\GlobalAllocRecord.cpp" />
     <ClCompile Include="GameWorld\HeroObject.cpp" />
     <ClCompile Include="GameWorld\HeroObject_Packet.cpp" />
+    <ClCompile Include="GameWorld\HumDamCalc.cpp" />
     <ClCompile Include="GameWorld\LibImport.cpp" />
     <ClCompile Include="GameWorld\LuaItemHelper.cpp" />
     <ClCompile Include="GameWorld\LuaServerEngine.cpp" />
@@ -323,6 +325,7 @@
     <ClInclude Include="common\memleak.h" />
     <ClInclude Include="common\shared.h" />
     <ClInclude Include="common\view.h" />
+    <ClInclude Include="GameWorld\BroadcaseQueue.h" />
     <ClInclude Include="GameWorld\ConnCode.h" />
     <ClInclude Include="GameWorld\DamagePool.h" />
     <ClInclude Include="GameWorld\DBDropDownContext.h" />
@@ -334,6 +337,7 @@
     <ClInclude Include="GameWorld\GameSceneManager.h" />
     <ClInclude Include="GameWorld\GameWorld.h" />
     <ClInclude Include="GameWorld\GlobalAllocRecord.h" />
+    <ClInclude Include="GameWorld\HumDamCalc.h" />
     <ClInclude Include="GameWorld\LuaItemHelper.h" />
     <ClInclude Include="GameWorld\LuaServerEngine.h" />
     <ClInclude Include="GameWorld\ServerStatus.h" />

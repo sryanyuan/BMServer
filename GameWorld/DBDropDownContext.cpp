@@ -4,6 +4,7 @@
 #include "../../CommonModule/ShareData.h"
 #include "GameDbBuffer.h"
 #include "GameWorld.h"
+#include "../../CommonModule/SettingLoader.h"
 //////////////////////////////////////////////////////////////////////////
 DBDropDownContext::DBDropDownContext(DBOperationParam* _pParam)
 {
@@ -55,14 +56,16 @@ float DBDropDownContext::GetDropMultiple()
 			//fProbMulti *= nHumDropMulti;
 			fProbMulti *= 1.5f;
 		}*/
-		if(CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
-		{
-			fProbMulti *= 1.5f;
-		}
-		else
-		{
-			//	普通模式 2倍
-			fProbMulti *= 2.0f;
+		if (SettingLoader::GetInstance()->GetIntValue("FINALDROPMULTI") != 1) {
+			if (CMainServer::GetInstance()->GetServerMode() == GM_LOGIN)
+			{
+				fProbMulti *= 1.5f;
+			}
+			else
+			{
+				//	普通模式 2倍
+				fProbMulti *= 2.0f;
+			}
 		}
 
 		//	礼花加成
@@ -170,6 +173,10 @@ GameScene* DBDropDownContext::GetDropScene()
 
 	GameScene* pScene = GameSceneManager::GetInstance()->GetScene(HIWORD(m_pParam->dwParam[3]));
 	return pScene;
+}
+
+int DBDropDownContext::GetOwnerID() {
+	return int(m_pParam->dwParam[5]);
 }
 
 int DBDropDownContext::GetDropBasePosX()
@@ -311,13 +318,14 @@ int DBDropDownContext::InitDropPosition(int _nItems)
 	return m_xDropPosVector.size();
 }
 
-GroundItem* DBDropDownContext::NewGroundItem(int _nItemID, int _nPosX, int _nPosY)
+GroundItem* DBDropDownContext::NewGroundItem(int _nItemID, int _nPosX, int _nPosY, int _nOwner)
 {
 	GroundItem* pItem = new GroundItem;
 	memset(pItem, 0, sizeof(GroundItem));
 
 	pItem->wPosX = _nPosX;
 	pItem->wPosY = _nPosY;
+	pItem->nOwner = _nOwner;
 
 	if(GetRecordInItemTable(_nItemID, &pItem->stAttrib))
 	{

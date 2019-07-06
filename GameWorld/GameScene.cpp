@@ -61,6 +61,7 @@ GameScene::GameScene()
 	// set monster gen engine callback
 	m_xMonsGenEngine.SetGenMonsCallback(fastdelegate::bind(&GameScene::CreateMonsterCallback, this));
 	m_xMonsGenEngine.SetCanThroughCallback(fastdelegate::bind(&GameScene::CanThrough, this));
+	m_xMonsGenEngine.SetMonsGenMultipleCallback(std::bind(&GameScene::GetMonsGenMulti, this));
 }
 
 GameScene::~GameScene()
@@ -920,6 +921,9 @@ bool GameScene::InsertPlayer(GameObject* _pObj)
 					pHero->SendPlayerDataTo(pObj);
 				}
 			}
+
+			// Update scene enter time
+			pHero->SetLastEnterSceneTime(GetTickCount());
 		}
 
 		_pObj->SetMapID(m_dwMapID);
@@ -1121,6 +1125,12 @@ bool GameScene::RemovePlayer(unsigned int _dwID, bool _bDelete /* = true */)
 	bRet = true;
 
 	return bRet;
+}
+//////////////////////////////////////////////////////////////////////////
+void GameScene::GetPlayerMap(std::map<int, int> &_refPlayers) {
+	for (auto &pa : m_xPlayers) {
+		_refPlayers[int(((HeroObject*)(pa.second))->GetUID())] = 1;
+	}
 }
 //////////////////////////////////////////////////////////////////////////
 bool GameScene::InsertNPC(GameObject* _pNPC)
@@ -1455,6 +1465,36 @@ void GameScene::Update(unsigned int _dwTick)
 		else
 		{
 			DESTORY_GAMESCENE;
+		}
+	}
+
+	static int nPrintInterval = 0;
+	static int nTotalSavedBytes = 0;
+	static int nCurUsedBytes = 0;
+	// Send all broadcast queue packets
+	PkgGameObjectActionsNot actionsNot;
+	int nPlen = 0;
+	int nBuffered = m_xBroadcastQueue.Get(actionsNot, &nPlen);
+	if (0 != nBuffered) {
+		// Send to all players
+		for (auto &pa : m_xPlayers) {
+			HeroObject *pHero = static_cast<HeroObject*>(pa.second);
+			actionsNot.uTargetId = pHero->GetID();
+			pHero->SendPacket(actionsNot);
+		}
+		nCurUsedBytes += 12 + 4 + actionsNot.vecActions.size();
+		nTotalSavedBytes += nPlen;
+		++nPrintInterval;
+
+		if (nPrintInterval > 10) {
+			if (nTotalSavedBytes > 0) {
+				g_xConsole.CPrint("Scene %d send action bytes %d B/ %d B (%.2f%%)", GetMapID(), nCurUsedBytes, nTotalSavedBytes,
+					((float)nCurUsedBytes / (float)nTotalSavedBytes) * 100);
+			}
+			
+			nCurUsedBytes = 0;
+			nTotalSavedBytes = 0;
+			nPrintInterval = 0;
 		}
 	}
 }
@@ -3919,6 +3959,13 @@ void GameScene::CreateMonster(unsigned int _uID, unsigned short _ux, unsigned sh
 	record.nInterval = _uinterval / 1000;
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -3952,6 +3999,13 @@ void GameScene::CreateEliteMonster(unsigned int _uID, unsigned short _ux, unsign
 	record.nInterval = _uinterval / 1000;
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateElite;
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -3985,6 +4039,13 @@ void GameScene::CreateLeaderMonster(unsigned int _uID, unsigned short _ux, unsig
 	record.nInterval = _uinterval / 1000;
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateLeader;
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -4020,6 +4081,13 @@ void GameScene::CreateMonsterLater(unsigned int _uID, unsigned short _ux, unsign
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -4055,6 +4123,13 @@ void GameScene::CreateEliteMonsterLater(unsigned int _uID, unsigned short _ux, u
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -4090,6 +4165,13 @@ void GameScene::CreateLeaderMonsterLater(unsigned int _uID, unsigned short _ux, 
 	record.nCount = adjustMonsterNumber(_number);
 	record.nGenType = kMonsGenerateDefault;
 	record.nLastGenTime = time(NULL);
+	// Check if the monster is boss
+	ItemAttrib monsAttrib;
+	if (GetRecordInMonsterTable(_uID, &monsAttrib)) {
+		if (TEST_FLAG_BOOL(monsAttrib.maxEXPR, MAXEXPR_MASK_BOSS)) {
+			record.bBoss = true;
+		}
+	}
 	m_xMonsGenEngine.Insert(&record);
 }
 //////////////////////////////////////////////////////////////////////////
@@ -4119,6 +4201,15 @@ bool GameScene::IsInCity(unsigned short _wPosX, unsigned short _wPosY)
 
 	POINT ptTest = {_wPosX, _wPosY};
 	return (PtInRect(&m_stCityRect, ptTest)) ? true : false;
+}
+//////////////////////////////////////////////////////////////////////////
+float GameScene::GetMonsGenMulti() {
+	int nPlayerCount = m_nCurPlayers;
+	if (0 == nPlayerCount) {
+		return 0.0f;
+	}
+	nPlayerCount -= 1;
+	return 0.15f * float(nPlayerCount);
 }
 //////////////////////////////////////////////////////////////////////////
 void GameScene::AutoGenerateMonster()

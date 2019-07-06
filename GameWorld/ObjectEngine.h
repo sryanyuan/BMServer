@@ -923,6 +923,10 @@ public:
 	bool IsMagicAttackValid(int _nMagicID, int _nTargetX, int _nTargetY);
 	void ForceDisconnectHero();
 
+	inline void SetLastEnterSceneTime(unsigned int _uTm) {
+		m_uLastEnterSceneTime = _uTm;
+	}
+
 private:
 	bool LearnMagic(unsigned int _dwMgcID, unsigned char _bBookLevel);
 
@@ -1037,6 +1041,8 @@ public:
 
 	inline void SetLSLoginPushed()			{m_bLSLoginPushed = true;}
 	inline bool GetLSLoginPushed()			{return m_bLSLoginPushed;}
+
+	void IncAttackTimeout();
 
 public:
 	// lua export functions
@@ -1251,6 +1257,13 @@ protected:
 
 	// Magic cooldown control
 	CoolDownController m_xMagicColldown;
+
+	unsigned int m_uLastEnterSceneTime;
+
+	// Check attack or magic timeout
+	unsigned int m_uLastAttackTimeoutTime;
+	unsigned int m_uLastAttackTimeoutCounts;
+	unsigned int m_uForbidAttackUntil;
 };
 
 typedef std::list<HeroObject*> HeroObjectList;

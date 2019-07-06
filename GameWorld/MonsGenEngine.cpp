@@ -139,6 +139,9 @@ int MonsGenEngine::DoGen(const MonsCountRecorder& _refCurrentMonsCount)
 	{
 		return 0;
 	}
+	if (!m_cbGenMultiple) {
+		return 0;
+	}
 
 	time_t tn;
 	time(&tn);
@@ -201,6 +204,15 @@ int MonsGenEngine::GenWithRecord(int _nExistsCount, const MonsGenRecord* _pRecor
 	int nTotalCanGenCount = 0;
 	// find total count
 	nTotalCanGenCount = m_xMonsGenTotalCounter.Get(_pRecord->nMonsID);
+	if (!_pRecord->bBoss) {
+		float fMulti = m_cbGenMultiple();
+		if (fMulti > 0.09f) {
+			if (fMulti > 4.0f) {
+				fMulti = 4.0f;
+			}
+			nTotalCanGenCount = int((1.0f + fMulti) * float(nTotalCanGenCount));
+		}
+	}
 
 	nCanGenMonsCount = nTotalCanGenCount - nMonsExistsCount;
 	if (nCanGenMonsCount <= 0)

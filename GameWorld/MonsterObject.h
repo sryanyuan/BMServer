@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include "ObjectEngine.h"
 #include "FreeListManager.h"
+#include "HumDamCalc.h"
 //////////////////////////////////////////////////////////////////////////
 class MonsterObject : public GameObject
 {
@@ -131,6 +132,7 @@ public:
 
 public:
 
+	void AddHumDam(GameObject* _pAttacker, int _nDam);
 	void DropMonsterItems();
 	void DropMonsterItems(HeroObject* _pHero);
 
@@ -183,6 +185,8 @@ protected:
 	bool m_bCanStruck;
 
 	bool m_bDeadAsSlave;
+
+	HumDamCalc m_xdamCal;
 
 	//int m_nTotalRecvDamage;
 };
