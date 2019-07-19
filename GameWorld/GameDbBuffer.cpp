@@ -7,6 +7,7 @@
 std::map<int, ItemFullAttrib> g_xItemFullAttribMap;
 std::map<int, MonsFullAttrib> g_xMonsFullAttribMap;
 std::map<int, ItemExtraAttribList*> g_xItemExtraSuitAttribMap;
+std::set<int> g_xIgnoreSuitIDs;
 std::vector<HeroBaseInfo> g_xHeroBaseInfo;
 DataRecordList g_xItemRecordList;
 DataRecordList g_xMonsterRecordList;
@@ -116,8 +117,28 @@ bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo) {
 		LOG(ERROR) << "Compare lua hero base info with share data failed";
 		return false;
 	}
+	// Initialize suit attribute
+	std::vector<int> xIgnoreSuit;
+	if (!LuaDataLoader::LoadRawVectorInt(L, "config_ignoreSuitIDs", xIgnoreSuit)) {
+		LOG(ERROR) << "Error on loading ignore suit ids from lua";
+		return false;
+	}
+	for (auto v : xIgnoreSuit) {
+		g_xIgnoreSuitIDs.insert(v);
+	}
 	
 	return true;
+}
+
+bool IsSuitIDIgnore(int _nSuitID) {
+	return g_xIgnoreSuitIDs.count(_nSuitID) > 0;
+}
+
+void GetSuitIDIgnore(std::set<int> &refVals) {
+	if (g_xIgnoreSuitIDs.empty()) {
+		return;
+	}
+	refVals = g_xIgnoreSuitIDs;
 }
 
 bool compareLuaHeroBaseInfo() {

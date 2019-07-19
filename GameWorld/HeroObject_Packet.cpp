@@ -495,6 +495,8 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 			return;
 		}
 
+		g_xConsole.CPrint("Spell interval:%d", dwCurrentTick - m_dwLastSpellTime);
+
 		DoSpell(req);
 	}
 
@@ -651,9 +653,29 @@ void HeroObject::DoPacket(const PkgPlayerPickUpItemReq& req)
 		pItem->nOwner != int(GetUID())) {
 		unsigned int uCurTick = GetTickCount();
 		unsigned int uTickLast = uCurTick - pItem->wID;
+		
 		if (uTickLast < 120 * 1000) {
-			SendSystemMessage("规定时间范围内无法捡取不属于您的物品");
-			return;
+			// Check in the team
+			bool bInTeam = false;
+			if (GetTeamID() != 0) {
+				GameTeam *pTeam = GameTeamManager::GetInstance()->GetTeam(GetTeamID());
+				if (nullptr != pTeam) {
+					auto xTeammates = pTeam->GetAllPlayer();
+					bool bFind = false;
+					for (auto v : xTeammates) {
+						if (v != this && v != nullptr &&
+							v->GetUID() == pItem->nOwner) {
+							bFind = true;
+							break;
+						}
+					}
+					bInTeam = bFind;
+				}
+			}
+			if (!bInTeam) {
+				SendSystemMessage("规定时间范围内无法捡取不属于您的物品");
+				return;
+			}
 		}
 	}
 
@@ -1315,6 +1337,15 @@ void HeroObject::DoPacket(const PkgGameLoadedAck& ack)
 			not.uTargetId = GetID();
 			SendPacket(not);
 		}
+		// Sync suit ignore
+		std::set<int> xIgnoreSuit;
+		GetSuitIDIgnore(xIgnoreSuit);
+		if (!xIgnoreSuit.empty()) {
+			PkgGamePlayerSuitIgnoreNot not;
+			not.setSuitIgnore = std::move(xIgnoreSuit);
+			not.uTargetId = GetID();
+			SendPacket(not);
+		}
 	}
 }
 
@@ -1471,10 +1502,11 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					int nSellMoney = g_nItemPrice[GETITEMATB(pItem, ID)] / SELL_ITEM_MULTI * GETITEMATB(pItem, AtkSpeed);
 					if (0 != SettingLoader::GetInstance()->GetIntValue("SELLRAND") &&
 						nSellMoney != 0) {
-						nSellMoney = nSellMoney / 10 + rand() % nSellMoney * 0.9f;
+						nSellMoney = nSellMoney * 0.1 + rand() % nSellMoney * 0.9f;
 						if (nSellMoney == 0) {
 							nSellMoney = 1;
 						}
+						nSellMoney = g_nItemPrice[GETITEMATB(pItem, ID)] / SELL_ITEM_MULTI * GETITEMATB(pItem, AtkSpeed) / 2;
 					}
 					AddMoney(nSellMoney);
 				}
@@ -3490,6 +3522,15 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 				if(nUpgradeValue < 5 &&
 					nUpgradeValue >= 0)
 				{
+					static int s_nNeedCountTable[] = {1, 1, 2, 3, 5};
+					int nCountNeed = s_nNeedCountTable[nUpgradeValue];
+					if (nCountNeed > GETITEMATB(pStone, AtkSpeed)) {
+						char szTip[100];
+						sprintf(szTip, "当前操作需要精华石数量为%d个", nCountNeed);
+						SendSystemMessage(szTip);
+						return;
+					}
+
 					int nItemGrade = GetItemGradeInFullAttrib(pCheckItem->id);
 					if(0 == nItemGrade)
 					{
@@ -3514,7 +3555,11 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 							int nLeft = GETITEMATB(pStone, AtkSpeed);
 							if(nLeft >= 1)
 							{
-								--nLeft;
+								//--nLeft;
+								nLeft -= nCountNeed;
+								if (nLeft < 0) {
+									nLeft = 0;
+								}
 								SETITEMATB(pStone, AtkSpeed, nLeft);
 
 								if(GETITEMATB(pStone, Hide) == 1)
@@ -3579,6 +3624,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 			int nPreHP = pCheckItem->HP;
 			int nPreMaxMP = pCheckItem->maxMP;
 			int nPreMP = pCheckItem->MP;
+			int nPreMaxHP = pCheckItem->maxHP;
 			/*BYTE bLow = LOBYTE(pCheckItem->level);
 			BYTE bHigh = HIBYTE(pCheckItem->level);
 
@@ -3619,6 +3665,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 						if(GetRecordInItemTable(pCheckItem->id, pCheckItem))
 						{
 							GameWorld::GetInstance().UpgradeItemsWithAddition(pCheckItem, nUpgradeValue);
+							pCheckItem->maxHP = nPreMaxHP;
 							SET_FLAG(pCheckItem->atkPois, POIS_MASK_BIND);
 							pCheckItem->tag = nTag;
 							pCheckItem->HP = nPreHP;

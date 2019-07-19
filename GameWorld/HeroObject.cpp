@@ -2209,28 +2209,29 @@ void HeroObject::GetHeroAttrib(ItemAttrib* _pItem)
 			item.accuracy += 6;
 		}
 
+		// TODO: Write to lua
 		pMgc = GetUserMagic(MEFF_BERSERKER);
 		if(pMgc->bLevel == 1)
 		{
 			item.atkSpeed += 1;
-			item.DC *= 1.1f;
-			item.maxDC *= 1.3f;
+			item.DC *= 1.05f;
+			item.maxDC *= 1.1f;
 			item.maxAC += 4;
 			item.accuracy += 2;
 		}
 		else if(pMgc->bLevel == 2)
 		{
 			item.atkSpeed += 2;
-			item.DC *= 1.2f;
-			item.maxDC *= 1.4f;
+			item.DC *= 1.08f;
+			item.maxDC *= 1.13f;
 			item.maxAC += 7;
 			item.accuracy += 3;
 		}
 		else if(pMgc->bLevel == 3)
 		{
 			item.atkSpeed += 3;
-			item.DC *= 1.3f;
-			item.maxDC *= 1.5f;
+			item.DC *= 1.11f;
+			item.maxDC *= 1.16f;
 			item.maxAC += 10;
 			item.accuracy += 4;
 		}
@@ -2786,19 +2787,6 @@ void HeroObject::RefleshAttrib()
 
 		if(nLevel != 0)
 		{
-			/*if(GetHeroJob() == 0)
-			{
-				item.maxDC += nLevel * 2;
-			}
-			else if(GetHeroJob() == 1)
-			{
-				item.maxMC += nLevel * 2;
-			}
-			else if(GetHeroJob() == 2)
-			{
-				item.maxSC += nLevel * 2;
-			}*/
-
 			item.lucky += nLevel / 3;
 
 			m_xStates.PushItem(EAID_IGNOREAC, STATE_FOREVER, nLevel * 2);
@@ -2864,36 +2852,44 @@ void HeroObject::UpdateSuitAttrib()
 	//	Get all suit attrib information
 	for(int i = 0; i < PLAYER_ITEM_TOTAL; ++i)
 	{
-		//if(m_stEquip[i].type != ITEM_NO)
-		if(GETITEMATB(&m_stEquip[i], Type) != ITEM_NO)
+		if (GETITEMATB(&m_stEquip[i], Type) == ITEM_NO) {
+			continue;
+		}
+
+		int nSuitID = GETITEMATB(&m_stEquip[i], AtkPalsy);
+
+		if (nSuitID == 0)
 		{
-			//if(m_equip[i].atkPalsy != 0)
-			if(GETITEMATB(&m_stEquip[i], AtkPalsy) != 0)
+			continue;
+		}
+
+		// Check the suit id is ignored
+		if (IsSuitIDIgnore(nSuitID)) {
+			continue;
+		}
+
+		pCurAttribList = GetItemExtraSuitAttribList(nSuitID);
+
+		if (pCurAttribList != NULL)
+		{
+			begIter = xSuitAttribInfoList.begin();
+			endIter = xSuitAttribInfoList.end();
+			bExist = false;
+
+			for (begIter;
+				begIter != endIter;
+				++begIter)
 			{
-				pCurAttribList = GetItemExtraSuitAttribList(GETITEMATB(&m_stEquip[i], AtkPalsy));
-
-				if(pCurAttribList != NULL)
+				if (*begIter == pCurAttribList)
 				{
-					begIter = xSuitAttribInfoList.begin();
-					endIter = xSuitAttribInfoList.end();
-					bExist = false;
-
-					for(begIter;
-						begIter != endIter;
-						++begIter)
-					{
-						if(*begIter == pCurAttribList)
-						{
-							bExist = true;
-							break;
-						}
-					}
-
-					if(!bExist)
-					{
-						xSuitAttribInfoList.push_back(GetItemExtraSuitAttribList(GETITEMATB(&m_stEquip[i], AtkPalsy)));
-					}
+					bExist = true;
+					break;
 				}
+			}
+
+			if (!bExist)
+			{
+				xSuitAttribInfoList.push_back(GetItemExtraSuitAttribList(nSuitID));
 			}
 		}
 	}
@@ -5104,16 +5100,17 @@ bool HeroObject::UseMoneyItem(ItemAttrib* _pItem)
 		int nGetMoney = GETITEMATB(_pItem, Lucky) * 1000000;
 		nGetMoney *= 0.95;
 
+		if (SettingLoader::GetInstance()->GetIntValue("SELLRAND") != 0 &&
+			nGetMoney != 0) {
+			int nBase = nGetMoney * 0.1;
+			int nRand = int(nGetMoney * 0.9f);
+			nRand = rand() % nRand;
+			nGetMoney = nBase + nRand;
+		}
+
 		if(nGetMoney > 0)
 		{
 			AddMoney(nGetMoney);
-
-			/*PkgPlayerUpdateAttribNtf ppuan;
-			ppuan.uTargetId = GetID();
-			ppuan.bType = UPDATE_MONEY;
-			ppuan.dwParam = GetMoney();
-			SendPacket(ppuan);*/
-
 			bUsed = true;
 		}
 	}
@@ -5179,6 +5176,7 @@ bool HeroObject::UseTreasureMap(ItemAttrib* _pItem)
 	}
 
 	int nRandom = rand() % 2;
+	nRandom = 0;
 	if(nInstanceMapID != 0)
 	{
 		GameScene* pInstanceScene = GameSceneManager::GetInstance()->GetScene(nInstanceMapID);
@@ -6878,6 +6876,10 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 								if (!bMagicValid) {
 									nDamage = 0;
 								}
+								// Check magic interval
+								if (dwCurTick - m_dwLastSpellTime < 1000) {
+									nDamage = 0;
+								}
 								if(0 != pObj->ReceiveDamage(this, true, nDamage, 1600))
 								{
 									SetSlaveTarget(pObj);
@@ -6941,6 +6943,10 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 								nDamage = GetMagicDamageNoDefence(pMagic);
 								nDamage *= fMulti;
 								if (!bMagicValid) {
+									nDamage = 0;
+								}
+								// Check magic interval
+								if (dwCurTick - m_dwLastSpellTime < 1000) {
 									nDamage = 0;
 								}
 								if(nDamage > 0)
@@ -7212,7 +7218,7 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 						//if(!TEST_FLAG_BOOL(m_dwHumEffFlag, MMASK_SHIELD))
 						{
 							//	魔法盾解除状态 才能有效
-							int nTime = GetRandomAbility(AT_MC) * 2000 + 5000;
+							int nTime = GetRandomAbility(AT_MC) * 1000 + 5000;
 							not.uParam3 = nTime;
 							SET_FLAG(m_dwHumEffFlag, MMASK_SHIELD);
 							m_dwHumEffTime[MMASK_SHIELD_INDEX] = GetTickCount() + nTime;
@@ -7303,7 +7309,10 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 							{
 								nDamage /= 2;
 							}
-
+							// Check magic interval
+							if (dwCurTick - m_dwLastSpellTime < 1000) {
+								nDamage = 0;
+							}
 							if(nDamage > 0)
 							{
 								pAttacked->ReceiveDamage(this, true, nDamage, 800);
@@ -9306,14 +9315,14 @@ int HeroObject::GetRandomAbility(ABILITY_TYPE _type)
 
 	static float s_fSuitSameLevelFactor[] = {
 		1.0f,
+		1.01f,
 		1.02f,
+		1.03f,
 		1.04f,
+		1.05f,
 		1.06f,
-		1.08f,
-		1.10f,
-		1.12f,
-		1.14f,
-		1.16f
+		1.07f,
+		1.08f
 	};
 
 	if (m_nExtraSuitType > 0 &&
@@ -11267,37 +11276,43 @@ int HeroObject::GetSheildDefence(int _damage)
 {
 	int nDefence = 0;
 
-	if(m_stData.bJob == 1)
+	if (m_stData.bJob != 1) {
+		return nDefence;
+	}
+
+	const UserMagic* pMgc = GetUserMagic(MEFF_SHIELD);
+	if (NULL == pMgc)
 	{
-		const UserMagic* pMgc = GetUserMagic(MEFF_SHIELD);
-		if(NULL != pMgc)
+		return nDefence;
+	}
+
+	if (pMgc->bLevel > 0 &&
+		TEST_FLAG(m_dwHumEffFlag, MMASK_SHIELD))
+	{
+		float nSkillLevel = pMgc->bLevel;
+		if (nSkillLevel > 3)
 		{
-			if(pMgc->bLevel > 0 &&
-				TEST_FLAG(m_dwHumEffFlag, MMASK_SHIELD))
-			{
-				float nSkillLevel = pMgc->bLevel;
-				if(nSkillLevel > 3)
-				{
-					nSkillLevel = 3;
-				}
-
-				float fFactor = 0.18f;
-				float fMinDefence = fFactor;
-				float fMaxDefence = 0.0f;
-
-				fMinDefence *= nSkillLevel;
-				fMaxDefence = fMinDefence + fFactor;
-
-				float fActualDefence = fMinDefence;
-				int nMC = GetRandomAbility(AT_MC);
-				fActualDefence += (float)nMC / 1024;
-				if(fActualDefence > fMaxDefence)
-				{
-					fActualDefence = fMaxDefence;
-				}
-				nDefence = _damage * fActualDefence + 1;
-			}
+			nSkillLevel = 3;
 		}
+
+		float fFactor = 0.16f;
+		float fMinDefence = fFactor;
+		float fMaxDefence = 0.0f;
+
+		fMinDefence *= nSkillLevel;
+		fMaxDefence = fMinDefence + fFactor;
+
+		float fActualDefence = fMinDefence;
+		int nMC = GetRandomAbility(AT_MC);
+		fActualDefence += (float)nMC / 1024;
+		if (fActualDefence > fMaxDefence)
+		{
+			fActualDefence = fMaxDefence;
+		}
+		nDefence = _damage * fActualDefence + 1;
+
+		// Defence limit
+
 	}
 
 	return nDefence;

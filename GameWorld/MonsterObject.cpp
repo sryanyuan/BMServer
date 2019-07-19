@@ -1660,6 +1660,18 @@ int MonsterObject::ReceiveDamage(GameObject* _pAttacker, bool _bMgcAtk, int _ori
 		if(_pAttacker->GetType() == SOT_HERO)
 		{
 			//	±»Íæ¼Ò¹¥»÷ÁË
+			if (IsUnmovableMonster()) {
+				HeroObject *pHero = (HeroObject*)_pAttacker;
+				int nOff = abs(GetCoordX() - pHero->GetCoordX());
+				if (abs(GetCoordY() - pHero->GetCoordY()) > nOff) {
+					nOff = abs(GetCoordY() - pHero->GetCoordY());
+				}
+				// Compare the offset with view range
+				int nViewRange = GetViewRange();
+				if (nOff > nViewRange) {
+					return 0;
+				}
+			}
 		}
 		else if(_pAttacker->GetType() == SOT_MONSTER)
 		{

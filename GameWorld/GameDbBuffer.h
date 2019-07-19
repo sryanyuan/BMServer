@@ -34,6 +34,9 @@ int GetItemGradeInFullAttrib(int id);
 
 ItemExtraAttribList* GetItemExtraSuitAttribList(int nSuitID);
 
+bool IsSuitIDIgnore(int _nSuitID);
+void GetSuitIDIgnore(std::set<int> &refVals);
+
 int __cdecl DBItemAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, char** _pName);
 int __cdecl DBMonsAttribLoadCallBack(void* _pParam,int _nCount, char** _pValue, char** _pName);
 //////////////////////////////////////////////////////////////////////////
