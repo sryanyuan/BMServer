@@ -786,6 +786,9 @@
     <ClInclude Include="GameWorld\BroadcaseQueue.h">
       <Filter>GameWorld</Filter>
     </ClInclude>
+    <ClInclude Include="GameWorld\CheatCount.h">
+      <Filter>GameWorld</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CommonModule\Doc\ItemAttrib_field.txt">

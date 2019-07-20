@@ -3,6 +3,7 @@
 #include "DBThread.h"
 #include "../../CommonModule/LuaDataLoader.h"
 #include "ObjectEngine.h"
+#include "../../CommonModule/SettingLoader.h"
 //////////////////////////////////////////////////////////////////////////
 std::map<int, ItemFullAttrib> g_xItemFullAttribMap;
 std::map<int, MonsFullAttrib> g_xMonsFullAttribMap;
@@ -118,13 +119,16 @@ bool CreateGameDbBufferLua(lua_State *L, bool bUsingLuaHeroBaseInfo) {
 		return false;
 	}
 	// Initialize suit attribute
-	std::vector<int> xIgnoreSuit;
-	if (!LuaDataLoader::LoadRawVectorInt(L, "config_ignoreSuitIDs", xIgnoreSuit)) {
-		LOG(ERROR) << "Error on loading ignore suit ids from lua";
-		return false;
-	}
-	for (auto v : xIgnoreSuit) {
-		g_xIgnoreSuitIDs.insert(v);
+	if (SettingLoader::GetInstance()->GetIntValue("IGNORESUIT") != 0) {
+		LOG(INFO) << "Load ignore suit information";
+		std::vector<int> xIgnoreSuit;
+		if (!LuaDataLoader::LoadRawVectorInt(L, "config_ignoreSuitIDs", xIgnoreSuit)) {
+			LOG(ERROR) << "Error on loading ignore suit ids from lua";
+			return false;
+		}
+		for (auto v : xIgnoreSuit) {
+			g_xIgnoreSuitIDs.insert(v);
+		}
 	}
 	
 	return true;

@@ -111,6 +111,13 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		return;
 	}
 
+	if (m_xCheatCount.ReachLimit()) {
+		m_uForbidAttackUntil = dwCurrentTick + 10000;
+		m_xCheatCount.Reset();
+		LOG(INFO) << "Player[" << GetName() << "] cheat count reach";
+		return;
+	}
+
 	if(m_stData.eGameState == OS_DEAD)
 	{
 		return;
@@ -134,6 +141,17 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		//m_stData.eGameState = OS_WALK;
 		///*m_stData.*/m_dwLastWalkTime = dwCurrentTick;
 		g_xConsole.CPrint("Walk interval:%d, Speed %d", dwCurrentTick - m_dwLastWalkTime, GetObject_MoveSpeed());
+
+		int nWalkInterval = 590 - 30 * GetObject_MoveSpeed();
+		if (nWalkInterval > 50) {
+			nWalkInterval -= 50;
+		}
+		if (dwCurrentTick - m_dwLastWalkTime < nWalkInterval) {
+			m_xCheatCount.IncCount();
+		}
+		else {
+			m_xCheatCount.Reset();
+		}
 
 		if(dwCurrentTick - m_dwLastWalkTime < 250)
 		{
@@ -222,6 +240,17 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 		//m_stData.eGameState = OS_RUN;
 		///*m_stData.*/m_dwLastRunTime = dwCurrentTick;
 		g_xConsole.CPrint("Run interval:%d, Speed %d", dwCurrentTick - m_dwLastRunTime, GetObject_MoveSpeed());
+
+		int nWalkInterval = 590 - 30 * GetObject_MoveSpeed();
+		if (nWalkInterval > 50) {
+			nWalkInterval -= 50;
+		}
+		if (dwCurrentTick - m_dwLastWalkTime < nWalkInterval) {
+			m_xCheatCount.IncCount();
+		}
+		else {
+			m_xCheatCount.Reset();
+		}
 
 		if(dwCurrentTick - m_dwLastRunTime < 250)
 		{
@@ -332,6 +361,13 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 			nAttackInterval = 0;
 		}
 
+		if (dwCurrentTick - m_dwLastAttackTime < GetHeroAttackInterval() - 50) {
+			m_xCheatCount.IncCount();
+		}
+		else {
+			m_xCheatCount.Reset();
+		}
+
 		//g_xConsole.CPrint("Attack interval:%d, need interval:%d", dwCurrentTick - m_dwLastAttackTime, nAttackInterval);
 
 		if(dwCurrentTick - m_dwLastAttackTime < nAttackInterval)
@@ -341,6 +377,7 @@ void HeroObject::DoPacket(const PkgUserActionReq& req)
 			IncAttackTimeout();
 			return;
 		}
+
 		if(bIsStone)
 		{
 			return;
@@ -1588,7 +1625,7 @@ void HeroObject::DoPacket(const PkgPlayerShopOpReq& req)
 					}
 					if (0 != SettingLoader::GetInstance()->GetIntValue("SELLRAND") &&
 						nSellMoney != 0) {
-						nSellMoney = nSellMoney / 10 + rand() % nSellMoney * 0.9f;
+						nSellMoney = nSellMoney * 0.20 + rand() % nSellMoney * 0.75f;
 						if (nSellMoney == 0) {
 							nSellMoney = 1;
 						}
@@ -3522,7 +3559,7 @@ void HeroObject::DoPacket(const PkgPlayerForgeItemReq& req)
 				if(nUpgradeValue < 5 &&
 					nUpgradeValue >= 0)
 				{
-					static int s_nNeedCountTable[] = {1, 1, 2, 3, 5};
+					static int s_nNeedCountTable[] = {1, 1, 1, 2, 3};
 					int nCountNeed = s_nNeedCountTable[nUpgradeValue];
 					if (nCountNeed > GETITEMATB(pStone, AtkSpeed)) {
 						char szTip[100];

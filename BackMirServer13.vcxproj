@@ -326,6 +326,7 @@
     <ClInclude Include="common\shared.h" />
     <ClInclude Include="common\view.h" />
     <ClInclude Include="GameWorld\BroadcaseQueue.h" />
+    <ClInclude Include="GameWorld\CheatCount.h" />
     <ClInclude Include="GameWorld\ConnCode.h" />
     <ClInclude Include="GameWorld\DamagePool.h" />
     <ClInclude Include="GameWorld\DBDropDownContext.h" />

@@ -8,6 +8,7 @@
 #include "../../CommonModule/version.h"
 #include "DBDropDownContext.h"
 #include "../CMainServer/CMainServer.h"
+#include "../../CommonModule/LuaStackGuard.h"
 //////////////////////////////////////////////////////////////////////////
 const int g_nOpQueryItemAttrib = DO_QUERY_ITEMATTRIB;
 USHORT g_nItemPrice[ITEM_ID_MAX];
@@ -211,6 +212,8 @@ int DBThread::ExecuteDropItemEx2(DBOperationParam *_pParam) {
 
 	// Convert drop item table to lua table
 	lua_State* L = DBThread::GetInstance()->GetLuaState();
+	LuaStackGuard guard(L);
+
 	lua_getglobal(L, "DropDownMonsterItemsLua");
 	if (!lua_isfunction(L, -1)) {
 		g_xConsole.CPrint("Nil lua call function");
@@ -222,10 +225,16 @@ int DBThread::ExecuteDropItemEx2(DBOperationParam *_pParam) {
 	MonsDropItemInfoVec *pVec = nullptr;
 	GetRecordsInMonsDropTable(int(_pParam->dwParam[0]), &pVec);
 	if (nullptr != pVec) {
+		int nLuaIndex = 1;
 		for (auto &di : *pVec) {
+			lua_newtable(L);
+			lua_pushstring(L, "item");
 			lua_pushnumber(L, di.nItemId);
+			lua_settable(L, -3);
+			lua_pushstring(L, "prob");
 			lua_pushnumber(L, di.nProb);
 			lua_settable(L, -3);
+			lua_rawseti(L, -2, nLuaIndex++);
 		}
 	}
 	tolua_pushusertype(L, &xLuaDropContext, "DBDropDownContext");

@@ -43,7 +43,8 @@ using namespace ioserver;
 //////////////////////////////////////////////////////////////////////////
 HeroObject::HeroObject(unsigned int _dwID) : m_xMagics(USER_MAGIC_NUM),
 	/*,m_xSendBuffer(OBJECT_BUFFER_SIZE)*/
-	m_xBag(HERO_BAG_SIZE_CUR)
+	m_xBag(HERO_BAG_SIZE_CUR),
+	m_xCheatCount(10)
 {
 	m_eType = SOT_HERO;
 	for(int i = 0; i < HERO_BAG_SIZE_CUR; ++i)
@@ -6587,6 +6588,13 @@ bool HeroObject::DoSpell(const PkgUserActionReq& req)
 		return false;
 	}
 
+	if (dwInterval < 1000) {
+		m_xCheatCount.IncCount();
+	}
+	else {
+		m_xCheatCount.Reset();
+	}
+
 	if (m_uForbidAttackUntil != 0 &&
 		dwCurTick < m_uForbidAttackUntil) {
 		return false;
@@ -11295,7 +11303,7 @@ int HeroObject::GetSheildDefence(int _damage)
 			nSkillLevel = 3;
 		}
 
-		float fFactor = 0.16f;
+		float fFactor = 0.17f;
 		float fMinDefence = fFactor;
 		float fMaxDefence = 0.0f;
 

@@ -20,6 +20,7 @@
 #include "FreeListManager.h"
 #include <google/protobuf/message.h>
 #include <mutex>
+#include "CheatCount.h"
 //#include "../common/memleak.h"
 //////////////////////////////////////////////////////////////////////////
 extern ByteBuffer g_xThreadBuffer;
@@ -1264,6 +1265,9 @@ protected:
 	unsigned int m_uLastAttackTimeoutTime;
 	unsigned int m_uLastAttackTimeoutCounts;
 	unsigned int m_uForbidAttackUntil;
+
+	// Cheat count
+	CheatCount m_xCheatCount;
 };
 
 typedef std::list<HeroObject*> HeroObjectList;
